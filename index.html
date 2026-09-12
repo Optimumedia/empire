@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dL51AEffYGQ9bRvWWAM9BKYm0MF6ySN6E+ErfM7oCew='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a7d6jKm7v5Dz1tZU/BcjDQz9g/N5+ftEEq5TOZPa5kA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Empire">
+<meta name="apple-mobile-web-app-title" content="Sky">
 <meta name="theme-color" content="#0F141B">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Martin's Empire</title>
+<title>Sky is the limit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
 <style>
@@ -392,8 +392,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-122826"></script>
-<script src="city.js?v=20260912-122826"></script>
+<script src="quotes.js?v=20260912-125740"></script>
+<script src="city.js?v=20260912-125740"></script>
 
 <script>
 (() => {
@@ -765,14 +765,18 @@
     if ($('data-status')) dataStatus();
   }
 
+  // The one thing to do now: inside the current block, the earliest mission that is due and still fresh (≤2.5 h old);
+  // otherwise the most recent due one; otherwise the next upcoming mission. Never a stale morning item at lunchtime.
   function nextMission(C, ms, done) {
     const { h, tk, selKey } = C; if (selKey !== tk) return null;
-    const cands = ms.filter(m => !m.bonus && !done.has(m.id));
-    if (!cands.length) return null;
+    const cands = ms.filter(m => !m.bonus && !done.has(m.id)); if (!cands.length) return null;
+    const tOf = m => { const [hh, mm] = m.t.split(':').map(Number); return hh + mm / 60; };
+    const curGrp = h < 10 ? 'am' : h < 19.5 ? 'work' : 'pm';
     const starter = new Set((state.seen.starter && state.seen.starter.ids) || []);
-    const due = cands.filter(m => { const [hh, mm] = m.t.split(':').map(Number); return hh + mm / 60 <= h + 0.75; });
-    const pool = due.length ? due : cands.slice(0, 1);
-    return pool.sort((a, b) => (starter.has(b.id) - starter.has(a.id)) || (b.focus - a.focus) || 0)[0] || cands[0];
+    const due = cands.filter(m => m.grp === curGrp && tOf(m) <= h + 0.75).sort((a, b) => tOf(a) - tOf(b));
+    if (due.length) { const st = due.find(m => starter.has(m.id) || m.focus); if (st) return st; return due.find(m => h - tOf(m) <= 2.5) || due[due.length - 1]; }
+    const upcoming = cands.filter(m => tOf(m) > h).sort((a, b) => tOf(a) - tOf(b)); if (upcoming.length) return upcoming[0];
+    const inBlock = cands.filter(m => m.grp === curGrp); return inBlock[inBlock.length - 1] || cands[cands.length - 1];
   }
   function renderToday(C) {
     const { tk, selKey, S, h } = C; const d = parse(selKey), ms = missionsFor(d), rec = day(selKey), done = doneOn(selKey), isToday = selKey === tk, skip = isSkip(selKey);
@@ -795,7 +799,8 @@
     // NEXT
     const nx = nextMission(C, ms, done); const first = (() => { const y = day(key(addDays(parse(tk), -1))); return y.close && y.close.first; })();
     const N = $('next');
-    if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Rest is a decision, not a lapse.</h2><p>Come back tomorrow. The streak is waiting.</p>`;
+    if (!isToday) { N.className = 'next done'; N.innerHTML = `<div class="cap">Yesterday</div><h2>Log what you did.</h2><p>Tap the circles below. Back to today from the ⋯ menu.</p>`; }
+    else if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Rest is a decision, not a lapse.</h2><p>Come back tomorrow. The streak is waiting.</p>`;
     else if (!nx) { N.className = 'next done'; N.innerHTML = `<div class="cap">${won ? 'Day won' : 'Board clear'}</div><h2>${won ? 'Nothing left to prove today.' : 'All missions logged.'}</h2><p>${rec.close ? 'Day closed. Sleep is a mission.' : 'Close the day when the boys are down.'}</p>${!rec.close && isToday ? `<div class="acts"><button class="btn primary" id="close-btn">Close the day</button></div>` : ''}`; }
     else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'How rested?' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
     const p = planApplies(weekKey(d), selKey); $('woop-today').innerHTML = p && p.woop ? `<div class="woop"><b>This week’s plan:</b> ${esc(p.woop.plan)}</div>` : '';
@@ -1134,11 +1139,11 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   $('fr-ics').addEventListener('click', async () => {
     const fl = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday); if (!fl.length) { toast('Add birthdays first'); return; }
     const y = new Date().getFullYear(); const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-    const ev = ([id, f]) => { const md = bdayMD(f.bday, y).replace('-', ''); const lines = ['BEGIN:VEVENT', `UID:empire-bday-${id}@martins-empire`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
+    const ev = ([id, f]) => { const md = bdayMD(f.bday, y).replace('-', ''); const lines = ['BEGIN:VEVENT', `UID:sky-bday-${id}@sky-is-the-limit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
       'BEGIN:VALARM', 'TRIGGER:-P4DT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday in 5 days — plan something`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday tomorrow`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:PT9H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday today — call`, 'END:VALARM', 'END:VEVENT']; return lines.map(icsFold).join('\r\n') + '\r\n'; };
-    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Martin's Empire//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sky is the limit//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
     if (downloadsFn) { try { await downloadsFn.save({ filename: 'empire-birthdays.ics', data: ics, type: 'text/calendar' }); toast('Calendar file saved — open it to import'); return; } catch (e) { if (e && e.code === 'declined') return; } }
     try { await navigator.clipboard.writeText(ics); toast('Copied .ics text — paste into a file'); } catch (e) { toast('Could not export here'); }
   });
@@ -1165,7 +1170,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   if (STANDALONE) downloadsFn = { save: async ({ filename, data, type }) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); return { status: 'saved' }; } };
   else (async () => { try { downloadsFn = await window.claude.use('downloads'); } catch (e) { downloadsFn = null; } })();
   function dataStatus() { const days = Object.keys(state.days).length, wi = Object.keys(state.weighins).length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== 'road').length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} structures · device ${deviceId} · ${dbRef ? 'sync on' : 'this device only'}`; }
-  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'martins-empire', exported: new Date().toISOString(), state }, null, 1); const name = `empire-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
+  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'sky-is-the-limit', exported: new Date().toISOString(), state }, null, 1); const name = `sky-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
   $('restore-btn').addEventListener('click', () => { const ta = $('restore-text'); if (ta.hidden || !ta.value.trim()) { ta.hidden = false; ta.value = ''; ta.focus(); toast('Paste the backup, then tap Restore again'); return; } let parsed; try { parsed = JSON.parse(ta.value); } catch (e) { toast('That isn’t a valid backup'); return; } const incoming = parsed && parsed.state ? parsed.state : parsed; if (!isObj(incoming) || !isObj(incoming.days)) { toast('That isn’t a valid backup'); return; } state = merge(state, incoming); ta.hidden = true; ta.value = ''; toast('Restored — merged with what was here', true); persist(); render(); });
   $('syncai').hidden = !STANDALONE;
   function renderCfg() { const c = cfg.get(); $('gh-token').value = c.ghToken || ''; $('an-key').value = c.anthropicKey || ''; $('cfg-note').textContent = `${c.ghToken ? 'GitHub token set' + (c.gistId ? ' · gist ' + c.gistId.slice(0, 7) : '') : 'No GitHub token — this device only'} · ${c.anthropicKey ? 'Anthropic key set — Council + Ask coach use AI' : 'No Anthropic key — Council uses rules'}`; }

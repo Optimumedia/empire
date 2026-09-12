@@ -1,5 +1,5 @@
-/* Martin's Empire — service worker. Build 20260912-122826 */
-const BUILD = '20260912-122826';
+/* Sky is the limit — service worker. Build 20260912-125740 */
+const BUILD = '20260912-125740';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 

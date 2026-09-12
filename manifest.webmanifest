@@ -1,8 +1,8 @@
 {
-  "name": "Martin's Empire",
-  "short_name": "Empire",
+  "name": "Sky is the limit",
+  "short_name": "Sky",
   "description": "Daily missions, a weekly Council, and a city that only grows when you do the real thing.",
-  "id": "martins-empire",
+  "id": "sky-is-the-limit",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
