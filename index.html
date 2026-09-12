@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-YUMGPwzwD3BJSMbzNlQlfQeLW5TP/s2320f7sKj4oe0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RROQMxh0Gjn+wgaSA3rG1DIO3D8WK6IcprskwDZDyi0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -396,8 +396,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-133939"></script>
-<script src="city.js?v=20260912-133939"></script>
+<script src="quotes.js?v=20260912-134123"></script>
+<script src="city.js?v=20260912-134123"></script>
 
 <script>
 (() => {
@@ -414,16 +414,16 @@
     { id: 'adventure',t: '09:30', grp: 'am',   name: 'Family adventure', tiny: 'One hour out of the house', desc: 'Park, pool, grandparents — out of the house.', stat: 'family', xp: 30, days: 'we', min: 120 },
     { id: 'delegate', t: '10:00', grp: 'work', name: 'Hand off or document one thing', tiny: 'Loom one 3-minute process', desc: '15 min. Loom it while you do it the last time.', stat: 'business', xp: 25, days: 'wk', wall: true, min: 15 },
     { id: 'focus',    t: '10:15', grp: 'work', name: '90 minutes of deep work, Slack closed', tiny: '25 minutes, one task, Slack closed', desc: 'Design the business before Dineline starts at 12:00.', stat: 'business', xp: 20, days: 'wk', min: 90 },
-    { id: 'protein',  t: '13:00', grp: 'work', name: 'Protein floor — about 150 g', tiny: 'Protein at two meals', desc: '1.8 g per kg. Recomp is won in the kitchen.', stat: 'body', xp: 15, days: 'all', min: 0, until: '2026-09-12' },
-    { id: 'prot_b',   t: '07:30', grp: 'am',   name: 'Protein hit 1 of 3 — breakfast', tiny: 'Any protein at breakfast', desc: 'About a third of the day’s target. Tap for three easy plates.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'b', min: 0, from: '2026-09-13' },
-    { id: 'prot_l',   t: '13:00', grp: 'work', name: 'Protein hit 2 of 3 — lunch', tiny: 'Any protein at lunch', desc: 'Second third. Nothing from a bag.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'l', min: 0, from: '2026-09-13' },
-    { id: 'prot_d',   t: '19:30', grp: 'pm',   name: 'Protein hit 3 of 3 — dinner', tiny: 'Any protein at dinner', desc: 'Last third. A shake or skyr later covers the gap.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'd', min: 0, from: '2026-09-13' },
+    { id: 'protein',  t: '13:00', grp: 'work', name: 'Protein floor — about 150 g', tiny: 'Protein at two meals', desc: '1.8 g per kg. Recomp is won in the kitchen.', stat: 'body', xp: 15, days: 'all', min: 0, until: '2026-09-11' },
+    { id: 'prot_b',   t: '07:30', grp: 'am',   name: 'Protein hit 1 of 3 — breakfast', tiny: 'Any protein at breakfast', desc: 'About a third of the day’s target. Tap for three easy plates.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'b', min: 0, from: '2026-09-12' },
+    { id: 'prot_l',   t: '13:00', grp: 'work', name: 'Protein hit 2 of 3 — lunch', tiny: 'Any protein at lunch', desc: 'Second third. Nothing from a bag.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'l', min: 0, from: '2026-09-12' },
+    { id: 'prot_d',   t: '19:30', grp: 'pm',   name: 'Protein hit 3 of 3 — dinner', tiny: 'Any protein at dinner', desc: 'Last third. A shake or skyr later covers the gap.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'd', min: 0, from: '2026-09-12' },
     { id: 'water',    t: '13:00', grp: 'work', name: 'No caffeine after 13:00, 2 litres of water', tiny: 'No caffeine after 15:00', desc: 'Caffeine at 15:00 is still in you at 23:00.', stat: 'health', xp: 10, days: 'all', min: 0 },
     { id: 'train_we', t: '14:00', grp: 'work', name: 'Weekend workout', desc: 'Counts toward Iron Week (4 workouts). Not needed to win the day, so a rest weekend costs nothing.', stat: 'body', xp: 30, days: 'we', bonus: true, min: 45 },
     { id: 'noclient', t: '16:00', grp: 'work', name: 'Zero client messages handled by you', tiny: 'Route one client message to ops', desc: 'The agency learns to answer without you.', stat: 'business', xp: 15, days: 'wk', min: 0 },
     { id: 'prep',     t: '17:00', grp: 'work', name: 'Meal prep for the week', tiny: 'Cook protein for two days', desc: 'Protein cooked, lunches boxed.', stat: 'body', xp: 20, days: 'sun', min: 60 },
     { id: 'friend',   t: '18:30', grp: 'work', name: 'Reach out to a friend', desc: 'A message, a call, a plan. Whoever it’s been longest.', stat: 'family', xp: 10, days: 'all', kind: 'friend', min: 5 },
-    { id: 'pulse',    t: '13:30', grp: 'work', name: 'Midday pulse — energy and stress', desc: 'Two taps. If the day has gone sideways, the board adapts.', stat: 'health', xp: 5, days: 'all', kind: 'pulse', min: 1, from: '2026-09-13' },
+    { id: 'pulse',    t: '13:30', grp: 'work', name: 'Midday pulse — energy and stress', desc: 'Two taps. If the day has gone sideways, the board adapts.', stat: 'health', xp: 5, days: 'all', kind: 'pulse', min: 1, from: '2026-09-12' },
     { id: 'stop',     t: '20:00', grp: 'pm',   name: 'Hard stop at 20:00 — laptop closed', tiny: 'Laptop closed by 20:30', desc: 'Tomorrow-you handles it. Tonight is booked.', stat: 'business', xp: 15, days: 'wk', wall: true, min: 0 },
     { id: 'pnp',      t: '20:00', grp: 'pm',   name: '10 minutes solo with each twin, phone away', tiny: '5 minutes with each twin, phone away', desc: 'Play, no phone. Follow their lead, narrate, don’t direct.', stat: 'family', xp: 15, days: 'all', min: 20 },
     { id: 'boys_pm',  t: '20:15', grp: 'pm',   name: 'Bedtime captain — bath, book, bed', tiny: 'The book and the goodnight', desc: 'Same three steps every night. They will remember this.', stat: 'family', xp: 20, days: 'all', wall: true, min: 40 },

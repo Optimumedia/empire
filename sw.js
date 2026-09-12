@@ -1,5 +1,5 @@
-/* No Limit — service worker. Build 20260912-133939 */
-const BUILD = '20260912-133939';
+/* No Limit — service worker. Build 20260912-134123 */
+const BUILD = '20260912-134123';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
