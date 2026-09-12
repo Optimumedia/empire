@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DzIFoDur1NJLj8YM5EknY4Q2FOwciPuQ1z30P4Phngw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-YUMGPwzwD3BJSMbzNlQlfQeLW5TP/s2320f7sKj4oe0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Sky">
+<meta name="apple-mobile-web-app-title" content="No Limit">
 <meta name="theme-color" content="#0F141B">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Sky is the limit</title>
+<title>No Limit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
 <style>
@@ -396,8 +396,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-133546"></script>
-<script src="city.js?v=20260912-133546"></script>
+<script src="quotes.js?v=20260912-133939"></script>
+<script src="city.js?v=20260912-133939"></script>
 
 <script>
 (() => {
@@ -1213,11 +1213,11 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   $('fr-ics').addEventListener('click', async () => {
     const fl = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday); if (!fl.length) { toast('Add birthdays first'); return; }
     const y = new Date().getFullYear(); const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-    const ev = ([id, f]) => { const md = bdayMD(f.bday, 2025).replace('-', ''); /* non-leap reference year: 29 Feb becomes 28 Feb, every year */ const lines = ['BEGIN:VEVENT', `UID:sky-bday-${id}@sky-is-the-limit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
+    const ev = ([id, f]) => { const md = bdayMD(f.bday, 2025).replace('-', ''); /* non-leap reference year: 29 Feb becomes 28 Feb, every year */ const lines = ['BEGIN:VEVENT', `UID:sky-bday-${id}@no-limit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
       'BEGIN:VALARM', 'TRIGGER:-P4DT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday in 5 days — plan something`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday tomorrow`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:PT9H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday today — call`, 'END:VALARM', 'END:VEVENT']; return lines.map(icsFold).join('\r\n') + '\r\n'; };
-    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sky is the limit//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//No Limit//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
     if (downloadsFn) { try { await downloadsFn.save({ filename: 'empire-birthdays.ics', data: ics, type: 'text/calendar' }); toast('Calendar file saved — open it to import'); return; } catch (e) { if (e && e.code === 'declined') return; } }
     try { await navigator.clipboard.writeText(ics); toast('Copied .ics text — paste into a file'); } catch (e) { toast('Could not export here'); }
   });
@@ -1244,7 +1244,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   if (STANDALONE) downloadsFn = { save: async ({ filename, data, type }) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); return { status: 'saved' }; } };
   else (async () => { try { downloadsFn = await window.claude.use('downloads'); } catch (e) { downloadsFn = null; } })();
   function dataStatus() { const days = Object.keys(state.days).length, wi = Object.keys(state.weighins).length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== 'road').length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} structures · device ${deviceId} · ${dbRef ? 'sync on' : 'this device only'}`; }
-  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'sky-is-the-limit', exported: new Date().toISOString(), state }, null, 1); const name = `sky-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
+  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'no-limit', exported: new Date().toISOString(), state }, null, 1); const name = `nolimit-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
   $('restore-btn').addEventListener('click', () => { const ta = $('restore-text'); if (ta.hidden || !ta.value.trim()) { ta.hidden = false; ta.value = ''; ta.focus(); toast('Paste the backup, then tap Restore again'); return; } let parsed; try { parsed = JSON.parse(ta.value); } catch (e) { toast('That isn’t a valid backup'); return; } const incoming = parsed && parsed.state ? parsed.state : parsed; if (!isObj(incoming) || !isObj(incoming.days)) { toast('That isn’t a valid backup'); return; } state = merge(state, incoming); ta.hidden = true; ta.value = ''; toast('Restored — merged with what was here', true); persist(); render(); });
   $('syncai').hidden = !STANDALONE;
   function renderCfg() { const c = cfg.get(); $('gh-token').value = c.ghToken || ''; $('an-key').value = c.anthropicKey || ''; $('cfg-note').textContent = `${c.ghToken ? 'GitHub token set' + (c.gistId ? ' · gist ' + c.gistId.slice(0, 7) : '') : 'No GitHub token — this device only'} · ${c.anthropicKey ? 'Anthropic key set — Council + Ask coach use AI' : 'No Anthropic key — Council uses rules'}`; }
@@ -1328,7 +1328,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   $('lab-out').addEventListener('click', e => { const f = e.target.closest('[data-labfix]'), d = e.target.closest('[data-labdismiss]'); if (f) { const x = labSug.find(y => y.code === f.dataset.labfix); if (x && x.fix) { x.fix.run(); diag.dismissed[x.code] = now(); saveDiag(); persist(); render(); toast('Applied'); } } else if (d) { diag.dismissed[d.dataset.labdismiss] = now(); saveDiag(); render(); } });
   $('lab-clear').addEventListener('click', () => { diag.errors = []; diag.checks = []; saveDiag(); render(); toast('Log cleared'); });
   function labReport() { const C = ctx(); const tw = Object.entries(state.tweaks || {}).filter(([, v]) => v.t || v.off).map(([id, v]) => `${id}${v.off ? ' parked' : ' → ' + v.t}`);
-    return [`Sky is the limit — diagnostic report ${new Date().toISOString()}`, `ua: ${navigator.userAgent}`, `mode: ${STANDALONE ? 'standalone' : 'claude'} · device ${deviceId} · sync ${dbRef ? 'on' : 'off'} · viewport ${innerWidth}×${innerHeight}`,
+    return [`No Limit — diagnostic report ${new Date().toISOString()}`, `ua: ${navigator.userAgent}`, `mode: ${STANDALONE ? 'standalone' : 'claude'} · device ${deviceId} · sync ${dbRef ? 'on' : 'off'} · viewport ${innerWidth}×${innerHeight}`,
       `day ${dayDiff(C.tk, seasonStart()) + 1} · won ${C.S.won} · streak ${C.S.streak}/${C.S.best} · shields ${C.S.stock} · level ${state.peakLevel} · grit ${C.G.grit} (earned ${C.G.earned}, spent ${C.G.spent}) · week ${C.W.xp}`,
       `days logged ${Object.keys(state.days).length} · plans ${Object.keys(state.plans).length} · friends ${Object.values(state.friends).filter(f => !f.gone).length} · city tiles ${Object.values(state.city.tiles || {}).filter(p => !p.gone).length}`,
       `tweaks: ${tw.join(', ') || 'none'}`, `usage: ${JSON.stringify(diag.use)}`,
