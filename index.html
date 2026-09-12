@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uZuf+j0ZcSFPbj7I5VFkvx++idbN1t800sJk2jUmwRE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-veA5LKwWynUuMscKdAPINqU4oLJdJ2MfaRf2lCJQXcI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sky">
@@ -371,7 +371,7 @@
       <div class="row"><button class="btn sm dark" id="review-btn">Save review</button><span class="tiny" id="review-note"></span></div></div>
     <div class="card"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
     <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
-    <div class="card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, protein.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
+    <div class="card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
     <div class="card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down.</p></div>
     <div class="card" id="syncai" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
       <div class="qa"><label for="gh-token">GitHub token — syncs progress across devices via a secret Gist</label><input class="note" id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></div>
@@ -396,8 +396,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-130328"></script>
-<script src="city.js?v=20260912-130328"></script>
+<script src="quotes.js?v=20260912-130724"></script>
+<script src="city.js?v=20260912-130724"></script>
 
 <script>
 (() => {
@@ -414,7 +414,10 @@
     { id: 'adventure',t: '09:30', grp: 'am',   name: 'Family adventure', tiny: 'One hour out of the house', desc: 'Park, pool, grandparents — out of the house.', stat: 'family', xp: 30, days: 'we', min: 120 },
     { id: 'delegate', t: '10:00', grp: 'work', name: 'Hand off or document one thing', tiny: 'Loom one 3-minute process', desc: '15 min. Loom it while you do it the last time.', stat: 'business', xp: 25, days: 'wk', wall: true, min: 15 },
     { id: 'focus',    t: '10:15', grp: 'work', name: '90 minutes of deep work, Slack closed', tiny: '25 minutes, one task, Slack closed', desc: 'Design the business before Dineline starts at 12:00.', stat: 'business', xp: 20, days: 'wk', min: 90 },
-    { id: 'protein',  t: '13:00', grp: 'work', name: 'Protein floor — about 150 g', tiny: 'Protein at two meals', desc: '1.8 g per kg, nothing from a bag. Recomp is won in the kitchen.', stat: 'body', xp: 15, days: 'all', min: 0 },
+    { id: 'protein',  t: '13:00', grp: 'work', name: 'Protein floor — about 150 g', tiny: 'Protein at two meals', desc: '1.8 g per kg. Recomp is won in the kitchen.', stat: 'body', xp: 15, days: 'all', min: 0, until: '2026-09-12' },
+    { id: 'prot_b',   t: '07:30', grp: 'am',   name: 'Protein hit 1 of 3 — breakfast', tiny: 'Any protein at breakfast', desc: 'About a third of the day’s target. Tap for three easy plates.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'b', min: 0, from: '2026-09-13' },
+    { id: 'prot_l',   t: '13:00', grp: 'work', name: 'Protein hit 2 of 3 — lunch', tiny: 'Any protein at lunch', desc: 'Second third. Nothing from a bag.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'l', min: 0, from: '2026-09-13' },
+    { id: 'prot_d',   t: '19:30', grp: 'pm',   name: 'Protein hit 3 of 3 — dinner', tiny: 'Any protein at dinner', desc: 'Last third. A shake or skyr later covers the gap.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'd', min: 0, from: '2026-09-13' },
     { id: 'water',    t: '13:00', grp: 'work', name: 'No caffeine after 13:00, 2 litres of water', tiny: 'No caffeine after 15:00', desc: 'Caffeine at 15:00 is still in you at 23:00.', stat: 'health', xp: 10, days: 'all', min: 0 },
     { id: 'train_we', t: '14:00', grp: 'work', name: 'Bonus session', desc: 'Optional. Counts toward Iron Week.', stat: 'body', xp: 30, days: 'we', bonus: true, min: 45 },
     { id: 'noclient', t: '16:00', grp: 'work', name: 'Zero client messages handled by you', tiny: 'Route one client message to ops', desc: 'The agency learns to answer without you.', stat: 'business', xp: 15, days: 'wk', min: 0 },
@@ -583,7 +586,7 @@
       const bdays = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday && bdayMD(f.bday, d.getFullYear()) === md)
         .map(([id, f]) => ({ id: 'bday:' + id, t: '12:00', grp: 'work', name: `🎂 ${f.name}’s birthday — call, don’t text`, desc: f.kind === 'family' ? 'Family. Make it a moment.' : 'Two minutes on the phone beats a paragraph.', stat: 'family', xp: 15, days: 'all', dyn: true, min: 5 }));
       const tw = state.tweaks || {};
-      return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off)).concat(bdays)
+      return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off) && (!m.from || k >= m.from) && (!m.until || k <= m.until)).concat(bdays)
         .map(m => tw[m.id] && tw[m.id].t ? { ...m, t: tw[m.id].t, grp: +tw[m.id].t.slice(0, 2) < 10 ? 'am' : +tw[m.id].t.slice(0, 2) < 19.5 ? 'work' : 'pm', moved: true } : m)
         .map(m => ({ ...m, baseXp: m.xp, xp: focus.has(m.id) ? m.xp * 2 : m.xp, focus: focus.has(m.id), name: tiny.has(m.id) && m.tiny ? m.tiny : m.name, isTiny: tiny.has(m.id) && !!m.tiny }))
         .sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
@@ -809,7 +812,7 @@
     if (!isToday) { N.className = 'next done'; N.innerHTML = `<div class="cap">Yesterday</div><h2>Log what you did.</h2><p>Tap the circles below. Back to today from the ⋯ menu.</p>`; }
     else if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Rest is a decision, not a lapse.</h2><p>Come back tomorrow. The streak is waiting.</p>`;
     else if (!nx) { N.className = 'next done'; N.innerHTML = `<div class="cap">${won ? 'Day won' : 'Board clear'}</div><h2>${won ? 'Nothing left to prove today.' : 'All missions logged.'}</h2><p>${rec.close ? 'Day closed. Sleep is a mission.' : 'Close the day when the boys are down.'}</p>${!rec.close && isToday ? `<div class="acts"><button class="btn primary" id="close-btn">Close the day</button></div>` : ''}`; }
-    else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'How rested?' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
+    else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'How rested?' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : nx.kind === 'meal' ? 'See meals' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
     const p = planApplies(weekKey(d), selKey); $('woop-today').innerHTML = p && p.woop ? `<div class="woop"><b>This week’s plan:</b> ${esc(p.woop.plan)}</div>` : '';
     const bl = bundles(); $('bundles').hidden = !bl.length;
     $('bundles').innerHTML = bl.map(b => done.has(b.mission) ? `<span class="open">🔓 ${esc(b.name)} — unlocked</span>` : `<span>🔒 ${esc(b.name)} after ${esc(((missionOn(selKey, b.mission) || BYID[b.mission] || {}).name || b.mission).split('—')[0].trim())}</span>`).join('');
@@ -1044,6 +1047,17 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     if (wasWon && !won) toast('Day no longer won');
     for (const ms0 of MILESTONES) if (won0 < ms0 && S.won >= ms0) milestone(`<div class="bignum">${ms0}</div><h1>${ms0} days won.</h1><p class="muted">${ms0 >= 30 ? 'You’re not trying this anymore. You’re doing it.' : 'Most people quit at three.'}</p>`, 3000);
   }
+  // protein: 1.8 g/kg spread over three feedings (0.4 g/kg per meal is where muscle protein synthesis saturates)
+  function proteinTarget() { const ks = Object.keys(state.weighins).sort(); const kg = ks.length ? state.weighins[ks[ks.length - 1]].kg : 83; return { kg, total: Math.round(kg * 1.8), meal: Math.round(kg * 1.8 / 3.5) }; }
+  const MEALS = {
+    b: [['3 eggs + 150 g Greek yogurt 0% + 30 g oats', 38], ['200 g skyr + 30 g whey shake + a banana', 44], ['2 eggs + 4 egg whites + 40 g cheese on rye', 37]],
+    l: [['150 g chicken breast + rice + veg', 46], ['2 cans of tuna + big salad + olive oil', 40], ['200 g lean beef mince (5%) bolognese', 45]],
+    d: [['180 g salmon + potatoes + greens', 40], ['200 g turkey or chicken thigh + veg', 45], ['250 g cottage cheese + 2 eggs + tomatoes', 41]],
+  };
+  function mealSheet(m, k, on) {
+    const P = proteinTarget(); const slot = { b: 'Breakfast', l: 'Lunch', d: 'Dinner' }[m.meal];
+    return openSheet(`<div class="cap c-body">Body · ${m.t} · +${m.xp} XP</div><h2>${slot} — aim for ~${P.meal} g protein</h2><p>Day target ≈ <b>${P.total} g</b> (1.8 g × ${P.kg} kg), split into three feedings of ~${P.meal} g. A 30 g whey shake or 200 g skyr any time covers the rest. Three plates that hit it:</p><div class="list">${MEALS[m.meal].map(([txt, g]) => `<div class="r"><span>${esc(txt)}</span><b class="num">${g} g</b></div>`).join('')}</div><p class="tiny">Grams are for the protein, not the plate. Weigh the meat once; after that you’ll eyeball it.</p><div class="acts"><button class="btn" data-x>Close</button><button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, m.id); }));
+  }
   function missionSheet(id) {
     const k = selKey(); const m = missionOn(k, id); if (!m) return; const r = rec(k); const on = doneOn(k).has(id);
     if (m.kind === 'rest') return openSheet(`<h2>How rested do you feel?</h2><p>One tap. After a month the coach shows you what moves it.</p><div class="scale" id="sh-rest">${[1, 2, 3, 4, 5].map(v => `<button data-v="${v}" aria-pressed="${!!(r.rest && r.rest.v === v)}">${v}</button>`).join('')}</div><p class="tiny">1 = wrecked · 5 = ready to run through a wall</p>`, sh => sh.querySelector('#sh-rest').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; r.rest = { v: +b.dataset.v, t: now() }; const was = doneOn(k).has('checkin'); if (!was) complete(k, 'checkin'); else { persist(); render(); } closeSheet(); }));
@@ -1051,6 +1065,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     if (m.kind === 'friend') { const fl = friendList(key(logicalToday())); if (!fl.length) return openSheet(`<h2>No friends yet</h2><p>Add the three people you most want to keep close. Progress tab → Friends.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`);
       return openSheet(`<h2>Who?</h2><p>Longest since contact first. A message counts; a call counts double in your head.</p><div class="fpick">${fl.map(f => `<button data-f="${esc(f.id)}">${esc(f.name)}<small>${f.days === null ? 'never' : f.days + 'd'}</small></button>`).join('')}</div>${on ? `<div class="acts"><button class="btn" id="sh-undo">Undo today’s</button></div>` : ''}`, sh => { sh.querySelector('.fpick').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; (rec(k).fr ||= {})[b.dataset.f] = now(); closeSheet(); if (!doneOn(k).has('friend')) complete(k, 'friend'); else { persist(); render(); toast(`Reached ${state.friends[b.dataset.f].name}`); } }); const u = sh.querySelector('#sh-undo'); if (u) u.addEventListener('click', () => { closeSheet(); complete(k, 'friend'); }); }); }
     if (m.kind === 'close') return closeDay();
+    if (m.kind === 'meal') return mealSheet(m, k, on);
     openSheet(`<div class="cap c-${m.stat}">${STATS[m.stat]} · ${m.t}${m.min ? ` · ${m.min} min` : ''} · +${m.xp} XP</div><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>${m.tiny && !m.isTiny ? `<p class="tiny">Tiny version if today is on fire: ${esc(m.tiny)} — full XP for showing up.</p>` : ''}<div class="acts"><button class="btn" data-x>Close</button><button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, id); }));
   }
   // ---- close the day (peak-end ritual) ----
