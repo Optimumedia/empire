@@ -129,7 +129,7 @@ window.City = (() => {
     const dem = { r: clamp(0.6 * clamp((jobs - workforce) / (workforce + 20), -1, 1) + 0.4 * (happiness - 50) / 50 - 0.05 * (tax - 7), -1, 1),
                   c: clamp(clamp((0.3 * pop - jobsC) / (0.3 * pop + 10), -1, 1) * M.business - 0.05 * (tax - 7), -1, 1),
                   i: clamp(clamp((0.25 * pop - jobsI) / (0.25 * pop + 10), -1, 1) - 0.05 * (tax - 7), -1, 1) };
-    if (pop === 0) { dem.r = 0.8; dem.c = 0.3; dem.i = 0.3; }
+    if (pop === 0) { dem.r = 0.8; dem.c = 0.3; dem.i = 0.3; } else if (pop < 50) { dem.r = Math.max(dem.r, 0.3); dem.c = Math.max(dem.c, 0.2); dem.i = Math.max(dem.i, 0.2); } // a young town always wants to grow
     // budget (per day)
     let avgLV = 0, nz = 0; for (const k in info) if (ZONES[info[k].p.k]) { avgLV += info[k].lvs; nz++; } avgLV = nz ? avgLV / nz : 30;
     const income = pop * 0.5 * (tax / 7) * (0.75 + 0.5 * avgLV / 100) * M.business + 0.1 * jobs;
@@ -177,6 +177,7 @@ window.City = (() => {
     if (A.pop >= 50 && A.income - A.upkeep < 0) return 'Upkeep exceeds tax income. Raise tax a point or hold off on the next service.';
     if (A.pop >= 50 && !inf.some(i => i.p.k === 'water')) return 'Homes want water before they’ll densify. A water tower covers 6 tiles.';
     if (A.unemployed > 0.15 * A.workforce && A.workforce > 10) return 'Unemployment is high — zone Commercial or Industrial for jobs.';
+    if (A.pop > 0 && A.jobs === 0) return 'No jobs yet. A strip of Industrial away from the homes gets people working — and paying tax.';
     if (A.pop > 0 && A.jobs > A.workforce * 1.6) return 'More jobs than workers. Zone Residential.';
     if (A.happiness < 50) return A.avgPoll > 30 ? 'Pollution is on your homes. Move industry away or buffer it with a park.' : 'Happiness is low — services in range and a park would lift it.';
     if (A.pop >= 50 && A.parkShare < 0.3) return 'Fewer than a third of homes are near a park. Land value is waiting on it.';
@@ -292,7 +293,7 @@ window.City = (() => {
       nightFlag = night; dirtyB = false;
     }
     function drawStructure(x, y, p, night, i) {
-      const r = rng(hash(x, y, p.k.length * 31 + p.lv)); const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH; const lv = p.lv;
+      const r = rng(hash(x, y, [...p.k].reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7) + p.lv * 101)); const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH; const lv = p.lv;
       const active = !i || i.active;
       if (ZONES[p.k]) {
         if (lv === 0) return;
@@ -373,7 +374,8 @@ window.City = (() => {
       for (const s of smoke) { s.age += dt * 0.5; s.x += dt * 6; s.y -= dt * 10; } smoke = smoke.filter(s => s.age < 1);
       for (const f of fx) { f.age += dt; f.x += (f.vx || 0) * dt; f.y += (f.vy || 0) * dt; if (f.vy !== undefined) f.vy += 60 * dt; } fx = fx.filter(f => f.age < f.life);
     }
-    function loop(ts) { if (!visible) { raf = 0; return; } if (ts - lastFrame >= 33) { const dt = Math.min(0.1, (ts - lastFrame) / 1000 || 0.03); lastFrame = ts; step(dt); drawFrame(); } raf = requestAnimationFrame(loop); }
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function loop(ts) { if (!visible) { raf = 0; return; } if (reduced) { if (ts - lastFrame >= 1000) { lastFrame = ts; drawFrame(); } raf = requestAnimationFrame(loop); return; } if (ts - lastFrame >= 33) { const dt = Math.min(0.1, (ts - lastFrame) / 1000 || 0.03); lastFrame = ts; step(dt); drawFrame(); } raf = requestAnimationFrame(loop); }
     function burst(n, text) { const [sx, sy] = toScreen(8, 8); const px = (sx + cam.x) * cam.z, py = (sy + cam.y) * cam.z; for (let i = 0; i < n; i++) fx.push({ kind: 'coin', x: sx + (Math.random() - 0.5) * 40, y: sy, vx: (Math.random() - 0.5) * 80, vy: -90 - Math.random() * 60, age: 0, life: 1.1 }); if (text) fx.push({ kind: 'text', text, x: sx, y: sy - 20, vx: 0, vy: -25, age: 0, life: 1.4 }); }
 
     // ---- sim tick + away report ----
@@ -469,7 +471,7 @@ window.City = (() => {
     const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (drag && !drag.moved) { const k = kkey(drag.gx, drag.gy); if (!painted.has(k)) { const ok = place(drag.gx, drag.gy); if (ok) { renderHud(); if (tool === 'service' || tool === 'decor') { sel = [drag.gx, drag.gy]; } } } renderPanel(); } drag = null; if (!ptrs.size) hover = null; };
     canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
     canvas.addEventListener('wheel', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left, my = e.clientY - r.top; const z = clamp(cam.z * (e.deltaY < 0 ? 1.1 : 0.9), 0.4, 2.2); cam.x = mx / z - (mx / cam.z - cam.x); cam.y = my / z - (my / cam.z - cam.y); cam.z = z; }, { passive: false });
-    window.addEventListener('resize', () => { if (visible) size(); });
+    window.addEventListener('resize', () => { if (visible) { size(); fitCamera(); } });
     setInterval(() => { if (visible) { tick(); renderHud(); } }, 60000);
     return { show, refresh: () => { if (visible) { lastA = null; dirtyG = dirtyB = true; renderHud(); renderPanel(); } },
       _tap: (x, y) => { const ok = place(x, y); renderHud(); renderPanel(); return ok; }, _tool: (t, s) => { tool = t; sub = s || null; renderPanel(); }, _sel: (x, y) => { sel = [x, y]; renderPanel(); }, _analyze: () => lastA || analyze(get().city, get().vitality),

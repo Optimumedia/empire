@@ -1,7 +1,7 @@
-/* Martin's Empire — service worker. Build 20260912-075123 */
-const BUILD = '20260912-075123';
+/* Martin's Empire — service worker. Build 20260912-122826 */
+const BUILD = '20260912-122826';
 const CACHE = 'empire-' + BUILD;
-const SHELL = ['./', './index.html', './quotes.js', './city.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -14,8 +14,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin || e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
-      .catch(() => caches.match(e.request).then(m => m || (e.request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
-  );
+  const put = r => { if (r && r.ok) caches.open(CACHE).then(c => c.put(e.request, r.clone())); return r; };
+  // versioned assets (?v=build) never change: cache first
+  if (url.searchParams.has('v')) { e.respondWith(caches.match(e.request).then(m => m || fetch(e.request).then(put))); return; }
+  // the page: network first with a short timeout, then cache, so bad signal never means a blank screen
+  const net = new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('timeout')), 4000); fetch(e.request, { cache: 'no-cache' }).then(r => { clearTimeout(t); res(put(r)); }, err => { clearTimeout(t); rej(err); }); });
+  e.respondWith(net.catch(() => caches.match(e.request).then(m => m || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()))));
 });
