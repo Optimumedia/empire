@@ -110,12 +110,21 @@
   .mission.now { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
   .mission.bonus .t { color: var(--gold); }
   .mission.focus { border-color: var(--gold); }
+  .fpick { display: none; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .mission.open .fpick { display: flex; }
+  .fpick [data-friend] { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; min-height: 32px; }
+  .fpick [data-friend] small { color: var(--muted); font-weight: 500; }
+  .bday { background: var(--gold-soft); border: 1px solid var(--gold); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; }
+  .bday + .bday { margin-top: 6px; } .bday.today { background: var(--gold); color: #1A1300; } .bday .s { font-size: 12px; opacity: .8; }
+  .contract { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--line); }
+  .contract.ready { border-style: solid; border-color: var(--gold); } .contract.done { opacity: .6; }
+  .ctile .k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mission .pill { display: inline-block; font-family: var(--font-display); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--gold-soft); color: var(--gold); margin-left: 6px; vertical-align: middle; }
   .mission .pill.tiny { background: var(--surface-2); color: var(--muted); }
   .mission .val { font-family: var(--font-display); font-weight: 700; color: var(--ink); font-size: 13px; margin-left: 6px; }
   .scale { display: flex; gap: 6px; margin-top: 6px; }
-  .scale button { flex: 1; min-height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-family: var(--font-display); font-weight: 700; cursor: pointer; }
-  .scale button[aria-pressed="true"] { background: var(--health); border-color: var(--health); color: #fff; }
+  .scale > * { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-family: var(--font-display); font-weight: 700; cursor: pointer; }
+  .scale > [aria-pressed="true"] { background: var(--health); border-color: var(--health); color: #fff; }
 
   .day-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .tile { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 10px 12px; min-width: 0; }
@@ -274,6 +283,7 @@
         <li>Missions mint <b>Grit</b>. Grit builds your <b>City</b> and buys real rewards. The City earns <b>Bucks</b> on its own. You start with 120 Grit — enough for an HQ and a Home.</li>
         <li>Lost a day? A <b>shield</b> covers it. Missed twice? Tomorrow's bar drops to 50%. Sick kid? <b>Skip</b> the day.</li>
         <li>Every Sunday the <b>Council</b> reviews your week and proposes changes. You accept or decline.</li>
+        <li>Add your <b>friends and their birthdays</b> in Stats. One friend a day, three a week, and nobody’s birthday slips past you.</li>
       </ol>
       <div><button class="btn primary" id="intro-ok">Got it</button></div>
     </div>
@@ -285,6 +295,7 @@
       <div class="tile"><div class="k">Missions</div><div class="v"><span id="today-done">0</span><small> / <span id="today-total">0</span></small></div></div>
       <div class="tile winbar"><div class="bar"><i id="win-fill" style="width:0%"></i><span class="mark" id="win-mark" style="left:72%"></span></div><div class="lbl"><span id="win-lbl">0 XP to win</span><span id="win-mode"></span></div></div>
     </div>
+    <div id="bdays" hidden></div>
     <div class="bundles" id="bundles" hidden></div>
     <div class="section">
       <div class="section-h">
@@ -340,6 +351,14 @@
       <div class="sub"><b id="loot-bal">0</b> Grit available</div>
       <div class="loot" id="loot"></div>
       <div><button class="btn sm" id="loot-add">Add a reward</button></div>
+    </div>
+    <div class="card">
+      <h3>Friends &amp; birthdays</h3>
+      <p class="sub">The people you don't want to drift from. The daily mission suggests whoever it's been longest. Birthdays show up 5 days, 1 day, and the day of — and become a mission that day.</p>
+      <div class="loot" id="friends"></div>
+      <div class="inline-form"><input id="fr-name" placeholder="Name" aria-label="Friend name"><input id="fr-bday" type="date" aria-label="Birthday" style="flex:0 0 150px"></div>
+      <div class="coach-actions"><button class="btn primary" id="fr-add">Add friend</button><button class="btn" id="fr-add-fam">Add as family</button><button class="btn" id="fr-ics" title="Import into Google Calendar for real phone notifications">Export birthdays to calendar</button></div>
+      <p class="sub" style="margin:0">Calendar export: open the .ics file on your phone → Google Calendar imports every birthday as a yearly event with reminders 5 days, 1 day and the morning of. That's your real notification.</p>
     </div>
     <div class="card"><h3>Level ladder</h3><div class="ladder" id="ladder"></div></div>
     <div class="card"><h3>All-time</h3><div class="statgrid" id="alltime"></div><div class="hist" id="milestones"></div></div>
@@ -452,6 +471,7 @@
     { id: 'boys_pm',  t: '20:15', grp: 'pm',   name: 'Bedtime captain — bath, book, bed',                  tiny: 'The book and the goodnight', desc: 'Same three steps every night.', stat: 'family', xp: 20, days: 'all', wall: true },
     { id: 'debrief',  t: '21:00', grp: 'pm',   name: 'Debrief with your wife — her stress first, no advice', tiny: 'Ask “how was your day?” and listen for five minutes', desc: '20 minutes. No agency talk after 20:00.', stat: 'family', xp: 20, days: 'all' },
     { id: 'kiss',     t: '21:30', grp: 'pm',   name: 'One specific appreciation + a six-second kiss',       desc: 'Small, daily, non-negotiable.', stat: 'family', xp: 10, days: 'all' },
+    { id: 'friend',   t: '18:30', grp: 'work', name: 'Reach out to a friend',                              desc: 'A message, a call, a plan. Pick whoever it’s been longest.', stat: 'family', xp: 10, days: 'all', kind: 'friend' },
     { id: 'dry',      t: '22:00', grp: 'pm',   name: 'Dry night — no alcohol',                             tiny: 'One drink max, none after 21:00', desc: 'The biggest hit to tomorrow’s recovery.', stat: 'health', xp: 10, days: 'all' },
     { id: 'lights',   t: '23:00', grp: 'pm',   name: 'Lights out by 23:00, phone outside the bedroom',     tiny: 'Lights out by 23:30', desc: '7½ hours before the boys wake you.', stat: 'health', xp: 15, days: 'all', wall: true },
   ];
@@ -469,6 +489,8 @@
     { id: 'lights5', name: 'Lights out by 23:00, 5 nights',         stat: 'health',   xp: 60,  target: 5, ids: ['lights'] },
     { id: 'weigh3',  name: 'Weigh in 3 mornings',                   stat: 'body',     xp: 30,  target: 3, ids: ['weigh'] },
     { id: 'tape',    name: 'Tape Tuesday — waist measured',         stat: 'body',     xp: 15,  target: 1, waist: true },
+    { id: 'friends3',name: 'Reach 3 different friends',             stat: 'family',   xp: 60,  target: 3, friends: true },
+    { id: 'hangout', name: 'Plan or have a night out / hangout',    stat: 'family',   xp: 50,  target: 1, manual: true },
   ];
   const LADDER = [
     { lv: 1, name: 'Awareness', when: 'months 1–2', gates: [['g1a', 'Two-week time audit — every hour tagged Doing / Deciding / Delegating / Designing'], ['g1b', 'Buyback rate calculated (yearly comp ÷ 2000 ÷ 4)'], ['g1c', 'Accountability chart drafted — every seat has one name'], ['g1d', 'Top 3 tasks below your buyback rate handed off, with SOPs']] },
@@ -515,7 +537,7 @@
   // State (per-field timestamps so devices merge instead of overwrite)
   // =====================================================================
   const LS_KEY = 'ascent.v2';
-  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, city: City.emptyCity() });
+  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, city: City.emptyCity() });
   const now = () => Date.now();
   const maxT = (a, b) => (!a ? b : !b ? a : (a.t || 0) >= (b.t || 0) ? a : b);
   const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
@@ -528,6 +550,7 @@
     if (isObj(r.off)) for (const id in r.off) out.off[id] = +r.off[id] || 1;
     if (isObj(r.rest)) out.rest = { v: +r.rest.v || 0, t: +r.rest.t || 0 };
     if (isObj(r.skip)) out.skip = { v: r.skip.v ? String(r.skip.v) : '', t: +r.skip.t || 0 };
+    if (isObj(r.fr)) { out.fr = {}; for (const id in r.fr) out.fr[id] = +r.fr[id] || 1; }
     return out;
   }
   function mergeDay(a, b) {
@@ -536,6 +559,7 @@
     for (const src of [a, b]) for (const id in src.off) out.off[id] = Math.max(out.off[id] || 0, src.off[id]);
     const rest = maxT(a.rest, b.rest); if (rest) out.rest = rest;
     const skip = maxT(a.skip, b.skip); if (skip) out.skip = skip;
+    if (a.fr || b.fr) { out.fr = {}; for (const src of [a, b]) for (const id in (src.fr || {})) out.fr[id] = Math.max(out.fr[id] || 0, src.fr[id]); }
     return out;
   }
   function merge(a, b) {
@@ -554,6 +578,7 @@
     byT('rewards', m => ({ name: String(m.name || ''), cost: +m.cost || 0, claimed: +m.claimed || 0, gone: !!m.gone, t: +m.t || 0 }));
     byT('identity', m => ({ v: String(m.v || ''), t: +m.t || 0 }));
     byT('plans'); byT('crates'); byT('stakes'); byT('letters'); byT('words');
+    byT('friends', m => ({ name: String(m.name || '').slice(0, 60), bday: /^\d{4}-\d{2}-\d{2}$/.test(m.bday || '') ? m.bday : '', kind: m.kind === 'family' ? 'family' : 'friend', gone: !!m.gone, t: +m.t || 0 }));
     for (const k of union(a.seen, b.seen)) out.seen[k] = true;
     out.peakLevel = Math.max(+(a.peakLevel || 1), +(b.peakLevel || 1), 1);
     out.city = City.merge(a.city, b.city);
@@ -570,12 +595,23 @@
   const accepted = (wk, type) => { const p = planFor(wk); return p ? (p.proposals || []).filter(x => x.type === type && x.status === 'accepted') : []; };
   const shineLines = () => (state.words.shine && state.words.shine.v ? state.words.shine.v.split('\n').map(s => s.trim()).filter(Boolean) : SHINE_DEFAULT);
   const bundles = () => (state.words.bundles && state.words.bundles.v ? state.words.bundles.v.split('\n').map(l => { const [n, m] = l.split('=').map(s => s && s.trim()); return n && m && BYID[m] ? { name: n, mission: m } : null; }).filter(Boolean) : []);
+  // Friends: last contact (days ago, null = never), sorted longest-first
+  function lastContact(fid) { let t = 0; for (const k in state.days) { const r = state.days[k]; if (r.fr && r.fr[fid] > t) t = r.fr[fid]; } return t; }
+  function friendList() { const tk = logicalToday().getTime(); return Object.entries(state.friends).filter(([, f]) => !f.gone).map(([id, f]) => { const t = lastContact(id); return { id, name: f.name, kind: f.kind, bday: f.bday, days: t ? Math.max(0, Math.round((tk - t) / 864e5)) : null }; }).sort((a, b) => (a.days === null ? 1e9 : a.days) < (b.days === null ? 1e9 : b.days) ? 1 : -1); }
+  function upcomingBirthdays(d) {
+    const out = []; const y = d.getFullYear();
+    for (const [id, f] of Object.entries(state.friends)) { if (f.gone || !f.bday) continue; const [by, m, dd] = f.bday.split('-').map(Number); let next = new Date(y, m - 1, dd); if (next < d) next = new Date(y + 1, m - 1, dd); const days = Math.round((next - d) / 864e5); const age = by > 1900 ? next.getFullYear() - by : 0; out.push({ id, name: f.name, days, age }); }
+    return out.sort((a, b) => a.days - b.days);
+  }
 
   // Missions valid on a date, after the week's accepted Council changes
   function missionsFor(d) {
     const dow = d.getDay(), we = dow === 0 || dow === 6, wk = weekKey(d);
     const retired = new Set(accepted(wk, 'retire').map(p => p.mission)), focus = new Set(accepted(wk, 'focus').map(p => p.mission)), tiny = new Set(accepted(wk, 'shrink').map(p => p.mission));
-    return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id))
+    const md = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const bdays = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday && f.bday.slice(5) === md)
+      .map(([id, f]) => ({ id: 'bday:' + id, t: '12:00', grp: 'work', name: `🎂 ${f.name}’s birthday — call, don’t text`, desc: f.kind === 'family' ? 'Family. Make it a moment.' : 'Two minutes on the phone beats a paragraph.', stat: 'family', xp: 15, days: 'all', dyn: true }));
+    return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id)).concat(bdays)
       .map(m => focus.has(m.id) ? { ...m, xp: m.xp * 2, focus: true } : tiny.has(m.id) && m.tiny ? { ...m, name: m.tiny, isTiny: true } : m)
       .sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
   }
@@ -593,6 +629,7 @@
     const w = state.weeks[wk] || {}; let n = 0;
     if (q.manual) n = w[q.id] ? 1 : 0; else if (q.counter) n = +w[q.id] || 0;
     else if (q.waist) n = Object.keys(state.waist).some(d => weekKey(parse(d)) === wk) ? 1 : 0;
+    else if (q.friends) { const s = new Set(); for (const k of weekDays(wk)) for (const id in (day(k).fr || {})) s.add(id); n = s.size; }
     else for (const k of weekDays(wk)) { const d = doneOn(k); for (const id of q.ids) if (d.has(id)) n++; }
     return { n: Math.min(n, q.target), raw: n, cleared: n >= q.target };
   }
@@ -758,20 +795,25 @@
     $('win-fill').style.width = `${Math.min(100, Math.round(100 * x.xp / max))}%`; $('win-mark').style.left = `${Math.round(100 * th.need / max)}%`;
     $('win-lbl').textContent = won ? `Won with ${x.xp - th.need} to spare · +${DAYWON_GRIT} Grit` : `${th.need - x.xp} XP to win`;
     $('win-mode').textContent = th.reduced ? 'Never miss twice: bar at 50%' : `${Math.round(100 * winRatio(weekKey(d)))} % of ${max}`;
+    // birthdays within 5 days
+    const up = upcomingBirthdays(parse(tk)).filter(b => b.days <= 5);
+    $('bdays').hidden = !up.length;
+    $('bdays').innerHTML = up.map(b => `<div class="bday${b.days === 0 ? ' today' : ''}">🎂 <b>${esc(b.name)}</b> — ${b.days === 0 ? 'birthday today. Call.' : b.days === 1 ? 'birthday tomorrow. Get the gift / send the message tonight.' : `birthday in ${b.days} days${b.days === 5 ? '. Plan something now.' : '.'}`}${b.age ? ` <span class="s">turns ${b.age}</span>` : ''}</div>`).join('');
     const bl = bundles(); $('bundles').hidden = !bl.length;
     $('bundles').innerHTML = bl.map(b => done.has(b.mission) ? `<span class="open">🔓 ${esc(b.name)} — unlocked</span>` : `<span>🔒 ${esc(b.name)} after ${esc((BYID[b.mission] || {}).name || b.mission).split('—')[0].trim()}</span>`).join('');
     const h = clockHours(); let nowId = null;
     if (isToday) for (const m of ms) { const [hh, mm] = m.t.split(':').map(Number); if (!m.bonus && hh + mm / 60 <= h + 0.5 && !done.has(m.id)) nowId = m.id; }
     let html = '', grp = null;
-    for (const m of ms) {
+    for (let m of ms) {
       if (m.grp !== grp) { grp = m.grp; html += `<div class="grp">${GRP[grp]}</div>`; }
       const on = done.has(m.id); let extra = '';
       if (m.kind === 'weigh' && state.weighins[selKey]) extra = `<span class="val">${state.weighins[selKey].kg} kg</span>`;
-      if (m.kind === 'rest') extra = `<span class="scale" role="group" aria-label="Rested 1 to 5">${[1, 2, 3, 4, 5].map(v => `<button data-rest="${v}" aria-pressed="${!!(rec.rest && rec.rest.v === v)}">${v}</button>`).join('')}</span>`;
+      if (m.kind === 'rest') extra = `<span class="scale" role="group" aria-label="Rested 1 to 5">${[1, 2, 3, 4, 5].map(v => `<span role="button" tabindex="0" data-rest="${v}" aria-pressed="${!!(rec.rest && rec.rest.v === v)}">${v}</span>`).join('')}</span>`;
+      if (m.kind === 'friend') { const fl = friendList(); const who = rec.fr ? Object.keys(rec.fr).map(id => (state.friends[id] || {}).name).filter(Boolean) : []; if (who.length) extra = `<span class="val">${esc(who.join(', '))}</span>`; else if (fl.length) { m = { ...m, desc: `Longest since: ${esc(fl[0].name)} (${fl[0].days === null ? 'never' : fl[0].days + ' d'}). Tap to choose.` }; extra = `<span class="fpick">${fl.slice(0, 8).map(f => `<span role="button" tabindex="0" data-friend="${f.id}">${esc(f.name)} <small>${f.days === null ? 'never' : f.days + 'd'}</small></span>`).join('')}</span>`; } else m = { ...m, desc: 'Add your friends and their birthdays in the Stats tab.' }; }
       const pill = m.focus ? '<span class="pill">Focus ×2</span>' : m.isTiny ? '<span class="pill tiny">Tiny</span>' : '';
       html += `<button class="mission${on ? ' done' : ''}${m.id === nowId ? ' now' : ''}${m.bonus ? ' bonus' : ''}${m.focus ? ' focus' : ''}" data-id="${m.id}" aria-pressed="${on}">
         <span class="t">${m.bonus ? 'BONUS' : m.t}</span>
-        <span><span class="name">${m.name}${pill}${m.kind === 'weigh' ? extra : ''}</span><span class="desc">${m.desc}</span>${m.kind === 'rest' ? extra : ''}</span>
+        <span><span class="name">${m.name}${pill}${m.kind === 'weigh' || (m.kind === 'friend' && on) ? extra : ''}</span><span class="desc">${m.desc}</span>${m.kind === 'rest' || (m.kind === 'friend' && !on) ? extra : ''}</span>
         <span class="xp"><b class="c-${m.stat}">+${m.xp}</b><span class="tag c-${m.stat}">${STATS[m.stat]}</span><span class="check"></span></span></button>`;
     }
     $('missions').innerHTML = html;
@@ -833,11 +875,13 @@
     const wa = Object.keys(state.waist).sort();
     $('waist-note').textContent = wa.length ? `Waist ${state.waist[wa[wa.length - 1]].cm} cm on ${fmt(parse(wa[wa.length - 1]))}${wa.length > 1 ? ` · ${(state.waist[wa[wa.length - 1]].cm - state.waist[wa[0]].cm).toFixed(1)} cm since ${fmt(parse(wa[0]))}` : ''}` : 'Tape at the navel after a normal exhale, same morning conditions. Once a week.';
     const votes = { business: 0, body: 0, health: 0, family: 0 };
-    for (const k in state.days) for (const id of doneOn(k)) { const m = BYID[id]; if (m) votes[m.stat]++; }
+    for (const k in state.days) for (const id of doneOn(k)) { const m = BYID[id]; votes[m ? m.stat : 'family']++; }
     $('statgrid').innerHTML = Object.keys(STATS).map(s => { const sl = levelFrom(T.by[s], needStat); const idn = (state.identity[s] && state.identity[s].v) || IDENTITY[s]; return `<button class="tile c-${s}" data-identity="${s}" style="text-align:left;cursor:pointer"><div class="k">${STATS[s]} · Lv ${sl.level}</div><div class="v">${votes[s]} <small>votes</small></div><div class="id">“${esc(idn)}”</div></button>`; }).join('');
     $('loot-bal').textContent = City.fmt(G.grit);
     const rws = Object.entries(state.rewards).filter(([, r]) => !r.gone).sort((a, b) => a[1].cost - b[1].cost);
     $('loot').innerHTML = rws.map(([id, r]) => `<div class="r${r.claimed ? ' claimed' : ''}"><span>${esc(r.name)}<div class="cost">${r.cost} Grit${r.claimed ? ' · claimed ' + fmt(new Date(r.claimed)) : ''}</div></span><span>${r.claimed ? `<button class="btn sm" data-unclaim="${id}">Undo</button>` : `<button class="btn sm gold" data-claim="${id}" ${G.grit >= r.cost ? '' : 'disabled'}>Claim</button> <button class="btn sm ghost" data-rmreward="${id}" aria-label="remove">×</button>`}</span></div>`).join('') || '<div class="sub">No rewards yet.</div>';
+    const fl = friendList(); const upc = upcomingBirthdays(logicalToday());
+    $('friends').innerHTML = fl.map(f => { const b = upc.find(u => u.id === f.id); return `<div class="r"><span>${esc(f.name)}${f.kind === 'family' ? ' <small style="color:var(--muted)">family</small>' : ''}<div class="cost" style="color:var(--muted)">${f.days === null ? 'never contacted' : f.days === 0 ? 'reached today' : `${f.days} days since contact`}${b ? ` · 🎂 ${b.days === 0 ? 'today' : b.days === 1 ? 'tomorrow' : 'in ' + b.days + ' days'}` : f.bday ? '' : ' · no birthday set'}</div></span><span><button class="btn sm primary" data-fcontact="${f.id}">Reached</button> <button class="btn sm ghost" data-fedit="${f.id}" aria-label="edit">✎</button> <button class="btn sm ghost" data-fremove="${f.id}" aria-label="remove">×</button></span></div>`; }).join('') || '<div class="sub">No friends yet. Add the three people you most want to keep close.</div>';
     let floor = 0, rows = ''; for (let l = 1; l <= Math.max(TITLES.length, L.level + 1); l++) { rows += `<div class="r${l === L.level ? ' cur' : ''}"><span class="lv">${l}</span><span>${titleFor(l)}</span><span class="need">${floor} XP</span></div>`; floor += need(l); }
     $('ladder').innerHTML = rows;
     const count = ids => Object.keys(state.days).reduce((n, k) => { const d = doneOn(k); return n + ids.filter(id => d.has(id)).length; }, 0);
@@ -1038,7 +1082,10 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   }
   $('missions').addEventListener('click', e => {
     const rb = e.target.closest('[data-rest]'), b = e.target.closest('.mission'); if (!b) return;
-    const k = selKey(), id = b.dataset.id, m = BYID[id]; const S0 = season(key(logicalToday())); const wasWon = dayXP(k).xp >= winThreshold(k, S0).need;
+    const k = selKey(), id = b.dataset.id, m = missionsFor(parse(k)).find(x => x.id === id); if (!m) return; const S0 = season(key(logicalToday())); const wasWon = dayXP(k).xp >= winThreshold(k, S0).need;
+    const fb = e.target.closest('[data-friend]');
+    if (fb) { const fid = fb.dataset.friend; (rec(k).fr ||= {})[fid] = now(); setMission(k, 'friend', true); toast(`Reached ${state.friends[fid].name} · +${m.xp} Family XP`); afterChange(k, wasWon, S0); return; }
+    if (m.kind === 'friend') { if (!Object.values(state.friends).some(f => !f.gone)) { toast('Add friends in the Stats tab first'); return; } const on = doneOn(k).has(id); if (on) { setMission(k, id, false); toast('Undone'); afterChange(k, wasWon, S0); } else { b.classList.toggle('open'); } return; }
     if (rb) { const v = +rb.dataset.rest; rec(k).rest = { v, t: now() }; setMission(k, 'checkin', true); toast(`Rested ${v}/5 · +5 Health XP`); afterChange(k, wasWon, S0); return; }
     if (m.kind === 'weigh') { const cur = state.weighins[k]; const v = parseFloat(prompt(`Weight this morning (kg)${cur ? ` — currently ${cur.kg}` : ''}`, cur ? cur.kg : '')); if (!v || v < 30 || v > 300) return; state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; setMission(k, 'weigh', true); toast(`${state.weighins[k].kg} kg logged · +5 Body XP`); afterChange(k, wasWon, S0); return; }
     if (m.kind === 'rest') return;
@@ -1130,6 +1177,29 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     else if (u) { const r = state.rewards[u.dataset.unclaim]; r.claimed = 0; r.t = now(); }
     else if (x) { if (!confirm('Remove this reward?')) return; const r = state.rewards[x.dataset.rmreward]; r.gone = true; r.t = now(); }
     else return; persist(); render();
+  });
+  // ---- friends ----
+  function addFriend(kind) {
+    const name = $('fr-name').value.trim(), bday = $('fr-bday').value; if (!name) { toast('Name first'); return; }
+    state.friends['f' + now()] = { name, bday: /^\d{4}-\d{2}-\d{2}$/.test(bday) ? bday : '', kind, gone: false, t: now() }; $('fr-name').value = ''; $('fr-bday').value = ''; toast(`${name} added`); persist(); render();
+  }
+  $('fr-add').addEventListener('click', () => addFriend('friend'));
+  $('fr-add-fam').addEventListener('click', () => addFriend('family'));
+  $('friends').addEventListener('click', e => {
+    const c = e.target.closest('[data-fcontact]'), x = e.target.closest('[data-fremove]'), ed = e.target.closest('[data-fedit]');
+    if (c) { const k = key(logicalToday()); (rec(k).fr ||= {})[c.dataset.fcontact] = now(); setMission(k, 'friend', true); toast(`Reached ${state.friends[c.dataset.fcontact].name}`); }
+    else if (x) { if (!confirm(`Remove ${state.friends[x.dataset.fremove].name}?`)) return; state.friends[x.dataset.fremove].gone = true; state.friends[x.dataset.fremove].t = now(); }
+    else if (ed) { const f = state.friends[ed.dataset.fedit]; const n = prompt('Name', f.name); if (n === null) return; const b = prompt('Birthday (YYYY-MM-DD, blank to clear)', f.bday); if (b === null) return; f.name = n.trim() || f.name; f.bday = /^\d{4}-\d{2}-\d{2}$/.test(b.trim()) ? b.trim() : ''; f.t = now(); }
+    else return; persist(); render();
+  });
+  $('fr-ics').addEventListener('click', async () => {
+    const fl = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday);
+    if (!fl.length) { toast('Add birthdays first'); return; }
+    const y = new Date().getFullYear();
+    const ev = ([id, f]) => { const [, m, d] = f.bday.split('-'); return `BEGIN:VEVENT\r\nUID:empire-bday-${id}@martins-empire\r\nDTSTAMP:${y}0101T000000Z\r\nDTSTART;VALUE=DATE:${y}${m}${d}\r\nRRULE:FREQ=YEARLY\r\nSUMMARY:🎂 ${f.name.replace(/[,;\\]/g, ' ')}'s birthday\r\nDESCRIPTION:From Martin's Empire. Call\\, don't text.\r\nBEGIN:VALARM\r\nTRIGGER:-P5D\r\nACTION:DISPLAY\r\nDESCRIPTION:${f.name} birthday in 5 days — plan something\r\nEND:VALARM\r\nBEGIN:VALARM\r\nTRIGGER:-P1D\r\nACTION:DISPLAY\r\nDESCRIPTION:${f.name} birthday tomorrow\r\nEND:VALARM\r\nBEGIN:VALARM\r\nTRIGGER:-PT15H\r\nACTION:DISPLAY\r\nDESCRIPTION:${f.name} birthday today — call\r\nEND:VALARM\r\nEND:VEVENT\r\n`; };
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Martin's Empire//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
+    if (downloadsFn) { try { await downloadsFn.save({ filename: 'empire-birthdays.ics', data: ics }); toast('Calendar file saved — open it to import'); return; } catch (e) { if (e && e.code === 'declined') return; } }
+    try { await navigator.clipboard.writeText(ics); toast('Copied .ics text — paste into a file'); } catch (e) { toast('Could not export here'); }
   });
   $('loot-add').addEventListener('click', () => { const name = prompt('Reward (something real you want — not food)'); if (!name || !name.trim()) return; const cost = parseInt(prompt('Cost in Grit (a good week is about 1,500)', '2000'), 10); if (!cost || cost < 1) return; state.rewards['r' + now()] = { name: name.trim(), cost, claimed: 0, gone: false, t: now() }; persist(); render(); });
   document.querySelectorAll('.nav [data-view]').forEach(b => b.addEventListener('click', () => {
