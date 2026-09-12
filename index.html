@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RROQMxh0Gjn+wgaSA3rG1DIO3D8WK6IcprskwDZDyi0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ERxPctHRNYXqPFK7lcPUnxHMsgxJAfx+rU7MGvCKWqM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -373,6 +373,9 @@
     <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
     <div class="card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
     <div class="card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down.</p></div>
+    <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
+      <div class="list" id="remind-list"></div>
+      <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
     <div class="card" id="syncai" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
       <div class="qa"><label for="gh-token">GitHub token — syncs progress across devices via a secret Gist</label><input class="note" id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></div>
       <p class="tiny" style="margin:0">github.com → Settings → Developer settings → Fine-grained tokens → permission <b>Gists: Read and write</b>, nothing else. Paste the same token on each device.</p>
@@ -396,8 +399,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-134123"></script>
-<script src="city.js?v=20260912-134123"></script>
+<script src="quotes.js?v=20260912-135134"></script>
+<script src="city.js?v=20260912-135134"></script>
 
 <script>
 (() => {
@@ -498,7 +501,7 @@
   // State — every record carries a timestamp so two devices merge instead of overwrite
   // =====================================================================
   const LS_KEY = 'ascent.v2';
-  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, city: City.emptyCity() });
+  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, city: City.emptyCity() });
   const now = () => Date.now();
   const maxT = (a, b) => (!a ? b : !b ? a : (a.t || 0) >= (b.t || 0) ? a : b);
   const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
@@ -552,6 +555,8 @@
     byT('letters', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
     byT('words', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
     for (const k of union(a.tweaks, b.tweaks)) { const x = a.tweaks && a.tweaks[k], y = b.tweaks && b.tweaks[k]; const m = (!x ? y : !y ? x : num(x.at) >= num(y.at) ? x : y); if (isObj(m)) out.tweaks[k] = { t: /^\d{2}:\d{2}$/.test(m.t || '') ? m.t : '', off: !!m.off, from: /^\d{4}-\d{2}-\d{2}$/.test(m.from || '') ? m.from : '', at: num(m.at) }; }
+    byT('push', m => (isObj(m.sub) && m.sub.endpoint ? { sub: m.sub, tz: String(m.tz || ''), t: num(m.t) } : { sub: null, tz: '', t: num(m.t) }));
+    for (const k of union(a.remind, b.remind)) { const x = a.remind && a.remind[k], y = b.remind && b.remind[k]; const m = (!x ? y : !y ? x : num(x.at) >= num(y.at) ? x : y); if (isObj(m)) out.remind[k] = { on: m.on !== false, t: /^\d{2}:\d{2}$/.test(m.t || '') ? m.t : '', at: num(m.at) }; }
     byT('friends', m => ({ name: String(m.name || '').slice(0, 60), bday: /^\d{4}-\d{2}-\d{2}$/.test(m.bday || '') ? m.bday : '', kind: m.kind === 'family' ? 'family' : 'friend', gone: !!m.gone, t: num(m.t) }));
     for (const k of union(a.seen, b.seen)) { const v = (a.seen && a.seen[k]) || (b.seen && b.seen[k]); out.seen[k] = typeof v === 'object' ? v : true; }
     out.peakLevel = Math.max(num(a.peakLevel, 1), num(b.peakLevel, 1), 1);
@@ -942,6 +947,7 @@
     if (document.activeElement !== $('bundle-text')) $('bundle-text').value = state.words.bundles && state.words.bundles.v ? state.words.bundles.v : '';
     renderCouncil(C);
     renderLab(C);
+    renderRemind();
   }
   // ---- Council ----
   function councilTarget(tk) { const d = parse(tk), dow = d.getDay(), wk = weekKey(d); return (dow === 0 || dow === 6 || planFor(wk)) ? nextWeek(wk) : wk; }
@@ -1239,6 +1245,32 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     else if (db) p.boss.status = 'declined';
     p.t = now(); persist(); render();
   });
+  // =====================================================================
+  // Reminders — Web Push. The subscription is saved into synced state; a GitHub Action (push/send.mjs) sends the due ones.
+  // =====================================================================
+  const VAPID_PUBLIC = 'BKrxCvD7xGGohz0eLesvba3aT-YxvbK416d4V8RV0dq82yQrPjkJSEULljg3TaVihZttQB-DivJNwXJQNk9ChLY';
+  const REMINDERS = [['first', '07:00', 'First move', 'the if-then you set last night'], ['gym', '08:25', 'Gym window', '5 minutes before 08:30'], ['lunch', '12:55', 'Protein + pulse', 'lunch feeding and the midday check-in'], ['stop', '19:55', 'Hard stop', '5 minutes before 20:00'], ['close', '22:25', 'Close the day', 'the two-minute ritual'], ['bday', '07:30', 'Birthdays', 'on the day, for anyone in your list']];
+  const b64ToU8 = b => { const p = '='.repeat((4 - b.length % 4) % 4); const r = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const raw = atob(r); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
+  async function pushSubscribe() {
+    if (!STANDALONE || !('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push isn’t available in this browser'); return; }
+    if (!cfg.get().ghToken) { toast('Turn on Gist sync first — reminders travel through it'); return; }
+    const perm = await Notification.requestPermission(); if (perm !== 'granted') { toast('Notifications blocked in the browser settings'); return; }
+    try { const reg = await navigator.serviceWorker.ready; let sub = await reg.pushManager.getSubscription(); if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+      state.push[deviceId] = { sub: sub.toJSON(), tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '', t: now() }; persist(); render(); toast('Reminders on. First one arrives at the next slot.'); }
+    catch (e) { toast('Could not subscribe: ' + (e && e.message ? e.message.slice(0, 60) : 'unknown')); }
+  }
+  function renderRemind() {
+    if (!STANDALONE) return; const card = $('remind-card'); card.hidden = false;
+    const mine = state.push[deviceId] && state.push[deviceId].sub; const anyDev = Object.values(state.push).filter(p => p.sub).length;
+    $('remind-status').textContent = mine ? `· on this phone${anyDev > 1 ? ` + ${anyDev - 1} more` : ''}` : anyDev ? `· on ${anyDev} other device${anyDev > 1 ? 's' : ''}` : '· off';
+    $('remind-enable').textContent = mine ? 'Re-enable on this phone' : 'Enable on this phone';
+    $('remind-list').innerHTML = REMINDERS.map(([id, t0, name, why]) => { const pr = state.remind[id] || {}; const on = pr.on !== false; const t = pr.t || t0; return `<div class="r"><span><b>${name}</b><div class="sub2">${why}</div></span><span class="row" style="gap:6px"><input class="note" type="time" value="${t}" data-rtime="${id}" style="width:104px;min-height:40px;padding:6px 8px" ${id === 'bday' ? 'disabled' : ''}><button class="btn sm ${on ? 'dark' : ''}" data-rtoggle="${id}">${on ? 'On' : 'Off'}</button></span></div>`; }).join('');
+  }
+  $('remind-enable').addEventListener('click', pushSubscribe);
+  $('remind-test').addEventListener('click', async () => { if (!('Notification' in window)) { toast('No notifications here'); return; } if (Notification.permission !== 'granted') { toast('Enable reminders first'); return; } const reg = await navigator.serviceWorker.ready; reg.showNotification('No Limit', { body: 'Reminders work on this phone. The scheduled ones come via GitHub.', tag: 'test', icon: 'icon-192.png', badge: 'icon-192.png' }); });
+  $('remind-list').addEventListener('click', e => { const b = e.target.closest('[data-rtoggle]'); if (!b) return; const id = b.dataset.rtoggle; const pr = state.remind[id] || { on: true, t: '' }; state.remind[id] = { on: pr.on === false, t: pr.t || '', at: now() }; persist(); render(); });
+  $('remind-list').addEventListener('change', e => { const i = e.target.closest('[data-rtime]'); if (!i) return; const id = i.dataset.rtime; const pr = state.remind[id] || { on: true }; state.remind[id] = { on: pr.on !== false, t: /^\d{2}:\d{2}$/.test(i.value) ? i.value : '', at: now() }; persist(); toast('Reminder time saved'); });
+
   // ---- backup / restore / config ----
   let downloadsFn = null;
   if (STANDALONE) downloadsFn = { save: async ({ filename, data, type }) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); return { status: 'saved' }; } };

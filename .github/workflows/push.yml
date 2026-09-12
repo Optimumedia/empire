@@ -1,0 +1,29 @@
+name: Reminders
+# Every 15 minutes: read the reminder settings + push subscriptions from the sync Gist and send any that are due.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    if: ${{ vars.GIST_RAW != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund web-push@3
+        working-directory: push
+      - run: node send.mjs
+        working-directory: push
+        env:
+          GIST_RAW: ${{ vars.GIST_RAW }}
+          VAPID_PUBLIC: ${{ vars.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          WINDOW_MIN: '15'
