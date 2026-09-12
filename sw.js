@@ -1,5 +1,5 @@
-/* Sky is the limit — service worker. Build 20260912-125740 */
-const BUILD = '20260912-125740';
+/* Sky is the limit — service worker. Build 20260912-130328 */
+const BUILD = '20260912-130328';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
