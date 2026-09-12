@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-veA5LKwWynUuMscKdAPINqU4oLJdJ2MfaRf2lCJQXcI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-lAnDf1LHAY5PsNEwoQf6Ba3PpJLNWb2T05yRtscO9eA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sky">
@@ -396,8 +396,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-130724"></script>
-<script src="city.js?v=20260912-130724"></script>
+<script src="quotes.js?v=20260912-131324"></script>
+<script src="city.js?v=20260912-131324"></script>
 
 <script>
 (() => {
@@ -423,6 +423,7 @@
     { id: 'noclient', t: '16:00', grp: 'work', name: 'Zero client messages handled by you', tiny: 'Route one client message to ops', desc: 'The agency learns to answer without you.', stat: 'business', xp: 15, days: 'wk', min: 0 },
     { id: 'prep',     t: '17:00', grp: 'work', name: 'Meal prep for the week', tiny: 'Cook protein for two days', desc: 'Protein cooked, lunches boxed.', stat: 'body', xp: 20, days: 'sun', min: 60 },
     { id: 'friend',   t: '18:30', grp: 'work', name: 'Reach out to a friend', desc: 'A message, a call, a plan. Whoever it’s been longest.', stat: 'family', xp: 10, days: 'all', kind: 'friend', min: 5 },
+    { id: 'pulse',    t: '13:30', grp: 'work', name: 'Midday pulse — energy and stress', desc: 'Two taps. If the day has gone sideways, the board adapts.', stat: 'health', xp: 5, days: 'all', kind: 'pulse', min: 1, from: '2026-09-13' },
     { id: 'stop',     t: '20:00', grp: 'pm',   name: 'Hard stop at 20:00 — laptop closed', tiny: 'Laptop closed by 20:30', desc: 'Tomorrow-you handles it. Tonight is booked.', stat: 'business', xp: 15, days: 'wk', wall: true, min: 0 },
     { id: 'pnp',      t: '20:00', grp: 'pm',   name: '10 minutes solo with each twin, phone away', tiny: '5 minutes with each twin, phone away', desc: 'Play, no phone. Follow their lead, narrate, don’t direct.', stat: 'family', xp: 15, days: 'all', min: 20 },
     { id: 'boys_pm',  t: '20:15', grp: 'pm',   name: 'Bedtime captain — bath, book, bed', tiny: 'The book and the goodnight', desc: 'Same three steps every night. They will remember this.', stat: 'family', xp: 20, days: 'all', wall: true, min: 40 },
@@ -512,6 +513,7 @@
     if (isObj(r.rest)) out.rest = { v: num(r.rest.v), t: num(r.rest.t) };
     if (isObj(r.skip)) out.skip = { v: r.skip.v ? String(r.skip.v).slice(0, 80) : '', t: num(r.skip.t) };
     if (isObj(r.fr)) { out.fr = {}; for (const id in r.fr) out.fr[id] = num(r.fr[id], 1) || 1; }
+    for (const f of ['am', 'md']) if (isObj(r[f])) out[f] = { e: Math.min(5, Math.max(0, num(r[f].e))), s: Math.min(5, Math.max(0, num(r[f].s))), tags: Array.isArray(r[f].tags) ? r[f].tags.filter(x => typeof x === 'string').slice(0, 6) : [], t: num(r[f].t) };
     if (isObj(r.close)) out.close = { mood: num(r.close.mood), best: String(r.close.best || '').slice(0, 40), note: String(r.close.note || '').slice(0, 300), first: String(r.close.first || '').slice(0, 200), t: num(r.close.t) };
     return out;
   }
@@ -519,7 +521,7 @@
     const out = { on: {}, off: {} };
     for (const src of [a, b]) for (const id in src.on) out.on[id] = Math.max(out.on[id] || 0, src.on[id]);
     for (const src of [a, b]) for (const id in src.off) out.off[id] = Math.max(out.off[id] || 0, src.off[id]);
-    for (const f of ['rest', 'skip', 'close']) { const m = maxT(a[f], b[f]); if (m) out[f] = m; }
+    for (const f of ['rest', 'skip', 'close', 'am', 'md']) { const m = maxT(a[f], b[f]); if (m) out[f] = m; }
     if (a.fr || b.fr) { out.fr = {}; for (const src of [a, b]) for (const id in (src.fr || {})) out.fr[id] = Math.max(out.fr[id] || 0, src.fr[id]); }
     return out;
   }
@@ -588,13 +590,19 @@
       const tw = state.tweaks || {};
       return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off) && (!m.from || k >= m.from) && (!m.until || k <= m.until)).concat(bdays)
         .map(m => tw[m.id] && tw[m.id].t ? { ...m, t: tw[m.id].t, grp: +tw[m.id].t.slice(0, 2) < 10 ? 'am' : +tw[m.id].t.slice(0, 2) < 19.5 ? 'work' : 'pm', moved: true } : m)
-        .map(m => ({ ...m, baseXp: m.xp, xp: focus.has(m.id) ? m.xp * 2 : m.xp, focus: focus.has(m.id), name: tiny.has(m.id) && m.tiny ? m.tiny : m.name, isTiny: tiny.has(m.id) && !!m.tiny }))
+        .map(m => { const ez = easyDay(k) && m.id !== 'train' && !!m.tiny; return { ...m, baseXp: m.xp, xp: focus.has(m.id) ? m.xp * 2 : m.xp, focus: focus.has(m.id), name: (tiny.has(m.id) || ez) && m.tiny ? m.tiny : m.name, isTiny: (tiny.has(m.id) || ez) && !!m.tiny, easy: ez }; })
         .sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
     });
   }
   const missionOn = (k, id) => missionsFor(parse(k)).find(m => m.id === id) || null;
   function doneOn(k) { return cached('do:' + k, () => { const r = day(k); return new Set(missionsFor(parse(k)).filter(m => isOn(r, m.id)).map(m => m.id)); }); }
-  const winRatio = (wk, k) => { const p = planApplies(wk, k); return p ? p.applied.threshold / 100 : WIN_DEFAULT; };
+  // Easy day: the morning or midday check-in says low energy (≤2), high stress (≥4) or a hard tag → bar drops to 60% and missions shrink to
+  // their tiny versions (Train stays as is). Automatic, capped at two per week; beyond that the Council decides.
+  const EASY_RATIO = 0.6, EASY_CAP = 2, HARD_TAGS = new Set(['sick', 'twins up', 'bad night', 'client fire']);
+  const lowState = st => !!st && (st.e > 0 && st.e <= 2 || st.s >= 4 || (st.tags || []).some(t => HARD_TAGS.has(t)));
+  const wantsEasy = k => { const r = day(k); return lowState(r.am) || lowState(r.md); };
+  function easyDay(k) { return cached('ez:' + k, () => { if (!wantsEasy(k)) return false; let n = 0; for (const d of weekDays(weekKey(parse(k)))) { if (d >= k) break; if (wantsEasy(d) && easyDay(d)) n++; } return n < EASY_CAP; }); }
+  const winRatio = (wk, k) => { const p = planApplies(wk, k); const base0 = p ? p.applied.threshold / 100 : WIN_DEFAULT; return easyDay(k) ? Math.min(base0, EASY_RATIO) : base0; };
 
   // =====================================================================
   // Scoring
@@ -784,6 +792,8 @@
     const curGrp = h < 10 ? 'am' : h < 19.5 ? 'work' : 'pm';
     const starter = new Set((state.seen.starter && state.seen.starter.ids) || []);
     const due = cands.filter(m => m.grp === curGrp && tOf(m) <= h + 0.75).sort((a, b) => tOf(a) - tOf(b));
+    const st0 = day(tk); const cond = st0.md || st0.am; const RECOVER = new Set(['wake', 'water', 'pnp', 'boys_pm', 'debrief', 'kiss', 'lights', 'dry', 'friend']), HEAVY = new Set(['train', 'focus', 'delegate']);
+    if (due.length && cond) { if (cond.s >= 4 || (cond.e > 0 && cond.e <= 2)) { const r = due.find(m => RECOVER.has(m.id)); if (r) return r; } else if (cond.e >= 4) { const hv = due.find(m => HEAVY.has(m.id)); if (hv) return hv; } }
     if (due.length) { const st = due.find(m => starter.has(m.id) || m.focus); if (st) return st; return due.find(m => h - tOf(m) <= 2.5) || due[due.length - 1]; }
     const upcoming = cands.filter(m => tOf(m) > h).sort((a, b) => tOf(a) - tOf(b)); if (upcoming.length) return upcoming[0];
     const inBlock = cands.filter(m => m.grp === curGrp); return inBlock[inBlock.length - 1] || cands[cands.length - 1];
@@ -798,7 +808,7 @@
     $('ring-sub').textContent = won ? `won · ${max - x.xp} left` : `of ${th.need} to win`;
     const st = skip ? 'hold' : stateOf(x.xp, th.need, isToday ? h : 24);
     const v = $('verdict'); v.className = `verdict s-${st}`;
-    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Everything else is bonus.' : '.'}` : th.reduced ? `Never miss twice — bar is at 50% today. ${th.need - x.xp} XP.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short and the evening is thin. Pick the two that matter.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : ''}`) : `${th.need - x.xp} XP short that day.`;
+    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Everything else is bonus.' : '.'}` : easyDay(selKey) ? `Easy day — bar at 60%, tiny missions. ${th.need - x.xp} XP to win it small.` : th.reduced ? `Never miss twice — bar is at 50% today. ${th.need - x.xp} XP.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short and the evening is thin. Pick the two that matter.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : ''}`) : `${th.need - x.xp} XP short that day.`;
     $('today-label').textContent = isToday ? 'Today' : `Yesterday · ${fmt(d)}`;
     const nonBonus = ms.filter(m => !m.bonus); $('today-count').textContent = `${nonBonus.filter(m => done.has(m.id)).length} of ${nonBonus.length}`;
     $('skip-note').hidden = !skip; $('skip-note').innerHTML = skip ? `<b>Skipped:</b> ${esc(rec.skip.v)} — doesn't count for or against the streak.` : '';
@@ -812,7 +822,7 @@
     if (!isToday) { N.className = 'next done'; N.innerHTML = `<div class="cap">Yesterday</div><h2>Log what you did.</h2><p>Tap the circles below. Back to today from the ⋯ menu.</p>`; }
     else if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Rest is a decision, not a lapse.</h2><p>Come back tomorrow. The streak is waiting.</p>`;
     else if (!nx) { N.className = 'next done'; N.innerHTML = `<div class="cap">${won ? 'Day won' : 'Board clear'}</div><h2>${won ? 'Nothing left to prove today.' : 'All missions logged.'}</h2><p>${rec.close ? 'Day closed. Sleep is a mission.' : 'Close the day when the boys are down.'}</p>${!rec.close && isToday ? `<div class="acts"><button class="btn primary" id="close-btn">Close the day</button></div>` : ''}`; }
-    else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'How rested?' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : nx.kind === 'meal' ? 'See meals' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
+    else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}${easyDay(selKey) ? ' · easy day' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'Check in' : nx.kind === 'pulse' ? 'Pulse' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : nx.kind === 'meal' ? 'See meals' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
     const p = planApplies(weekKey(d), selKey); $('woop-today').innerHTML = p && p.woop ? `<div class="woop"><b>This week’s plan:</b> ${esc(p.woop.plan)}</div>` : '';
     const bl = bundles(); $('bundles').hidden = !bl.length;
     $('bundles').innerHTML = bl.map(b => done.has(b.mission) ? `<span class="open">🔓 ${esc(b.name)} — unlocked</span>` : `<span>🔒 ${esc(b.name)} after ${esc(((missionOn(selKey, b.mission) || BYID[b.mission] || {}).name || b.mission).split('—')[0].trim())}</span>`).join('');
@@ -902,6 +912,7 @@
     const lines = [`Week so far: ${W.xp} XP${lw ? ` versus ${lw} last week` : ''}${W.mult > 1 ? ` (×${W.mult.toFixed(1)} for beating the ghost)` : ''}. Iron Week ${iron.raw}/4. Streak ${S.streak}, best ${S.best}, shields ${S.stock}.`,
       'Four walls: 08:30 drop-off, 10:00 work, 20:00 hard stop, 23:00 lights out. Every mission sits inside one of them.',
       'Business XP comes from handing things off, not doing more. The agency runs without you because you delegated once a day and stopped answering clients yourself.'];
+    const ez = weekDays(wk).filter(k => k <= tk && easyDay(k)).length; if (ez) lines.push(`Easy days this week: ${ez} of ${EASY_CAP}. ${ez >= EASY_CAP ? 'The next low day goes to the Council, not the bar.' : 'Honest check-ins keep the streak alive on bad days.'}`);
     const dry = [], wet = [];
     for (const k in state.days) { const r = state.days[k]; if (!r.rest) continue; (isOn(day(key(addDays(parse(k), -1))), 'dry') ? dry : wet).push(r.rest.v); }
     if (dry.length >= 5 && wet.length >= 5) { const m = a => (a.reduce((s, v) => s + v, 0) / a.length).toFixed(1); lines.push(`Evidence: you wake rested ${m(dry)}/5 after dry nights versus ${m(wet)}/5 after drinking. Your data.`); }
@@ -939,6 +950,7 @@
     const lastWk = prevWeek(target); const last = state.plans[lastWk] || null; const rv = state.reviews[lastWk] || state.reviews[weekKey(parse(tk))] || null;
     return { target_week: target, win_rate_4w: winRate, days: days.slice(-14), missions, streak: { current: S.streak, best: S.best, shields: S.stock },
       quests_last_week: questsFor(lastWk).map(q => ({ id: q.id, cleared: questState(lastWk, q).cleared, progress: questState(lastWk, q).raw + '/' + q.target })),
+      condition: (() => { const ks = days.map(d => d.date); const am = ks.map(k => day(k).am).filter(Boolean), md = ks.map(k => day(k).md).filter(Boolean); const avg = (a, f) => a.length ? +(a.reduce((x, y) => x + y[f], 0) / a.length).toFixed(1) : null; return { easy_days: ks.filter(k => easyDay(k)).length, am_energy: avg(am, 'e'), am_stress: avg(am, 's'), md_energy: avg(md, 'e'), md_stress: avg(md, 's') }; })(),
       freedom_level: freedomLevel(), threshold_now: Math.round(100 * winRatio(lastWk, weekDays(lastWk)[6])), stat_xp_4w: weeks.reduce((o, wk) => { const b = weekXP(wk).by; for (const s in STATS) o[s] = (o[s] || 0) + (b[s] || 0); return o; }, {}),
       user_review: rv && rv.at ? { energy: rv.energy, win: rv.a1.slice(0, 300), obstacle: rv.a2.slice(0, 300), change: rv.a3.slice(0, 300), disruptions: rv.a4.slice(0, 200) } : null,
       last_plan: last ? { summary: last.summary, proposals: last.proposals.map(p => ({ type: p.type, mission: p.mission, status: p.status })) } : null };
@@ -1054,13 +1066,26 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     l: [['150 g chicken breast + rice + veg', 46], ['2 cans of tuna + big salad + olive oil', 40], ['200 g lean beef mince (5%) bolognese', 45]],
     d: [['180 g salmon + potatoes + greens', 40], ['200 g turkey or chicken thigh + veg', 45], ['250 g cottage cheese + 2 eggs + tomatoes', 41]],
   };
+  // Morning check-in / midday pulse: three dials and a few tags. Honest answers pay XP and may switch the day to easy mode.
+  function stateSheet(m, k) {
+    const r = rec(k); const am = m.kind === 'rest'; const cur = (am ? r.am : r.md) || { e: 0, s: 0, tags: [] }; const st = { rest: r.rest ? r.rest.v : 0, e: cur.e, s: cur.s, tags: new Set(cur.tags || []) };
+    const TAGS = am ? ['bad night', 'twins up', 'sick', 'travel', 'client fire'] : ['client fire', 'twins up', 'sick', 'skipped lunch', 'good flow'];
+    const scale = (id, v) => `<div class="scale" data-scale="${id}">${[1, 2, 3, 4, 5].map(n => `<button data-v="${n}" aria-pressed="${v === n}">${n}</button>`).join('')}</div>`;
+    openSheet(`<h2>${am ? 'Morning check-in' : 'Midday pulse'}</h2><p>${am ? 'Ten seconds. Low energy or high stress and the board goes easy — bar at 60%, tiny missions, Train untouched.' : 'Two taps. If the day went sideways, the evening adapts.'}</p>
+      ${am ? `<div class="qa"><label>Rested</label>${scale('rest', st.rest)}</div>` : ''}<div class="qa"><label>Energy</label>${scale('e', st.e)}</div><div class="qa"><label>Stress</label>${scale('s', st.s)}<p class="tiny" style="margin:0">1 = calm · 5 = on fire</p></div>
+      <div class="fpick" id="sh-tags">${TAGS.map(t => `<button data-tag="${t}" aria-pressed="${st.tags.has(t)}">${t}</button>`).join('')}</div>
+      <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Save · +${m.xp} XP</button></div>`, sh => {
+      sh.addEventListener('click', e => { const v = e.target.closest('[data-v]'); if (v) { const id = v.closest('[data-scale]').dataset.scale; st[id] = +v.dataset.v; v.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === v)); return; } const tg = e.target.closest('[data-tag]'); if (tg) { st.tags.has(tg.dataset.tag) ? st.tags.delete(tg.dataset.tag) : st.tags.add(tg.dataset.tag); tg.setAttribute('aria-pressed', st.tags.has(tg.dataset.tag)); } });
+      sh.querySelector('#sh-ok').addEventListener('click', () => { if (am && !st.rest && !st.e && !st.s) { toast('Tap at least one'); return; } if (!am && !st.e && !st.s && !st.tags.size) { toast('Tap at least one'); return; } if (am && st.rest) r.rest = { v: st.rest, t: now() }; const wasEasy = easyDay(k); r[am ? 'am' : 'md'] = { e: st.e, s: st.s, tags: [...st.tags], t: now() }; bump(); closeSheet(); if (!doneOn(k).has(m.id)) complete(k, m.id); else { persist(); render(); } if (!wasEasy && easyDay(k)) setTimeout(() => milestone(`<div class="bignum">60%</div><h1>Easy day.</h1><p class="muted">Bar lowered, missions shrunk, Train as it is. The walls stand. Win it small.</p>`, 2600), 400); });
+    });
+  }
   function mealSheet(m, k, on) {
     const P = proteinTarget(); const slot = { b: 'Breakfast', l: 'Lunch', d: 'Dinner' }[m.meal];
     return openSheet(`<div class="cap c-body">Body · ${m.t} · +${m.xp} XP</div><h2>${slot} — aim for ~${P.meal} g protein</h2><p>Day target ≈ <b>${P.total} g</b> (1.8 g × ${P.kg} kg), split into three feedings of ~${P.meal} g. A 30 g whey shake or 200 g skyr any time covers the rest. Three plates that hit it:</p><div class="list">${MEALS[m.meal].map(([txt, g]) => `<div class="r"><span>${esc(txt)}</span><b class="num">${g} g</b></div>`).join('')}</div><p class="tiny">Grams are for the protein, not the plate. Weigh the meat once; after that you’ll eyeball it.</p><div class="acts"><button class="btn" data-x>Close</button><button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, m.id); }));
   }
   function missionSheet(id) {
     const k = selKey(); const m = missionOn(k, id); if (!m) return; const r = rec(k); const on = doneOn(k).has(id);
-    if (m.kind === 'rest') return openSheet(`<h2>How rested do you feel?</h2><p>One tap. After a month the coach shows you what moves it.</p><div class="scale" id="sh-rest">${[1, 2, 3, 4, 5].map(v => `<button data-v="${v}" aria-pressed="${!!(r.rest && r.rest.v === v)}">${v}</button>`).join('')}</div><p class="tiny">1 = wrecked · 5 = ready to run through a wall</p>`, sh => sh.querySelector('#sh-rest').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; r.rest = { v: +b.dataset.v, t: now() }; const was = doneOn(k).has('checkin'); if (!was) complete(k, 'checkin'); else { persist(); render(); } closeSheet(); }));
+    if (m.kind === 'rest' || m.kind === 'pulse') return stateSheet(m, k);
     if (m.kind === 'weigh') return openSheet(`<h2>Weight this morning</h2><p>Before breakfast, same conditions. Comma or dot both work.</p><input class="note" id="sh-kg" type="text" inputmode="decimal" placeholder="kg" value="${state.weighins[k] ? state.weighins[k].kg : ''}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Log</button></div>`, sh => { const ok = () => { const v = parseNum(sh.querySelector('#sh-kg').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; const was = doneOn(k).has('weigh'); closeSheet(); if (!was) complete(k, 'weigh'); else { persist(); render(); toast('Updated'); } }; sh.querySelector('#sh-ok').addEventListener('click', ok); sh.querySelector('#sh-kg').addEventListener('keydown', e => { if (e.key === 'Enter') ok(); }); });
     if (m.kind === 'friend') { const fl = friendList(key(logicalToday())); if (!fl.length) return openSheet(`<h2>No friends yet</h2><p>Add the three people you most want to keep close. Progress tab → Friends.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`);
       return openSheet(`<h2>Who?</h2><p>Longest since contact first. A message counts; a call counts double in your head.</p><div class="fpick">${fl.map(f => `<button data-f="${esc(f.id)}">${esc(f.name)}<small>${f.days === null ? 'never' : f.days + 'd'}</small></button>`).join('')}</div>${on ? `<div class="acts"><button class="btn" id="sh-undo">Undo today’s</button></div>` : ''}`, sh => { sh.querySelector('.fpick').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; (rec(k).fr ||= {})[b.dataset.f] = now(); closeSheet(); if (!doneOn(k).has('friend')) complete(k, 'friend'); else { persist(); render(); toast(`Reached ${state.friends[b.dataset.f].name}`); } }); const u = sh.querySelector('#sh-undo'); if (u) u.addEventListener('click', () => { closeSheet(); complete(k, 'friend'); }); }); }
@@ -1254,6 +1279,10 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const played = days14.filter(k => !isSkip(k) && dayXP(k).xp > 0); const wonN = played.filter(k => dayXP(k).xp >= winThreshold(k, S).need).length; if (played.length >= 7 && wonN / played.length < 0.4) add('win-low', 'high', `Winning ${wonN} of ${played.length} played days`, 'The bar is too high for this season of life. Run the Council — it lowers the threshold 5 points at a time — or park two missions.', null);
     // 9. starters not holding
     const st = (state.seen.starter && state.seen.starter.ids) || []; for (const id of st) { let sched = 0, d2 = 0; for (const k of days14.slice(0, 7)) { if (!missionOn(k, id)) continue; sched++; if (doneOn(k).has(id)) d2++; } if (sched >= 4 && d2 / sched < 0.5) add('starter:' + id, 'med', `Starter “${short(BYID[id] || { name: id })}” under 50% this week`, 'You committed to three. Either this one gets the Council’s focus ×2, or swap it for one you’ll actually do.', null); }
+    // 9b. easy days maxed two weeks running → the bar itself is wrong for this season
+    const ezWeeks = [weekKey(parse(tk)), prevWeek(weekKey(parse(tk)))].map(w => weekDays(w).filter(k => k <= tk && easyDay(k)).length); if (ezWeeks.every(n => n >= EASY_CAP)) add('easy-maxed', 'high', 'Two weeks of easy days, both capped', 'The bar is set for a season you’re not in. Run the Council (it lowers 5 points at a time), or tell me and I’ll rebalance the missions.', null);
+    // 9c. stress consistently high midday → the work block is the problem, not the evening
+    const mds = days14.map(k => day(k).md).filter(Boolean); if (mds.length >= 5 && mds.reduce((a, m) => a + m.s, 0) / mds.length >= 4) add('stress-high', 'med', 'Midday stress averages 4+', 'The Work block needs a release valve: move the walk/daylight mission to 12:00, or make “zero client messages” the focus for a week.', null);
     // 10. caught errors / failed checks
     const recentErr = diag.errors.filter(e => e.t > now() - 3 * 864e5).length; if (recentErr) add('errors', 'high', `${recentErr} error${recentErr === 1 ? '' : 's'} caught in 3 days`, 'Copy the report below and paste it to me — the stack traces are in it.', null);
     const recentChk = diag.checks.filter(c => c.t > now() - 3 * 864e5); if (recentChk.length) add('checks', 'high', `${recentChk.length} sanity check${recentChk.length === 1 ? '' : 's'} failed`, recentChk.map(c => c.code + (c.ctx ? ` (${c.ctx})` : '')).slice(0, 4).join(' · '), null);
