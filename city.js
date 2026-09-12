@@ -139,16 +139,16 @@ window.City = (() => {
   }
   // growth: run at open and once a minute; returns events for the away report
   function simulate(c, vit, now) {
-    const ev = { grew: 0, fell: 0 };
+    const ev = { grew: 0, fell: 0, touched: false };
     for (let iter = 0; iter < 4; iter++) {
       const A = analyze(c, vit); let changed = false;
       for (const k in A.info) {
         const i = A.info[k], p = i.p, z = ZONES[p.k]; if (!z) continue;
         const ok = growthOK(i, A, c), hold = growthOK(i, A, c, true);
-        if (ok.ok && p.lv < 3) { const tm = GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1); if (!p.g) { p.g = now; } else if (now - p.g >= tm) { p.lv++; p.t = now; p.g = now; ev.grew++; changed = true; } }
-        else if (p.g) p.g = 0;
+        if (ok.ok && p.lv < 3) { const tm = GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1); if (!p.g) { p.g = now; ev.touched = true; } else if (now - p.g >= tm) { p.lv++; p.t = now; p.g = now; ev.grew++; changed = true; } }
+        else if (p.g) { p.g = 0; ev.touched = true; }
         // a built tile only declines when it loses what its CURRENT level needs (road, power, water, services) — never for lack of demand
-        if (p.lv > 0 && !hold.ok) { if (!p.d) p.d = now; else if (now - p.d >= DECLINE_H * HOUR) { p.lv--; p.t = now; p.d = now; ev.fell++; changed = true; } } else p.d = 0;
+        if (p.lv > 0 && !hold.ok) { if (!p.d) { p.d = now; ev.touched = true; } else if (now - p.d >= DECLINE_H * HOUR) { p.lv--; p.t = now; p.d = now; ev.fell++; changed = true; } } else p.d = 0;
       }
       if (!changed) break;
     }
@@ -385,7 +385,7 @@ window.City = (() => {
       const before = c.lastSim.t; const ev = simulate(c, S.vitality, t); lastA = analyze(c, S.vitality); if (!c.lastTax.t && lastA.pop > 0) { c.lastTax.t = t; commit(); }
       if (ev.grew || ev.fell) { dirtyB = true; dirtyG = true; }
       if (!awayShown && before && t - before > 2 * HOUR) { awayShown = true; const hrs = Math.round((t - before) / HOUR); toast(`Away ${hrs} h: ${ev.grew} grew${ev.fell ? `, ${ev.fell} declined` : ''}, ${fmt(taxPending(c, lastA, t))} Bucks in taxes`, true); }
-      if (ev.grew || ev.fell || !before) commit(true);
+      if (ev.grew || ev.fell || ev.touched || !before) commit(true);
     }
     function show(v) { visible = v; if (v) { size(); tick(); renderHud(); renderPanel(); if (!raf) raf = requestAnimationFrame(loop); } }
 

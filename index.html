@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-lAnDf1LHAY5PsNEwoQf6Ba3PpJLNWb2T05yRtscO9eA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DzIFoDur1NJLj8YM5EknY4Q2FOwciPuQ1z30P4Phngw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sky">
@@ -396,8 +396,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-131324"></script>
-<script src="city.js?v=20260912-131324"></script>
+<script src="quotes.js?v=20260912-133546"></script>
+<script src="city.js?v=20260912-133546"></script>
 
 <script>
 (() => {
@@ -419,7 +419,7 @@
     { id: 'prot_l',   t: '13:00', grp: 'work', name: 'Protein hit 2 of 3 — lunch', tiny: 'Any protein at lunch', desc: 'Second third. Nothing from a bag.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'l', min: 0, from: '2026-09-13' },
     { id: 'prot_d',   t: '19:30', grp: 'pm',   name: 'Protein hit 3 of 3 — dinner', tiny: 'Any protein at dinner', desc: 'Last third. A shake or skyr later covers the gap.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'd', min: 0, from: '2026-09-13' },
     { id: 'water',    t: '13:00', grp: 'work', name: 'No caffeine after 13:00, 2 litres of water', tiny: 'No caffeine after 15:00', desc: 'Caffeine at 15:00 is still in you at 23:00.', stat: 'health', xp: 10, days: 'all', min: 0 },
-    { id: 'train_we', t: '14:00', grp: 'work', name: 'Bonus session', desc: 'Optional. Counts toward Iron Week.', stat: 'body', xp: 30, days: 'we', bonus: true, min: 45 },
+    { id: 'train_we', t: '14:00', grp: 'work', name: 'Weekend workout', desc: 'Counts toward Iron Week (4 workouts). Not needed to win the day, so a rest weekend costs nothing.', stat: 'body', xp: 30, days: 'we', bonus: true, min: 45 },
     { id: 'noclient', t: '16:00', grp: 'work', name: 'Zero client messages handled by you', tiny: 'Route one client message to ops', desc: 'The agency learns to answer without you.', stat: 'business', xp: 15, days: 'wk', min: 0 },
     { id: 'prep',     t: '17:00', grp: 'work', name: 'Meal prep for the week', tiny: 'Cook protein for two days', desc: 'Protein cooked, lunches boxed.', stat: 'body', xp: 20, days: 'sun', min: 60 },
     { id: 'friend',   t: '18:30', grp: 'work', name: 'Reach out to a friend', desc: 'A message, a call, a plan. Whoever it’s been longest.', stat: 'family', xp: 10, days: 'all', kind: 'friend', min: 5 },
@@ -513,7 +513,7 @@
     if (isObj(r.rest)) out.rest = { v: num(r.rest.v), t: num(r.rest.t) };
     if (isObj(r.skip)) out.skip = { v: r.skip.v ? String(r.skip.v).slice(0, 80) : '', t: num(r.skip.t) };
     if (isObj(r.fr)) { out.fr = {}; for (const id in r.fr) out.fr[id] = num(r.fr[id], 1) || 1; }
-    for (const f of ['am', 'md']) if (isObj(r[f])) out[f] = { e: Math.min(5, Math.max(0, num(r[f].e))), s: Math.min(5, Math.max(0, num(r[f].s))), tags: Array.isArray(r[f].tags) ? r[f].tags.filter(x => typeof x === 'string').slice(0, 6) : [], t: num(r[f].t) };
+    for (const f of ['am', 'md']) if (isObj(r[f])) out[f] = { e: Math.min(5, Math.max(0, num(r[f].e))), s: Math.min(5, Math.max(0, num(r[f].s))), tags: Array.isArray(r[f].tags) ? r[f].tags.filter(x => typeof x === 'string').slice(0, 6) : [], why: Array.isArray(r[f].why) ? r[f].why.filter(x => typeof x === 'string').slice(0, 6) : [], note: String(r[f].note || '').slice(0, 140), t: num(r[f].t) };
     if (isObj(r.close)) out.close = { mood: num(r.close.mood), best: String(r.close.best || '').slice(0, 40), note: String(r.close.note || '').slice(0, 300), first: String(r.close.first || '').slice(0, 200), t: num(r.close.t) };
     return out;
   }
@@ -527,7 +527,7 @@
   }
   const fixPlan = m => ({ gen: m.gen === 'llm' ? 'llm' : 'rules', from: /^\d{4}-\d{2}-\d{2}$/.test(m.from || '') ? m.from : '', summary: String(m.summary || '').slice(0, 400), celebration: String(m.celebration || '').slice(0, 160),
     applied: { threshold: Math.min(80, Math.max(60, num(isObj(m.applied) && m.applied.threshold, 72))) },
-    proposals: (Array.isArray(m.proposals) ? m.proposals : []).filter(isObj).slice(0, 6).map((p, i) => ({ id: String(p.id || 'p' + i), type: ['focus', 'shrink', 'retire', 'shield'].includes(p.type) ? p.type : 'focus', mission: BYID[p.mission] ? p.mission : '', rationale: String(p.rationale || '').slice(0, 220), load: num(p.load), status: ['pending', 'accepted', 'declined'].includes(p.status) ? p.status : 'pending' })).filter(p => p.type === 'shield' || p.mission),
+    proposals: (Array.isArray(m.proposals) ? m.proposals : []).filter(isObj).slice(0, 6).map((p, i) => ({ id: String(p.id || 'p' + i), type: ['focus', 'shrink', 'retire', 'shield'].includes(p.type) ? p.type : 'focus', mission: BYID[p.mission] ? p.mission : '', rationale: String(p.rationale || '').slice(0, 220), load: num(p.load), status: ['pending', 'accepted', 'declined'].includes(p.status) ? p.status : 'pending', acceptedFrom: /^\d{4}-\d{2}-\d{2}$/.test(p.acceptedFrom || '') ? p.acceptedFrom : '' })).filter(p => p.type === 'shield' || p.mission),
     boss: isObj(m.boss) && BYID[m.boss.mission] ? { title: String(m.boss.title || '').slice(0, 80), mission: m.boss.mission, count: Math.min(7, Math.max(2, Math.round(num(m.boss.count, 3)))), xp: 150, status: ['pending', 'accepted', 'declined'].includes(m.boss.status) ? m.boss.status : 'pending' } : null,
     woop: isObj(m.woop) && m.woop.plan ? { wish: String(m.woop.wish || '').slice(0, 120), obstacle: String(m.woop.obstacle || '').slice(0, 160), plan: String(m.woop.plan).slice(0, 240) } : null, t: num(m.t) });
   function merge(a, b) {
@@ -551,7 +551,7 @@
     byT('stakes', m => ({ amt: Math.max(0, num(m.amt)), t: num(m.t) }));
     byT('letters', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
     byT('words', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
-    byT('tweaks', m => ({ t: /^\d{2}:\d{2}$/.test(m.t || '') ? m.t : '', off: !!m.off, at: num(m.at) }));
+    for (const k of union(a.tweaks, b.tweaks)) { const x = a.tweaks && a.tweaks[k], y = b.tweaks && b.tweaks[k]; const m = (!x ? y : !y ? x : num(x.at) >= num(y.at) ? x : y); if (isObj(m)) out.tweaks[k] = { t: /^\d{2}:\d{2}$/.test(m.t || '') ? m.t : '', off: !!m.off, from: /^\d{4}-\d{2}-\d{2}$/.test(m.from || '') ? m.from : '', at: num(m.at) }; }
     byT('friends', m => ({ name: String(m.name || '').slice(0, 60), bday: /^\d{4}-\d{2}-\d{2}$/.test(m.bday || '') ? m.bday : '', kind: m.kind === 'family' ? 'family' : 'friend', gone: !!m.gone, t: num(m.t) }));
     for (const k of union(a.seen, b.seen)) { const v = (a.seen && a.seen[k]) || (b.seen && b.seen[k]); out.seen[k] = typeof v === 'object' ? v : true; }
     out.peakLevel = Math.max(num(a.peakLevel, 1), num(b.peakLevel, 1), 1);
@@ -573,7 +573,7 @@
   const planFor = wk => state.plans[wk] || null;
   // a plan only affects days on/after the day it was accepted — never rewrites the past
   const planApplies = (wk, k) => { const p = planFor(wk); return p && (!p.from || k >= p.from) ? p : null; };
-  const accepted = (wk, k, type) => { const p = planApplies(wk, k); return p ? p.proposals.filter(x => x.type === type && x.status === 'accepted') : []; };
+  const accepted = (wk, k, type) => { const p = planApplies(wk, k); return p ? p.proposals.filter(x => x.type === type && x.status === 'accepted' && (!x.acceptedFrom || k >= x.acceptedFrom)) : []; };
   const shineLines = () => (state.words.shine && state.words.shine.v ? state.words.shine.v.split('\n').map(s => s.trim()).filter(Boolean) : SHINE_DEFAULT);
   const bundles = () => (state.words.bundles && state.words.bundles.v ? state.words.bundles.v.split('\n').map(l => { const [n, m] = l.split('=').map(s => s && s.trim()); return n && m && BYID[m] ? { name: n, mission: m } : null; }).filter(Boolean) : []);
   const freedomLevel = () => { let f = 0; for (const lv of LADDER) { if (lv.gates.every(([g]) => state.ladder[g] && state.ladder[g].v)) f = lv.lv; else break; } return f; };
@@ -587,9 +587,9 @@
       const md = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       const bdays = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday && bdayMD(f.bday, d.getFullYear()) === md)
         .map(([id, f]) => ({ id: 'bday:' + id, t: '12:00', grp: 'work', name: `🎂 ${f.name}’s birthday — call, don’t text`, desc: f.kind === 'family' ? 'Family. Make it a moment.' : 'Two minutes on the phone beats a paragraph.', stat: 'family', xp: 15, days: 'all', dyn: true, min: 5 }));
-      const tw = state.tweaks || {};
+      const tw = {}; for (const id in (state.tweaks || {})) { const v = state.tweaks[id]; if (!v.from || k >= v.from) tw[id] = v; } // a tweak only shapes days from the day it was made
       return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off) && (!m.from || k >= m.from) && (!m.until || k <= m.until)).concat(bdays)
-        .map(m => tw[m.id] && tw[m.id].t ? { ...m, t: tw[m.id].t, grp: +tw[m.id].t.slice(0, 2) < 10 ? 'am' : +tw[m.id].t.slice(0, 2) < 19.5 ? 'work' : 'pm', moved: true } : m)
+        .map(m => { const v = tw[m.id]; if (!v || !v.t) return m; const hf = +v.t.slice(0, 2) + (+v.t.slice(3) || 0) / 60; return { ...m, t: v.t, grp: hf < 10 ? 'am' : hf < 19.5 ? 'work' : 'pm', moved: true }; })
         .map(m => { const ez = easyDay(k) && m.id !== 'train' && !!m.tiny; return { ...m, baseXp: m.xp, xp: focus.has(m.id) ? m.xp * 2 : m.xp, focus: focus.has(m.id), name: (tiny.has(m.id) || ez) && m.tiny ? m.tiny : m.name, isTiny: (tiny.has(m.id) || ez) && !!m.tiny, easy: ez }; })
         .sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
     });
@@ -649,11 +649,13 @@
     return cached('se:' + tk, () => {
       let stock = 0, month = null, streak = 0, lostYesterday = false, best = 0; const shielded = {}, lost = {}; let won = 0; const wonByWeek = {};
       const start = parse(seasonStart()), end = parse(tk);
+      const revDays = new Set(Object.values(state.reviews).filter(r => r.at > 0).map(r => key(new Date(r.at)))); // review shield lands the day the review was saved
+      const planDays = new Set(Object.values(state.plans).filter(p => p.proposals.some(x => x.type === 'shield' && x.status === 'accepted')).map(p => p.from || key(parse(Object.keys(state.plans).find(w => state.plans[w] === p)))));
       for (let d = start; d <= end; d = addDays(d, 1)) {
         const k = key(d), wk = weekKey(d), mo = k.slice(0, 7);
         if (mo !== month) { stock = Math.min(SHIELD_CAP, stock + SHIELD_MONTHLY); month = mo; }
-        if (d.getDay() === 0 && reviewValid(wk)) stock = Math.min(SHIELD_CAP, stock + 1);
-        if (d.getDay() === 1) { const p = planFor(wk); if (p && p.proposals.some(x => x.type === 'shield' && x.status === 'accepted')) stock = Math.min(SHIELD_CAP, stock + 1); }
+        if (revDays.has(k)) stock = Math.min(SHIELD_CAP, stock + 1);
+        if (planDays.has(k)) stock = Math.min(SHIELD_CAP, stock + 1);
         const prevLost = lostYesterday; lostYesterday = false;
         const th = Math.ceil(dayMax(k) * (prevLost ? WIN_AFTER_LOSS : winRatio(wk, k)));
         const w = dayXP(k).xp >= th;
@@ -698,7 +700,7 @@
   function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
   function push(immediate) {
     if (!dbRef) return;
-    const run = async () => { if (pushing) { dirty = true; return; } const s = JSON.stringify(state); if (s === lastPushed) return; pushing = true; try { await dbRef.set(state); lastPushed = JSON.stringify(state); dirty = false; } catch (e) { lastPushed = ''; dirty = true; note('Could not sync — saved on this device. Tap Sync now to retry.'); } pushing = false; };
+    const run = async () => { if (pushing) { dirty = true; return; } const s = JSON.stringify(state); if (s === lastPushed) return; pushing = true; try { await dbRef.set(state); lastPushed = JSON.stringify(state); dirty = false; } catch (e) { lastPushed = ''; dirty = true; note('Could not sync — saved on this device. Tap Sync now to retry.'); } pushing = false; if (dirty && JSON.stringify(state) !== lastPushed) push(false); };
     clearTimeout(saveTimer); if (immediate) run(); else saveTimer = setTimeout(run, STANDALONE ? 1500 : 300);
   }
   function persist() { bump(); dirty = true; saveLocal(); push(false); }
@@ -709,7 +711,7 @@
     if (!r.ok) throw new Error('GitHub ' + r.status); return r.status === 204 ? null : r.json();
   }
   async function gistRead(id) { const g = await gh('/gists/' + id); const f = g.files && g.files[GIST_FILE]; if (!f) return null; let content = f.content; if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url)).text(); try { return JSON.parse(content); } catch (e) { return null; } }
-  function absorb(remote) { const remoteN = merge(base(), remote || {}); const merged = merge(state, remoteN); state = merged; bump(); saveLocal(); render(); const ms = JSON.stringify(merged); if (ms !== JSON.stringify(remoteN)) { dirty = true; return true; } lastPushed = ms; return false; }
+  function absorb(remote) { const remoteN = merge(base(), remote || {}); const merged = merge(state, remoteN); const ms = JSON.stringify(merged); if (ms !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); render(); } if (ms !== JSON.stringify(remoteN)) { dirty = true; return true; } lastPushed = ms; return false; }
   async function gistConnect() {
     const c = cfg.get(); if (!c.ghToken) { note('Sync off — add a GitHub token in Sync & AI'); return; }
     try {
@@ -717,7 +719,7 @@
       if (!id) { for (let page = 1; page <= 5 && !id; page++) { const list = await gh(`/gists?per_page=100&page=${page}`); const found = list.find(g => g.description === GIST_DESC); if (found) id = found.id; if (list.length < 100) break; } }
       if (!id) { const made = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); id = made.id; }
       cfg.set({ ...cfg.get(), gistId: id });
-      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(s)) { state = merged; bump(); saveLocal(); render(); } } await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); } };
+      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); render(); } } await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); } };
       const remote = await gistRead(id); if (absorb(remote)) push(false);
       note('Synced via your GitHub Gist');
     } catch (e) { dbRef = null; note('Gist sync failed — check the token (needs Gists: read & write)'); }
@@ -796,7 +798,7 @@
     if (due.length && cond) { if (cond.s >= 4 || (cond.e > 0 && cond.e <= 2)) { const r = due.find(m => RECOVER.has(m.id)); if (r) return r; } else if (cond.e >= 4) { const hv = due.find(m => HEAVY.has(m.id)); if (hv) return hv; } }
     if (due.length) { const st = due.find(m => starter.has(m.id) || m.focus); if (st) return st; return due.find(m => h - tOf(m) <= 2.5) || due[due.length - 1]; }
     const upcoming = cands.filter(m => tOf(m) > h).sort((a, b) => tOf(a) - tOf(b)); if (upcoming.length) return upcoming[0];
-    const inBlock = cands.filter(m => m.grp === curGrp); return inBlock[inBlock.length - 1] || cands[cands.length - 1];
+    const inBlock = cands.filter(m => m.grp === curGrp); return inBlock[inBlock.length - 1] || null;
   }
   function renderToday(C) {
     const { tk, selKey, S, h } = C; const d = parse(selKey), ms = missionsFor(d), rec = day(selKey), done = doneOn(selKey), isToday = selKey === tk, skip = isSkip(selKey);
@@ -808,7 +810,7 @@
     $('ring-sub').textContent = won ? `won · ${max - x.xp} left` : `of ${th.need} to win`;
     const st = skip ? 'hold' : stateOf(x.xp, th.need, isToday ? h : 24);
     const v = $('verdict'); v.className = `verdict s-${st}`;
-    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Everything else is bonus.' : '.'}` : easyDay(selKey) ? `Easy day — bar at 60%, tiny missions. ${th.need - x.xp} XP to win it small.` : th.reduced ? `Never miss twice — bar is at 50% today. ${th.need - x.xp} XP.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short and the evening is thin. Pick the two that matter.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : ''}`) : `${th.need - x.xp} XP short that day.`;
+    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Everything else is bonus.' : '.'}` : th.reduced ? `Never miss twice — bar is at 50% today. ${th.need - x.xp} XP.` : easyDay(selKey) ? `Easy day — bar at 60%, tiny missions. ${th.need - x.xp} XP to win it small.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short and the evening is thin. Pick the two that matter.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : ''}`) : `${th.need - x.xp} XP short that day.`;
     $('today-label').textContent = isToday ? 'Today' : `Yesterday · ${fmt(d)}`;
     const nonBonus = ms.filter(m => !m.bonus); $('today-count').textContent = `${nonBonus.filter(m => done.has(m.id)).length} of ${nonBonus.length}`;
     $('skip-note').hidden = !skip; $('skip-note').innerHTML = skip ? `<b>Skipped:</b> ${esc(rec.skip.v)} — doesn't count for or against the streak.` : '';
@@ -839,7 +841,7 @@
         if (m.kind === 'weigh' && state.weighins[selKey]) extra = ` · ${state.weighins[selKey].kg} kg`;
         if (m.kind === 'rest' && rec.rest) extra = ` · rested ${rec.rest.v}/5`;
         if (m.kind === 'friend' && rec.fr) { const who = Object.keys(rec.fr).map(id => (state.friends[id] || {}).name).filter(Boolean); if (who.length) extra = ` · ${who.join(', ')}`; }
-        return `<div class="mrow${on ? ' done' : ''}${m.id === nowId ? ' now' : ''}"><button class="chk" data-chk="${esc(m.id)}" aria-pressed="${on}" aria-label="${on ? 'Undo' : 'Done'}: ${esc(m.name)}"><i></i></button><button class="body" data-open="${esc(m.id)}"><b>${esc(m.name)}${m.focus ? '<span class="pill">×2</span>' : m.isTiny ? '<span class="pill tiny">tiny</span>' : m.bonus ? '<span class="pill tiny">bonus</span>' : m.moved ? '<span class="pill tiny">moved</span>' : ''}</b><span>${m.t}${m.min ? ` · ${m.min} min` : ''}${esc(extra)}</span></button><span class="xp c-${m.stat}">+${m.xp}</span></div>`; }).join('')}</div></div>`;
+        return `<div class="mrow${on ? ' done' : ''}${m.id === nowId ? ' now' : ''}"><button class="chk" data-chk="${esc(m.id)}" aria-pressed="${on}" aria-label="${on ? 'Undo' : 'Done'}: ${esc(m.name)}"><i></i></button><button class="body" data-open="${esc(m.id)}"><b>${esc(m.name)}${m.focus ? '<span class="pill">×2</span>' : m.isTiny ? '<span class="pill tiny">tiny</span>' : m.bonus ? '<span class="pill tiny">optional</span>' : m.moved ? '<span class="pill tiny">moved</span>' : ''}</b><span>${m.t}${m.min ? ` · ${m.min} min` : ''}${esc(extra)}</span></button><span class="xp c-${m.stat}">+${m.xp}</span></div>`; }).join('')}</div></div>`;
     }).join('');
     $('close-row').innerHTML = isToday && !rec.close && (h >= 19.5 || won) ? `<button class="btn wide dark" id="close-btn2">Close the day</button>` : rec.close ? `<div class="note-line" style="width:100%"><b>Closed.</b> Best move: ${esc(rec.close.best || '—')}${rec.close.first ? ` · Tomorrow: ${esc(rec.close.first)}` : ''}</div>` : '';
   }
@@ -912,6 +914,9 @@
     const lines = [`Week so far: ${W.xp} XP${lw ? ` versus ${lw} last week` : ''}${W.mult > 1 ? ` (×${W.mult.toFixed(1)} for beating the ghost)` : ''}. Iron Week ${iron.raw}/4. Streak ${S.streak}, best ${S.best}, shields ${S.stock}.`,
       'Four walls: 08:30 drop-off, 10:00 work, 20:00 hard stop, 23:00 lights out. Every mission sits inside one of them.',
       'Business XP comes from handing things off, not doing more. The agency runs without you because you delegated once a day and stopped answering clients yourself.'];
+    const sp = stressPattern(tk, Array.from({ length: 14 }, (_, i) => key(addDays(parse(tk), -i))).filter(k => k >= seasonStart()));
+    if (sp.top.length) { const [w, c] = sp.top[0]; if (c >= 3) lines.push(`Stress pattern: “${w}” ${c} times in two weeks${sp.top[1] && sp.top[1][1] >= 2 ? `, “${sp.top[1][0]}” ${sp.top[1][1]}` : ''}. ${STRESS_ADVICE[w] || 'Name it in the Sunday review and the Council will plan around it.'}`); else if (sp.hi >= 3) lines.push(`Stress ran high on ${sp.hi} check-ins this fortnight. Reasons so far: ${sp.top.map(([w, c]) => `${w} ×${c}`).join(', ')}. Three of the same and the coach names the fix.`); }
+    const td = day(tk).md || day(tk).am; if (td && td.s >= 4 && td.why && td.why.length) lines.push(`Today, stress ${td.s}/5 from ${td.why.join(' + ')}. ${STRESS_ADVICE[td.why[0]] || ''}`);
     const ez = weekDays(wk).filter(k => k <= tk && easyDay(k)).length; if (ez) lines.push(`Easy days this week: ${ez} of ${EASY_CAP}. ${ez >= EASY_CAP ? 'The next low day goes to the Council, not the bar.' : 'Honest check-ins keep the streak alive on bad days.'}`);
     const dry = [], wet = [];
     for (const k in state.days) { const r = state.days[k]; if (!r.rest) continue; (isOn(day(key(addDays(parse(k), -1))), 'dry') ? dry : wet).push(r.rest.v); }
@@ -943,15 +948,16 @@
   function councilData(tk, target) {
     const weeks = []; let w = prevWeek(target); for (let i = 0; i < 4; i++) { weeks.unshift(w); w = prevWeek(w); }
     const S = season(tk); const days = [];
-    for (const wk of weeks) for (const k of weekDays(wk)) if (k <= tk) days.push({ date: k, won: dayXP(k).xp >= winThreshold(k, S).need, score: +(dayXP(k).xp / Math.max(1, dayMax(k))).toFixed(2), skipped: isSkip(k), shielded: !!S.shielded[k] });
+    const start = seasonStart();
+    for (const wk of weeks) for (const k of weekDays(wk)) if (k <= tk && k >= start) days.push({ date: k, won: dayXP(k).xp >= winThreshold(k, S).need, score: +(dayXP(k).xp / Math.max(1, dayMax(k))).toFixed(2), skipped: isSkip(k), shielded: !!S.shielded[k] });
     const active = days.filter(d => !d.skipped); const winRate = active.length ? +(active.filter(d => d.won).length / active.length).toFixed(2) : 0;
-    const rate = (id, n) => { let sched = 0, done = 0; for (let i = 1; i <= n * 7; i++) { const k = key(addDays(parse(tk), -i)); if (!missionsFor(parse(k)).some(m => m.id === id)) continue; sched++; if (doneOn(k).has(id)) done++; } return sched ? +(done / sched).toFixed(2) : null; };
+    const rate = (id, n) => { let sched = 0, done = 0; for (let i = 1; i <= n * 7; i++) { const k = key(addDays(parse(tk), -i)); if (k < start) break; if (!missionsFor(parse(k)).some(m => m.id === id)) continue; sched++; if (doneOn(k).has(id)) done++; } return sched ? +(done / sched).toFixed(2) : null; };
     const missions = MISSIONS.filter(m => !m.bonus).map(m => ({ id: m.id, stat: m.stat, name: m.name, is_wall: !!m.wall, has_tiny: !!m.tiny, rate_2w: rate(m.id, 2), rate_8w: rate(m.id, 8) }));
     const lastWk = prevWeek(target); const last = state.plans[lastWk] || null; const rv = state.reviews[lastWk] || state.reviews[weekKey(parse(tk))] || null;
     return { target_week: target, win_rate_4w: winRate, days: days.slice(-14), missions, streak: { current: S.streak, best: S.best, shields: S.stock },
       quests_last_week: questsFor(lastWk).map(q => ({ id: q.id, cleared: questState(lastWk, q).cleared, progress: questState(lastWk, q).raw + '/' + q.target })),
       condition: (() => { const ks = days.map(d => d.date); const am = ks.map(k => day(k).am).filter(Boolean), md = ks.map(k => day(k).md).filter(Boolean); const avg = (a, f) => a.length ? +(a.reduce((x, y) => x + y[f], 0) / a.length).toFixed(1) : null; return { easy_days: ks.filter(k => easyDay(k)).length, am_energy: avg(am, 'e'), am_stress: avg(am, 's'), md_energy: avg(md, 'e'), md_stress: avg(md, 's') }; })(),
-      freedom_level: freedomLevel(), threshold_now: Math.round(100 * winRatio(lastWk, weekDays(lastWk)[6])), stat_xp_4w: weeks.reduce((o, wk) => { const b = weekXP(wk).by; for (const s in STATS) o[s] = (o[s] || 0) + (b[s] || 0); return o; }, {}),
+      freedom_level: freedomLevel(), threshold_now: (() => { const pl = planApplies(lastWk, weekDays(lastWk)[6]); return pl ? pl.applied.threshold : Math.round(100 * WIN_DEFAULT); })(), stat_xp_4w: weeks.reduce((o, wk) => { const b = weekXP(wk).by; for (const s in STATS) o[s] = (o[s] || 0) + (b[s] || 0); return o; }, {}),
       user_review: rv && rv.at ? { energy: rv.energy, win: rv.a1.slice(0, 300), obstacle: rv.a2.slice(0, 300), change: rv.a3.slice(0, 300), disruptions: rv.a4.slice(0, 200) } : null,
       last_plan: last ? { summary: last.summary, proposals: last.proposals.map(p => ({ type: p.type, mission: p.mission, status: p.status })) } : null };
   }
@@ -980,7 +986,8 @@
       .filter(x => { const k = x.type === 'shield' ? 'shield' : x.mission; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4)
       .map(x => ({ type: x.type, mission: x.mission, rationale: String(x.rationale || '').slice(0, 220), load: x.type === 'focus' ? 1 : x.type === 'shield' ? 0 : -1 }));
     if (props.filter(x => x.type === 'focus').length > 1) { let n = 0; for (let i = props.length - 1; i >= 0; i--) if (props[i].type === 'focus' && n++ > 0) props.splice(i, 1); }
-    const boss = isObj(p.boss) && BYID[p.boss.mission] ? { title: String(p.boss.title || '').slice(0, 80), mission: p.boss.mission, count: Math.min(7, Math.max(2, Math.round(num(p.boss.count, 3)))), xp: 150 } : null;
+    const retired = new Set(props.filter(x => x.type === 'retire').map(x => x.mission));
+    const boss = isObj(p.boss) && BYID[p.boss.mission] && !retired.has(p.boss.mission) ? { title: String(p.boss.title || '').slice(0, 80), mission: p.boss.mission, count: Math.min(7, Math.max(2, Math.round(num(p.boss.count, 3)))), xp: 150 } : null;
     const woop = isObj(p.woop) && p.woop.plan ? { wish: String(p.woop.wish || '').slice(0, 120), obstacle: String(p.woop.obstacle || '').slice(0, 160), plan: String(p.woop.plan).slice(0, 240) } : null;
     return { gen: 'llm', summary: String(p.summary || '').slice(0, 400), celebration: String(p.celebration || '').slice(0, 160), applied: { threshold: th }, proposals: props, boss, woop };
   }
@@ -1049,7 +1056,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   const rec = k => (state.days[k] ||= { on: {}, off: {} });
   function setMission(k, id, on) { const r = rec(k); if (on) r.on[id] = now(); else r.off[id] = now(); }
   function complete(k, id, el) {
-    const m = missionOn(k, id); if (!m) return; const C0 = ctx(); const wasWon = dayXP(k).xp >= winThreshold(k, C0.S).need, won0 = C0.S.won;
+    const m = missionOn(k, id); if (!m) { persist(); render(); return; } const C0 = ctx(); const wasWon = dayXP(k).xp >= winThreshold(k, C0.S).need, won0 = C0.S.won;
     const on = doneOn(k).has(id); setMission(k, id, !on); use(on ? 'undo' : 'done');
     if (!on) { if (el) { el.classList.add('pop'); sparks(el); } vibrate(12); const lines = shineLines(); toast(Math.random() < 0.45 ? `+${m.xp} · ${lines[Math.floor(Math.random() * lines.length)]}` : `+${m.xp} ${STATS[m.stat]} XP · +${m.xp} Grit`); }
     else toast(`Undone −${m.xp}`);
@@ -1067,16 +1074,35 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     d: [['180 g salmon + potatoes + greens', 40], ['200 g turkey or chicken thigh + veg', 45], ['250 g cottage cheese + 2 eggs + tomatoes', 41]],
   };
   // Morning check-in / midday pulse: three dials and a few tags. Honest answers pay XP and may switch the day to easy mode.
+  // Stress reasons → advice. A reason that recurs is a system problem, not a bad day; each one maps to a lever already in the game.
+  const STRESS_WHY = ['clients', 'workload', 'money', 'team', 'wife & kids', 'sleep', 'health', 'Dineline'];
+  const STRESS_ADVICE = {
+    'clients': 'Clients are reaching you directly. That is the L3 Freedom gate: route every client channel to an ops inbox and make “zero client messages” the Council’s focus. You answering fast trains them to bypass ops.',
+    'workload': 'Too much on your plate means too little handed off. One Loom a day is the mission; the Council can shrink deep work to 25 minutes until the load drops. Hours are the symptom — decision rights are the cause.',
+    'money': 'Money stress needs a number, not a feeling: open the Profit First accounts (L2 gate), set your own pay as a fixed %, and put cash-flow on the weekly scorecard. Vague dread is worse than a bad figure.',
+    'team': 'Team friction is usually unclear decision rights. Write the one-page “what you may do without asking” SOP with the three media buyers (L3 gate) — and never reverse your wife’s ops call in front of them.',
+    'wife & kids': 'Home stress: protect the 20:00 wall and the debrief — her stress first, no fixing. Book the State of the Union (1 hour) this week; unsaid things are the expensive ones.',
+    'sleep': 'Sleep is the root of the others. Lights out 23:00 and a dry night are the two levers with the biggest measured effect on how rested you wake. Make lights-out this week’s focus.',
+    'health': 'Health stress gets a doctor, not a mission. Book it today, then let the easy-day rule carry the board until you’re back.',
+    'Dineline': 'The day job squeezing the agency: the 10:00–12:00 window is yours — deep work and the hand-off before Dineline starts. If it keeps leaking, the fix is a conversation about scope, not a longer day.',
+  };
+  function stressPattern(tk, days) {
+    const counts = {}, notes = []; let hi = 0, n = 0;
+    for (const k of days) { for (const st of [day(k).am, day(k).md]) { if (!st) continue; n++; if (st.s >= 3) { hi++; for (const w of (st.why || [])) counts[w] = (counts[w] || 0) + 1; if (st.note) notes.push(st.note); } } }
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return { counts, top, hi, n, notes: notes.slice(-3) };
+  }
   function stateSheet(m, k) {
-    const r = rec(k); const am = m.kind === 'rest'; const cur = (am ? r.am : r.md) || { e: 0, s: 0, tags: [] }; const st = { rest: r.rest ? r.rest.v : 0, e: cur.e, s: cur.s, tags: new Set(cur.tags || []) };
+    const r = rec(k); const am = m.kind === 'rest'; const cur = (am ? r.am : r.md) || { e: 0, s: 0, tags: [] }; const st = { rest: r.rest ? r.rest.v : 0, e: cur.e, s: cur.s, tags: new Set(cur.tags || []), why: new Set(cur.why || []), note: cur.note || '' };
     const TAGS = am ? ['bad night', 'twins up', 'sick', 'travel', 'client fire'] : ['client fire', 'twins up', 'sick', 'skipped lunch', 'good flow'];
     const scale = (id, v) => `<div class="scale" data-scale="${id}">${[1, 2, 3, 4, 5].map(n => `<button data-v="${n}" aria-pressed="${v === n}">${n}</button>`).join('')}</div>`;
     openSheet(`<h2>${am ? 'Morning check-in' : 'Midday pulse'}</h2><p>${am ? 'Ten seconds. Low energy or high stress and the board goes easy — bar at 60%, tiny missions, Train untouched.' : 'Two taps. If the day went sideways, the evening adapts.'}</p>
       ${am ? `<div class="qa"><label>Rested</label>${scale('rest', st.rest)}</div>` : ''}<div class="qa"><label>Energy</label>${scale('e', st.e)}</div><div class="qa"><label>Stress</label>${scale('s', st.s)}<p class="tiny" style="margin:0">1 = calm · 5 = on fire</p></div>
       <div class="fpick" id="sh-tags">${TAGS.map(t => `<button data-tag="${t}" aria-pressed="${st.tags.has(t)}">${t}</button>`).join('')}</div>
+      <div class="qa" id="sh-why" ${st.s >= 3 ? '' : 'hidden'}><label>What’s driving the stress?</label><div class="fpick">${STRESS_WHY.map(w => `<button data-why="${w}" aria-pressed="${st.why.has(w)}">${w}</button>`).join('')}</div><input class="note" id="sh-note" maxlength="140" placeholder="One line, optional — what exactly?" value="${esc(st.note)}"></div>
       <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Save · +${m.xp} XP</button></div>`, sh => {
-      sh.addEventListener('click', e => { const v = e.target.closest('[data-v]'); if (v) { const id = v.closest('[data-scale]').dataset.scale; st[id] = +v.dataset.v; v.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === v)); return; } const tg = e.target.closest('[data-tag]'); if (tg) { st.tags.has(tg.dataset.tag) ? st.tags.delete(tg.dataset.tag) : st.tags.add(tg.dataset.tag); tg.setAttribute('aria-pressed', st.tags.has(tg.dataset.tag)); } });
-      sh.querySelector('#sh-ok').addEventListener('click', () => { if (am && !st.rest && !st.e && !st.s) { toast('Tap at least one'); return; } if (!am && !st.e && !st.s && !st.tags.size) { toast('Tap at least one'); return; } if (am && st.rest) r.rest = { v: st.rest, t: now() }; const wasEasy = easyDay(k); r[am ? 'am' : 'md'] = { e: st.e, s: st.s, tags: [...st.tags], t: now() }; bump(); closeSheet(); if (!doneOn(k).has(m.id)) complete(k, m.id); else { persist(); render(); } if (!wasEasy && easyDay(k)) setTimeout(() => milestone(`<div class="bignum">60%</div><h1>Easy day.</h1><p class="muted">Bar lowered, missions shrunk, Train as it is. The walls stand. Win it small.</p>`, 2600), 400); });
+      sh.addEventListener('click', e => { const v = e.target.closest('[data-v]'); if (v) { const id = v.closest('[data-scale]').dataset.scale; st[id] = +v.dataset.v; v.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === v)); if (id === 's') sh.querySelector('#sh-why').hidden = st.s < 3; return; } const wy = e.target.closest('[data-why]'); if (wy) { st.why.has(wy.dataset.why) ? st.why.delete(wy.dataset.why) : st.why.add(wy.dataset.why); wy.setAttribute('aria-pressed', st.why.has(wy.dataset.why)); return; } const tg = e.target.closest('[data-tag]'); if (tg) { st.tags.has(tg.dataset.tag) ? st.tags.delete(tg.dataset.tag) : st.tags.add(tg.dataset.tag); tg.setAttribute('aria-pressed', st.tags.has(tg.dataset.tag)); } });
+      sh.querySelector('#sh-ok').addEventListener('click', () => { if (am && !st.rest && !st.e && !st.s) { toast('Tap at least one'); return; } if (!am && !st.e && !st.s && !st.tags.size) { toast('Tap at least one'); return; } const r2 = rec(k); if (am && st.rest) r2.rest = { v: st.rest, t: now() }; const wasEasy = easyDay(k); r2[am ? 'am' : 'md'] = { e: st.e, s: st.s, tags: [...st.tags], why: st.s >= 3 ? [...st.why] : [], note: st.s >= 3 ? (sh.querySelector('#sh-note').value || '').trim().slice(0, 140) : '', t: now() }; bump(); closeSheet(); if (!doneOn(k).has(m.id)) complete(k, m.id); else { persist(); render(); } if (!wasEasy && easyDay(k)) setTimeout(() => milestone(`<div class="bignum">60%</div><h1>Easy day.</h1><p class="muted">Bar lowered, missions shrunk, Train as it is. The walls stand. Win it small.</p>`, 2600), 400); });
     });
   }
   function mealSheet(m, k, on) {
@@ -1111,7 +1137,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
       o.querySelector('#ov-x').addEventListener('click', closeOverlay);
       o.querySelector('#ov-mood').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; step.mood = +b.dataset.m; o.querySelectorAll('#ov-mood button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
       const bl = o.querySelector('#ov-best'); if (bl) bl.addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (!b) return; step.best = b.dataset.b; o.querySelectorAll('#ov-best button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
-      o.querySelector('#ov-save').addEventListener('click', () => { const bi = o.querySelector('#ov-best-in'); if (bi) step.best = bi.value.trim(); step.note = o.querySelector('#ov-note').value.trim(); step.first = o.querySelector('#ov-first').value.trim(); r.close = { ...step, t: now() }; closeOverlay(); if (!doneOn(k).has('close')) complete(k, 'close'); else { persist(); render(); } const S = season(k); if (S.streak > 0) setTimeout(() => milestone(`<div class="flame">🔥</div><div class="bignum">${S.streak}</div><div class="cap" style="font-size:14px">day streak</div><h1>Closed.</h1><p class="muted">${step.first ? 'Tomorrow’s first move is set.' : 'Sleep.'}</p>`, 2200), 300); });
+      o.querySelector('#ov-save').addEventListener('click', () => { const bi = o.querySelector('#ov-best-in'); if (bi) step.best = bi.value.trim(); step.note = o.querySelector('#ov-note').value.trim(); step.first = o.querySelector('#ov-first').value.trim(); rec(k).close = { ...step, t: now() }; closeOverlay(); if (!doneOn(k).has('close')) complete(k, 'close'); else { persist(); render(); } const S = season(k); if (S.streak > 0) setTimeout(() => milestone(`<div class="flame">🔥</div><div class="bignum">${S.streak}</div><div class="cap" style="font-size:14px">day streak</div><h1>Closed.</h1><p class="muted">${step.first ? 'Tomorrow’s first move is set.' : 'Sleep.'}</p>`, 2200), 300); });
     });
   }
   // ---- onboarding (4 screens, ends with progress banked) ----
@@ -1187,7 +1213,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   $('fr-ics').addEventListener('click', async () => {
     const fl = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday); if (!fl.length) { toast('Add birthdays first'); return; }
     const y = new Date().getFullYear(); const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-    const ev = ([id, f]) => { const md = bdayMD(f.bday, y).replace('-', ''); const lines = ['BEGIN:VEVENT', `UID:sky-bday-${id}@sky-is-the-limit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
+    const ev = ([id, f]) => { const md = bdayMD(f.bday, 2025).replace('-', ''); /* non-leap reference year: 29 Feb becomes 28 Feb, every year */ const lines = ['BEGIN:VEVENT', `UID:sky-bday-${id}@sky-is-the-limit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${y}${md}`, 'RRULE:FREQ=YEARLY', `SUMMARY:🎂 ${icsText(f.name)}'s birthday`, 'DESCRIPTION:From Martin\'s Empire. Call\\, don\'t text.',
       'BEGIN:VALARM', 'TRIGGER:-P4DT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday in 5 days — plan something`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday tomorrow`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:PT9H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday today — call`, 'END:VALARM', 'END:VEVENT']; return lines.map(icsFold).join('\r\n') + '\r\n'; };
@@ -1207,7 +1233,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const acc = e.target.closest('[data-acc]'), dec = e.target.closest('[data-dec]'), ab = e.target.closest('[data-accboss]'), db = e.target.closest('[data-decboss]');
     const wk = (acc || dec) ? (acc || dec).dataset.plan : ab ? ab.dataset.accboss : db ? db.dataset.decboss : null; if (!wk) return; const p = state.plans[wk]; if (!p) return;
     const load = () => p.proposals.filter(x => x.status === 'accepted').reduce((s, x) => s + (x.load || 0), 0) + (p.boss && p.boss.status === 'accepted' ? 1 : 0);
-    if (acc) { const x = p.proposals.find(y => y.id === acc.dataset.acc); if ((x.load || 0) > 0 && load() + x.load > 1) { toast('Max +1 load — decline something first'); return; } x.status = 'accepted'; }
+    if (acc) { const x = p.proposals.find(y => y.id === acc.dataset.acc); if ((x.load || 0) > 0 && load() + x.load > 1) { toast('Max +1 load — decline something first'); return; } x.status = 'accepted'; x.acceptedFrom = key(logicalToday()); }
     else if (dec) p.proposals.find(y => y.id === dec.dataset.dec).status = 'declined';
     else if (ab) { if (load() + 1 > 1) { toast('Max +1 load — decline the focus first'); return; } p.boss.status = 'accepted'; }
     else if (db) p.boss.status = 'declined';
@@ -1243,11 +1269,10 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const { tk, S, G, h } = C; const out = []; const ms = missionsFor(parse(tk)); const done = doneOn(tk);
     const nx = nextMission(C, ms, done); const curGrp = h < 10 ? 'am' : h < 19.5 ? 'work' : 'pm';
     if (nx) { const [hh, mm] = nx.t.split(':').map(Number); const t = hh + mm / 60; if (t < h - 3 && nx.grp !== curGrp) out.push(['next-stale', `NEXT offered “${nx.name}” (${nx.t}) at ${h.toFixed(1)}h`]); }
-    const x = dayXP(tk).xp, max = dayMax(tk) + ms.filter(m => m.bonus).reduce((a, m) => a + m.xp, 0); if (x > max) out.push(['xp-over-max', `${x} > ${max}`]);
+    const x = dayXP(tk).xp, max = dayMax(tk) + ms.reduce((a, m) => a + (m.bonus ? m.xp : m.xp - m.baseXp), 0); if (x > max) out.push(['xp-over-max', `${x} > ${max}`]);
     const ids = ms.map(m => m.id); if (new Set(ids).size !== ids.length) out.push(['dup-mission', ids.join(',')]);
     const th = winThreshold(tk, S); if (dayMax(tk) && (th.need < dayMax(tk) * 0.45 || th.need > dayMax(tk) * 0.85)) out.push(['threshold-band', `${th.need} of ${dayMax(tk)}`]);
     if (S.streak > dayDiff(tk, seasonStart()) + 1) out.push(['streak-impossible', `${S.streak} > days`]);
-    if (G.earned - G.spent !== G.grit) out.push(['grit-mismatch', `${G.earned}-${G.spent}≠${G.grit}`]);
     if (G.grit < -50) out.push(['grit-debt', String(G.grit)]);
     if (!$('sheet').hidden && $('sheet-bg').hidden) out.push(['sheet-stranded', '']);
     for (const wk in state.plans) { const p = state.plans[wk]; if (p.from && p.from > key(addDays(parse(wk), 6))) out.push(['plan-from-late', `${wk} from ${p.from}`]); }
@@ -1260,11 +1285,11 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const add = (code, sev, title, why, fix) => { if (diag.dismissed[code] && diag.dismissed[code] > now() - 14 * 864e5) return; sug.push({ code, sev, title, why, fix }); };
     const short = m => m.name.split('—')[0].trim();
     // 1. missions consistently completed long after their slot → move the slot
-    for (const m of MISSIONS) { if (m.kind || m.bonus) continue; const times = [];
+    for (const m of MISSIONS) { if (m.kind || m.bonus || m.wall) continue; const times = [];
       for (const k of days14) { const r = day(k); const ts = r.on[m.id]; if (!ts || (r.off[m.id] || 0) > ts) continue; const d = new Date(ts); const late = d.getHours() < DAY_BOUNDARY_H; if (!(key(d) === k || (late && key(addDays(d, -1)) === k))) continue; const mm = missionOn(k, m.id); if (!mm) continue; const [hh, mn] = mm.t.split(':').map(Number); const doneAt = d.getHours() + d.getMinutes() / 60 + (late ? 24 : 0); const lag = doneAt - (hh + mn / 60); if (lag > 1.5 && lag < 12) times.push(doneAt); }
-      if (times.length >= 4) { const med = times.sort((a, b) => a - b)[Math.floor(times.length / 2)]; const nt = `${pad(Math.floor(med) % 24)}:${med % 1 >= 0.5 ? '30' : '00'}`; const cur = missionOn(tk, m.id) || m; if (nt !== cur.t) add('move:' + m.id, 'low', `Move “${short(m)}” to ${nt}?`, `You logged it around ${nt} on ${times.length} of the last 14 days — its slot says ${cur.t}. The NEXT card would stop nagging early.`, { label: `Move to ${nt}`, run: () => { state.tweaks[m.id] = { t: nt, off: false, at: now() }; } }); } }
+      if (times.length >= 4) { const med = times.sort((a, b) => a - b)[Math.floor(times.length / 2)]; if (med >= 23.75) continue; const nt = `${pad(Math.floor(med))}:${med % 1 >= 0.5 ? '30' : '00'}`; const cur = missionOn(tk, m.id) || m; if (nt !== cur.t) add('move:' + m.id, 'low', `Move “${short(m)}” to ${nt}?`, `You logged it around ${nt} on ${times.length} of the last 14 days — its slot says ${cur.t}. The NEXT card would stop nagging early.`, { label: `Move to ${nt}`, run: () => { state.tweaks[m.id] = { t: nt, off: false, from: tk, at: now() }; } }); } }
     // 2. never done in 14 scheduled days → shrink or park
-    for (const m of MISSIONS) { if (m.kind || m.bonus || m.wall) continue; let sched = 0, dn = 0; for (const k of days14) { if (!missionOn(k, m.id)) continue; sched++; if (doneOn(k).has(m.id)) dn++; } if (sched >= 8 && dn === 0) add('park:' + m.id, 'med', `“${short(m)}” hasn’t happened in ${sched} days`, m.tiny ? `Shrink it to “${m.tiny}” via the Council, or park it and lower today’s bar.` : 'Park it and lower the bar, or keep it as an aspiration.', { label: 'Park it', run: () => { state.tweaks[m.id] = { t: '', off: true, at: now() }; } }); }
+    for (const m of MISSIONS) { if (m.kind || m.bonus || m.wall) continue; let sched = 0, dn = 0; for (const k of days14) { if (!missionOn(k, m.id)) continue; sched++; if (doneOn(k).has(m.id)) dn++; } if (sched >= 8 && dn === 0) add('park:' + m.id, 'med', `“${short(m)}” hasn’t happened in ${sched} days`, m.tiny ? `Shrink it to “${m.tiny}” via the Council, or park it and lower today’s bar.` : 'Park it and lower the bar, or keep it as an aspiration.', { label: 'Park it', run: () => { state.tweaks[m.id] = { t: '', off: true, from: tk, at: now() }; } }); }
     // 3. undo rate → mis-taps
     const dn = diag.use.done || 0, un = diag.use.undo || 0; if (dn >= 20 && un / (dn + un) > 0.25) add('undo-rate', 'med', 'One in four ticks gets undone', `${un} undos for ${dn} completions. Tap targets may be too close, or the NEXT “Done” button catches accidental taps.`, null);
     // 4. council proposals always declined
@@ -1283,6 +1308,8 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const ezWeeks = [weekKey(parse(tk)), prevWeek(weekKey(parse(tk)))].map(w => weekDays(w).filter(k => k <= tk && easyDay(k)).length); if (ezWeeks.every(n => n >= EASY_CAP)) add('easy-maxed', 'high', 'Two weeks of easy days, both capped', 'The bar is set for a season you’re not in. Run the Council (it lowers 5 points at a time), or tell me and I’ll rebalance the missions.', null);
     // 9c. stress consistently high midday → the work block is the problem, not the evening
     const mds = days14.map(k => day(k).md).filter(Boolean); if (mds.length >= 5 && mds.reduce((a, m) => a + m.s, 0) / mds.length >= 4) add('stress-high', 'med', 'Midday stress averages 4+', 'The Work block needs a release valve: move the walk/daylight mission to 12:00, or make “zero client messages” the focus for a week.', null);
+    // 9d. one stress reason keeps coming back
+    const spL = stressPattern(tk, days14); for (const [w, c] of spL.top) if (c >= 3) add('stress:' + w, c >= 6 ? 'high' : 'med', `Stress from “${w}” ${c} times in two weeks`, STRESS_ADVICE[w] || 'Recurring. Bring it to the Sunday review.', null);
     // 10. caught errors / failed checks
     const recentErr = diag.errors.filter(e => e.t > now() - 3 * 864e5).length; if (recentErr) add('errors', 'high', `${recentErr} error${recentErr === 1 ? '' : 's'} caught in 3 days`, 'Copy the report below and paste it to me — the stack traces are in it.', null);
     const recentChk = diag.checks.filter(c => c.t > now() - 3 * 864e5); if (recentChk.length) add('checks', 'high', `${recentChk.length} sanity check${recentChk.length === 1 ? '' : 's'} failed`, recentChk.map(c => c.code + (c.ctx ? ` (${c.ctx})` : '')).slice(0, 4).join(' · '), null);
