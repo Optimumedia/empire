@@ -1,5 +1,5 @@
-/* Martin's Empire — service worker. Build 20260912-072559 */
-const BUILD = '20260912-072559';
+/* Martin's Empire — service worker. Build 20260912-075123 */
+const BUILD = '20260912-075123';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js', './city.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 

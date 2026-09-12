@@ -221,7 +221,7 @@
 
   /* City */
   .citywrap { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line-2); overflow: hidden; }
-  .citywrap canvas { display: block; width: 100%; touch-action: manipulation; background: linear-gradient(180deg, var(--surface-2), var(--surface)); }
+  .citywrap canvas { display: block; width: 100%; touch-action: none; background: #8ec5ff; }
   .chud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .ctile { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 10px 12px; min-width: 0; }
   .ctile .k { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; font-family: var(--font-display); font-weight: 600; }
@@ -236,6 +236,16 @@
   .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .cbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; cursor: pointer; min-height: 56px; }
   .cbtn .e { font-size: 20px; } .cbtn b { font-size: 13px; } .cbtn:disabled { opacity: .5; cursor: default; } .cbtn.decor { border-style: dashed; }
+  .ctile.wide { grid-column: 1 / -1; }
+  .rcis { display: grid; grid-template-columns: 14px 1fr 14px 1fr 14px 1fr; gap: 6px; align-items: center; margin-top: 6px; font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--muted); }
+  .rci { height: 8px; border-radius: 999px; background: var(--track); position: relative; overflow: hidden; }
+  .rci::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--ink); opacity: .4; }
+  .rci i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; opacity: .85; }
+  .advisor { font-size: 13.5px; padding: 8px 10px; border-radius: 10px; background: var(--gold-soft); border: 1px solid var(--gold); }
+  .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 10px; padding: 6px 2px; font-size: 10px; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 48px; text-align: center; line-height: 1.15; }
+  .tool span { font-size: 18px; } .tool.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .cbtn.on { border-color: var(--gold); background: var(--gold-soft); }
   .crow { display: flex; gap: 8px; flex-wrap: wrap; }
   .auction { display: flex; flex-direction: column; gap: 10px; cursor: pointer; }
   .abar { position: relative; height: 34px; border-radius: 999px; background: var(--track); overflow: hidden; }
@@ -280,7 +290,7 @@
       <ol>
         <li>Four walls: <b>08:30</b> drop-off → train, <b>10:00</b> work, <b>20:00</b> hard stop, <b>23:00</b> lights out.</li>
         <li>Tap missions as you do them. Earn <b>72%</b> of the board and the day is won. Rest days are fine.</li>
-        <li>Missions mint <b>Grit</b>. Grit builds your <b>City</b> and buys real rewards. The City earns <b>Bucks</b> on its own. You start with 120 Grit — enough for an HQ and a Home.</li>
+        <li>Missions mint <b>Grit</b>. Grit builds your <b>City</b> and buys real rewards. The City earns <b>Bucks</b> on its own. You start with a 400 Grit founder’s stipend — a power plant, roads and your first zones.</li>
         <li>Lost a day? A <b>shield</b> covers it. Missed twice? Tomorrow's bar drops to 50%. Sick kid? <b>Skip</b> the day.</li>
         <li>Every Sunday the <b>Council</b> reviews your week and proposes changes. You accept or decline.</li>
         <li>Add your <b>friends and their birthdays</b> in Stats. One friend a day, three a week, and nobody’s birthday slips past you.</li>
@@ -330,7 +340,7 @@
     <div class="chud" id="city-hud"></div>
     <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas></div>
     <div class="cpanel" id="city-panel"></div>
-    <div class="card"><h3>How the City works</h3><p class="sub" style="margin:0">Four districts mirror your four stats. Buildings cost Grit — you can only earn Grit by doing real missions. Each district's <b>vitality</b> is your last 7 days in that stat: neglect Body and Riverside goes dormant and earns half. Neighbours from different districts pay +10% each — a balanced life is literally more profitable. Bucks buy decor and boosts. Three Ad Auctions a day, no more.</p></div>
+    <div class="card"><h3>How the City works</h3><p class="sub" style="margin:0">A real city: draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach (power, water, school, clinic, fire, police, parks). Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers — as long as they have a road within 2 tiles, power, demand, and the services each level asks for. Tap any tile to see exactly what it's waiting on.<br><br>Everything structural costs <b>Grit</b>, which only real missions mint. The city pays <b>taxes</b> in Bucks; Bucks buy trees, lights, plazas, statues and festivals — never roads or zones. Your four stats are the weather: Family speeds up homes and lifts happiness, Business drives shop demand and tax income, Body stretches how far parks reach, Health thins pollution and staffs the clinic. A lazy week stalls the city; it never wrecks it.<br><br>Milestones by population: Hamlet 50 → Village 200 → Town 500 (expansion, mid-rise) → City 1,500 (towers) → Metropolis 4,000 → Empire City 10,000.</p></div>
   </div>
 
   <!-- STATS -->
@@ -476,7 +486,7 @@
     { id: 'lights',   t: '23:00', grp: 'pm',   name: 'Lights out by 23:00, phone outside the bedroom',     tiny: 'Lights out by 23:30', desc: '7½ hours before the boys wake you.', stat: 'health', xp: 15, days: 'all', wall: true },
   ];
   const BYID = Object.fromEntries(MISSIONS.map(m => [m.id, m]));
-  const GRP = { am: 'Morning', work: 'Work', pm: 'Evening' };
+  const GRP = { am: 'Morning', work: 'Work', pm: 'Evening' }, GRP_WE = { am: 'Morning', work: 'Day', pm: 'Evening' };
   const QUESTS = [
     { id: 'iron',    name: 'Iron Week — 4 workouts',                stat: 'body',     xp: 100, target: 4, boss: true, ids: ['train', 'train_we'] },
     { id: 'handoff', name: 'Hand off 5 things',                     stat: 'business', xp: 80,  target: 5, ids: ['delegate'] },
@@ -677,7 +687,7 @@
   function winThreshold(k, S) { const y = key(addDays(parse(k), -1)); const reduced = S.lost[y] === true; return { need: Math.ceil(dayMax(k) * (reduced ? WIN_AFTER_LOSS : winRatio(weekKey(parse(k))))), reduced }; }
   // Grit: real-life currency
   function gritInfo(T, S, curWk) {
-    let earned = 120 + T.xp + DAYWON_GRIT * S.won, spent = City.gritSpent(state.city); // 120 = founder's grant: HQ + Home on day one
+    let earned = 400 + T.xp + DAYWON_GRIT * S.won, spent = City.gritSpent(state.city); // 400 = founder's stipend: power plant + roads + first zones
     for (const id in state.rewards) if (state.rewards[id].claimed && !state.rewards[id].gone) spent += state.rewards[id].cost;
     for (const wk in state.stakes) { const s = state.stakes[wk]; if (!s.amt) continue; spent += s.amt; if (wk < curWk && questState(wk, QUESTS[0]).cleared) earned += Math.round(s.amt * 1.5); }
     return { earned, spent, grit: Math.max(0, earned - spent) };
@@ -805,7 +815,7 @@
     if (isToday) for (const m of ms) { const [hh, mm] = m.t.split(':').map(Number); if (!m.bonus && hh + mm / 60 <= h + 0.5 && !done.has(m.id)) nowId = m.id; }
     let html = '', grp = null;
     for (let m of ms) {
-      if (m.grp !== grp) { grp = m.grp; html += `<div class="grp">${GRP[grp]}</div>`; }
+      if (m.grp !== grp) { grp = m.grp; html += `<div class="grp">${(d.getDay() === 0 || d.getDay() === 6 ? GRP_WE : GRP)[grp]}</div>`; }
       const on = done.has(m.id); let extra = '';
       if (m.kind === 'weigh' && state.weighins[selKey]) extra = `<span class="val">${state.weighins[selKey].kg} kg</span>`;
       if (m.kind === 'rest') extra = `<span class="scale" role="group" aria-label="Rested 1 to 5">${[1, 2, 3, 4, 5].map(v => `<span role="button" tabindex="0" data-rest="${v}" aria-pressed="${!!(rec.rest && rec.rest.v === v)}">${v}</span>`).join('')}</span>`;
@@ -1144,7 +1154,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   });
   $('cfg-sync').addEventListener('click', async () => { dbRef = null; await connect(); dataStatus(); toast(dbRef ? 'Synced' : 'Sync not connected'); });
   if (STANDALONE && 'serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) toast('Update ready — reopen the app'); }); }); }).catch(() => {}); }
-  function dataStatus() { const days = Object.keys(state.days).length, wi = Object.keys(state.weighins).length, b = Object.keys(state.city.plots).length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} buildings · device ${deviceId} · ${dbRef ? 'cloud sync on' : 'this device only'}`; }
+  function dataStatus() { const days = Object.keys(state.days).length, wi = Object.keys(state.weighins).length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== "road").length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} buildings · device ${deviceId} · ${dbRef ? 'cloud sync on' : 'this device only'}`; }
   $('backup-btn').addEventListener('click', async () => {
     const json = JSON.stringify({ app: 'martins-empire', exported: new Date().toISOString(), state }, null, 1);
     const name = `empire-backup-${key(logicalToday())}.json`;
@@ -1214,9 +1224,10 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   render();
   city = City.mount({
     canvas: $('city-canvas'), panel: $('city-panel'), hud: $('city-hud'), toast, deviceId,
-    get: () => { const tk = key(logicalToday()), wk = weekKey(logicalToday()); const T = totals(wk), S = season(tk); const G = gritInfo(T, S, wk); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(T.by[s], needStat).level; return { city: state.city, grit: G.grit, vitality: vitality(tk), statLevels, unlocked: { business: true, family: true, body: statLevels.body >= 2, health: statLevels.health >= 2 }, todayKey: tk }; },
+    get: () => { const tk = key(logicalToday()), wk = weekKey(logicalToday()); const T = totals(wk), S = season(tk); const G = gritInfo(T, S, wk); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(T.by[s], needStat).level; const v = vitality(tk); const v01 = {}; for (const k in v) v01[k] = v[k] - 0.5; return { city: state.city, grit: G.grit, vitality: v01, statLevels, todayKey: tk }; },
     commit: () => { persist(); const tk = key(logicalToday()), wk = weekKey(logicalToday()); $('chip-grit').textContent = City.fmt(gritInfo(totals(wk), season(tk), wk).grit); },
   });
+  window.__city = city; // debug hook
   setInterval(render, 60 * 1000);
   connect();
   setupSample();

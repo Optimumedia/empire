@@ -1,72 +1,67 @@
-/* Empire City v2 — an isometric town fed by real life.
-   Grit (earned by missions) buys and upgrades buildings. Bucks (the town's own income) buy decor, boosts, and are the mini-game payout.
-   Pure helpers are exported so the main app can price things; mount() runs the canvas. */
+/* Empire City v3 — a SimCity-style simulation fed by real life.
+   Grit (earned only by real missions) pays for every structural decision: roads, zones, services, land.
+   The city zones grow on their own over real-time hours when conditions hold; taxes pay Bucks, which buy only cosmetics.
+   Exports pure helpers for the main app (merge, gritSpent, bucks, fmt, population, cityTitle) and mount() for the canvas. */
 window.City = (() => {
   'use strict';
 
-  const N = 6, TW = 64, TH = 32, TWH = 32, THH = 16;
-  const GROWTH = 1.15, OFFLINE_CAP_MS = 8 * 3600e3, MAX_LV = 30;
-  const DISTRICTS = {
-    business: { name: 'Downtown',  hue: 212, x0: 0, y0: 0, ground: [214, 12, 74], landmark: '🏛️' },
-    family:   { name: 'Hillside',  hue: 325, x0: 3, y0: 0, ground: [95, 30, 68],  landmark: '🎡' },
-    body:     { name: 'Riverside', hue: 18,  x0: 0, y0: 3, ground: [40, 28, 70],  landmark: '🗽' },
-    health:   { name: 'Greenbelt', hue: 145, x0: 3, y0: 3, ground: [120, 32, 62], landmark: '⛲' },
+  // =====================================================================
+  // World & rules
+  // =====================================================================
+  const W = 16, TW = 64, TH = 32, TWH = 32, THH = 16;
+  const CORE = [3, 13];                       // owned x/y range at ring 0 (10×10); each ring adds one tile each side
+  const RIVER_X = 0;                          // column of water down the left edge
+  const HOUR = 3600e3, DAY = 24 * HOUR;
+  const TAX_CAP_MS = 12 * HOUR;               // unclaimed tax stops accruing after 12 h
+  const ZONES = {
+    r: { name: 'Residential', e: '🏘️', grit: 10, hue: 32,  pop: [0, 8, 30, 100],  jobs: [0, 0, 0, 0] },
+    c: { name: 'Commercial',  e: '🏬', grit: 12, hue: 212, pop: [0, 0, 0, 0],     jobs: [0, 4, 15, 50] },
+    i: { name: 'Industrial',  e: '🏭', grit: 12, hue: 20,  pop: [0, 0, 0, 0],     jobs: [0, 6, 20, 60], poll: [0, 4, 8, 12] },
   };
-  const BUILDINGS = {
-    hq:        { d: 'business', name: 'Agency HQ',    e: '🏢', cost: 60,  inc: 2,  unlock: 1, shape: 'tower' },
-    billboard: { d: 'business', name: 'Billboard',    e: '📣', cost: 90,  inc: 3,  unlock: 2, shape: 'billboard' },
-    studio:    { d: 'business', name: 'Studio',       e: '🎬', cost: 150, inc: 5,  unlock: 3, shape: 'studio' },
-    tower:     { d: 'business', name: 'Media Tower',  e: '📡', cost: 400, inc: 12, unlock: 5, shape: 'antenna' },
-    home:      { d: 'family',   name: 'Home',         e: '🏠', cost: 60,  inc: 2,  unlock: 1, shape: 'house' },
-    playground:{ d: 'family',   name: 'Playground',   e: '🛝', cost: 90,  inc: 3,  unlock: 2, shape: 'playground' },
-    school:    { d: 'family',   name: 'School',       e: '🏫', cost: 150, inc: 5,  unlock: 3, shape: 'school' },
-    park:      { d: 'family',   name: 'Grand Park',   e: '🌳', cost: 400, inc: 12, unlock: 5, shape: 'park' },
-    gym:       { d: 'body',     name: 'Gym',          e: '🏋️', cost: 60,  inc: 2,  unlock: 1, shape: 'gym' },
-    track:     { d: 'body',     name: 'Track',        e: '🏃', cost: 90,  inc: 3,  unlock: 2, shape: 'track' },
-    pool:      { d: 'body',     name: 'Pool',         e: '🏊', cost: 150, inc: 5,  unlock: 3, shape: 'pool' },
-    stadium:   { d: 'body',     name: 'Stadium',      e: '🏟️', cost: 400, inc: 12, unlock: 5, shape: 'stadium' },
-    clinic:    { d: 'health',   name: 'Clinic',       e: '🏥', cost: 60,  inc: 2,  unlock: 1, shape: 'clinic' },
-    garden:    { d: 'health',   name: 'Garden',       e: '🌿', cost: 90,  inc: 3,  unlock: 2, shape: 'garden' },
-    lodge:     { d: 'health',   name: 'Sleep Lodge',  e: '🛏️', cost: 150, inc: 5,  unlock: 3, shape: 'lodge' },
-    spa:       { d: 'health',   name: 'Spa',          e: '♨️', cost: 400, inc: 12, unlock: 5, shape: 'spa' },
+  const SERVICES = {
+    power:  { name: 'Power plant', e: '⚡', grit: 150, r: 8, cap: 60,  capKind: 'tiles', up: 20, poll: 15, pr: 4, mile: 0 },
+    water:  { name: 'Water tower', e: '💧', grit: 80,  r: 6, cap: 40,  capKind: 'tiles', up: 10, mile: 0 },
+    park:   { name: 'Park',        e: '🌳', grit: 30,  r: 3, up: 2, mile: 50 },
+    school: { name: 'School',      e: '🏫', grit: 150, r: 5, cap: 250, capKind: 'pop', up: 15, mile: 50 },
+    clinic: { name: 'Clinic',      e: '🏥', grit: 120, r: 5, cap: 300, capKind: 'pop', up: 15, mile: 200 },
+    fire:   { name: 'Fire station',e: '🚒', grit: 100, r: 6, cap: 400, capKind: 'pop', up: 12, mile: 200 },
+    police: { name: 'Police',      e: '🚓', grit: 100, r: 6, cap: 400, capKind: 'pop', up: 12, mile: 500 },
+    stadium:{ name: 'Stadium',     e: '🏟️', grit: 500, r: 6, up: 30, mile: 4000 },
   };
   const DECOR = {
-    road:     { name: 'Plaza',       e: '🧱', bucks: 400,  bonus: 0.03 },
-    tree:     { name: 'Trees',       e: '🌲', bucks: 700,  bonus: 0.03 },
-    lamp:     { name: 'Streetlight', e: '💡', bucks: 1200, bonus: 0.04 },
-    fountain: { name: 'Fountain',    e: '⛲', bucks: 2500, bonus: 0.06 },
+    tree:   { name: 'Trees',       e: '🌲', bucks: 50,  lv: 4,  mile: 0 },
+    light:  { name: 'Streetlight', e: '💡', bucks: 100, lv: 3,  mile: 50 },
+    plaza:  { name: 'Plaza',       e: '⛲', bucks: 150, lv: 8,  mile: 1500 },
+    statue: { name: 'Statue',      e: '🗽', bucks: 400, lv: 12, mile: 1500 },
   };
-  const BOOST_COST = 2000, BOOST_MS = 8 * 3600e3;
-  const CITY_TITLES = [[0, 'Empty lot'], [3, 'Startup Street'], [12, 'Agency Avenue'], [30, 'Founder’s Quarter'], [60, 'Empire District'], [100, 'Capital'], [160, 'Metropolis'], [240, 'Empire']];
-  const CONTRACTS = [
-    { id: 'collect3', text: 'Collect income 3 times', check: (c, k) => (c.collects[k] || 0) >= 3, reward: 150 },
-    { id: 'upgrade', text: 'Upgrade any building', check: (c, k) => Object.values(c.plots).some(p => p.t >= dayStart(k) && p.lv > 1), reward: 200 },
-    { id: 'auction', text: 'Win an Ad Auction', check: (c, k) => ((c.auction[k] || {}).hits || 0) >= 1, reward: 150 },
-    { id: 'perfect', text: 'Land a perfect bid', check: (c, k) => ((c.auction[k] || {}).perfect || 0) >= 1, reward: 300 },
-    { id: 'imp', text: 'Pop 25 impressions in one round', check: (c, k) => ((c.imp[k] || {}).best || 0) >= 25, reward: 200 },
-    { id: 'build', text: 'Build something new', check: (c, k) => Object.values(c.plots).some(p => p.lv === 1 && p.t >= dayStart(k)), reward: 200 },
-  ];
-  const dayStart = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, 4).getTime() - 24 * 3600e3 * 0; };
-
-  const districtOf = (x, y) => { for (const k in DISTRICTS) { const d = DISTRICTS[k]; if (x >= d.x0 && x < d.x0 + 3 && y >= d.y0 && y < d.y0 + 3) return k; } return null; };
-  const upgradeCost = (b, lv) => Math.round(b.cost * Math.pow(GROWTH, lv));
-  const totalCost = (b, lv) => Math.round(b.cost * (Math.pow(GROWTH, lv) - 1) / (GROWTH - 1));
+  const ROAD_GRIT = 5, FEST_BUCKS = 300, FEST_MS = DAY;
+  const MILES = [[0, 'Outpost'], [50, 'Hamlet'], [200, 'Village'], [500, 'Town'], [1500, 'City'], [4000, 'Metropolis'], [10000, 'Empire City']];
+  const GROW_H = [2, 24, 72];                 // hours to reach L1, L2, L3 when conditions hold
+  const DECLINE_H = 48;
+  const POP_MAX = { L2: 500, L3: 1500 };      // milestone gates for density
   const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(Math.round(n));
-  const tier = lv => lv >= 20 ? 3 : lv >= 10 ? 2 : 1;
+  const kkey = (x, y) => `${x},${y}`;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  const emptyCity = () => ({ plots: {}, decor: {}, ledger: {}, lastCollect: { t: 0 }, boost: { until: 0, t: 0 }, skill: { v: 0, t: 0 }, auction: {}, imp: {}, collects: {}, contracts: {}, seen: {} });
+  // seeded prng — buildings look the same every render
+  const hash = (x, y, s) => { let h = (x * 374761393 + y * 668265263 + s * 2246822519) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return (h ^ (h >>> 16)) >>> 0; };
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+  // =====================================================================
+  // State (merge-friendly: every record carries t)
+  // =====================================================================
+  const emptyCity = () => ({ v: 3, tiles: {}, ring: { v: 0, t: 0 }, tax: { v: 7, t: 0 }, ledger: {}, gspent: {}, lastTax: { t: 0 }, lastSim: { t: 0 }, fest: { until: 0, t: 0 }, peakPop: { v: 0, t: 0 }, seen: {} });
+  const KINDS = new Set(['road', 'r', 'c', 'i', 'hall', ...Object.keys(SERVICES), ...Object.keys(DECOR)]);
   function norm(c) {
-    const out = emptyCity(); if (!c || typeof c !== 'object') return out;
-    for (const k in c.plots || {}) { const p = c.plots[k]; if (p && BUILDINGS[p.type]) out.plots[k] = { type: p.type, lv: Math.max(0, Math.min(MAX_LV, +p.lv || 0)), t: +p.t || 0 }; }
-    for (const k in c.decor || {}) { const p = c.decor[k]; if (p && DECOR[p.type]) out.decor[k] = { type: p.type, on: !!p.on, t: +p.t || 0 }; }
+    const out = emptyCity(); if (!c || typeof c !== 'object' || c.v !== 3) return out; // v1/v2 towns are retired; the founder's stipend rebuilds
+    for (const k in c.tiles || {}) { const p = c.tiles[k]; if (p && KINDS.has(p.k)) out.tiles[k] = { k: p.k, lv: clamp(+p.lv || 0, 0, 3), t: +p.t || 0, g: +p.g || 0, d: +p.d || 0, gone: !!p.gone }; }
+    out.ring = { v: clamp(+(c.ring && c.ring.v) || 0, 0, 3), t: +(c.ring && c.ring.t) || 0 };
+    out.tax = { v: clamp(+(c.tax && c.tax.v) || 7, 0, 20), t: +(c.tax && c.tax.t) || 0 };
     for (const k in c.ledger || {}) { const l = c.ledger[k]; if (l) out.ledger[k] = { earned: +l.earned || 0, spent: +l.spent || 0 }; }
-    out.lastCollect = { t: +(c.lastCollect && c.lastCollect.t) || 0 };
-    out.boost = { until: +(c.boost && c.boost.until) || 0, t: +(c.boost && c.boost.t) || 0 };
-    out.skill = { v: +(c.skill && c.skill.v) || 0, t: +(c.skill && c.skill.t) || 0 };
-    for (const k in c.auction || {}) { const a = c.auction[k]; if (a) out.auction[k] = { plays: +a.plays || 0, hits: +a.hits || 0, perfect: +a.perfect || 0, won: +a.won || 0 }; }
-    for (const k in c.imp || {}) { const a = c.imp[k]; if (a) out.imp[k] = { plays: +a.plays || 0, best: +a.best || 0, won: +a.won || 0 }; }
-    for (const k in c.collects || {}) out.collects[k] = +c.collects[k] || 0;
-    for (const k in c.contracts || {}) { const a = c.contracts[k]; if (a) out.contracts[k] = { claimed: +a.claimed || 0 }; }
+    for (const k in c.gspent || {}) out.gspent[k] = +c.gspent[k] || 0;
+    out.lastTax = { t: +(c.lastTax && c.lastTax.t) || 0 }; out.lastSim = { t: +(c.lastSim && c.lastSim.t) || 0 };
+    out.fest = { until: +(c.fest && c.fest.until) || 0, t: +(c.fest && c.fest.t) || 0 };
+    out.peakPop = { v: +(c.peakPop && c.peakPop.v) || 0, t: +(c.peakPop && c.peakPop.t) || 0 };
     for (const k in c.seen || {}) out.seen[k] = true;
     return out;
   }
@@ -74,322 +69,412 @@ window.City = (() => {
     a = norm(a); b = norm(b); const out = emptyCity();
     const keys = (x, y) => [...new Set([...Object.keys(x), ...Object.keys(y)])].sort();
     const newer = (x, y) => (!x ? y : !y ? x : (x.t || 0) >= (y.t || 0) ? x : y);
-    const maxf = (field, fields) => { for (const k of keys(a[field], b[field])) { const x = a[field][k] || {}, y = b[field][k] || {}; const o = {}; for (const f of fields) o[f] = Math.max(+x[f] || 0, +y[f] || 0); out[field][k] = o; } };
-    for (const k of keys(a.plots, b.plots)) out.plots[k] = newer(a.plots[k], b.plots[k]);
-    for (const k of keys(a.decor, b.decor)) out.decor[k] = newer(a.decor[k], b.decor[k]);
-    maxf('ledger', ['earned', 'spent']); maxf('auction', ['plays', 'hits', 'perfect', 'won']); maxf('imp', ['plays', 'best', 'won']); maxf('contracts', ['claimed']);
-    for (const k of keys(a.collects, b.collects)) out.collects[k] = Math.max(a.collects[k] || 0, b.collects[k] || 0);
-    out.lastCollect = { t: Math.max(a.lastCollect.t, b.lastCollect.t) };
-    out.boost = newer(a.boost, b.boost); out.skill = newer(a.skill, b.skill);
+    for (const k of keys(a.tiles, b.tiles)) out.tiles[k] = newer(a.tiles[k], b.tiles[k]);
+    out.ring = newer(a.ring, b.ring); out.tax = newer(a.tax, b.tax); out.fest = newer(a.fest, b.fest); out.peakPop = { v: Math.max(a.peakPop.v, b.peakPop.v), t: 0 };
+    for (const k of keys(a.ledger, b.ledger)) { const x = a.ledger[k] || { earned: 0, spent: 0 }, y = b.ledger[k] || { earned: 0, spent: 0 }; out.ledger[k] = { earned: Math.max(x.earned, y.earned), spent: Math.max(x.spent, y.spent) }; }
+    for (const k of keys(a.gspent, b.gspent)) out.gspent[k] = Math.max(a.gspent[k] || 0, b.gspent[k] || 0);
+    out.lastTax = { t: Math.max(a.lastTax.t, b.lastTax.t) }; out.lastSim = { t: Math.max(a.lastSim.t, b.lastSim.t) };
     for (const k of keys(a.seen, b.seen)) out.seen[k] = true;
     return out;
   }
-
-  // ---- economy ----
-  const gritSpent = c => Object.values(c.plots).reduce((s, p) => s + totalCost(BUILDINGS[p.type], p.lv), 0);
-  const bucks = c => Object.values(c.ledger).reduce((s, l) => s + l.earned - l.spent, 0);
-  function adjacency(c, x, y) {
-    const me = c.plots[`${x},${y}`]; if (!me) return 0; let n = 0;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const o = c.plots[`${x + dx},${y + dy}`]; if (o && BUILDINGS[o.type].d !== BUILDINGS[me.type].d) n++; }
-    return Math.min(0.3, n * 0.1);
-  }
-  const decorBonus = c => Object.values(c.decor).reduce((s, d) => s + (d.on ? DECOR[d.type].bonus : 0), 0);
-  const districtLevel = c => { const out = {}; for (const k in c.plots) { const b = BUILDINGS[c.plots[k].type]; out[b.d] = (out[b.d] || 0) + c.plots[k].lv; } return out; };
-  const landmarks = c => { const dl = districtLevel(c); const out = {}; for (const d in DISTRICTS) out[d] = (dl[d] || 0) >= 30; return out; };
-  function incomePerMin(c, vitality) {
-    let s = 0; const lm = landmarks(c);
-    for (const k in c.plots) { const [x, y] = k.split(',').map(Number); const p = c.plots[k]; const b = BUILDINGS[p.type]; if (p.lv <= 0) continue; s += b.inc * p.lv * (1 + adjacency(c, x, y)) * (vitality[b.d] || 1) * (lm[b.d] ? 1.25 : 1); }
-    s *= 1 + decorBonus(c); if (c.boost.until > Date.now()) s *= 2; return s;
-  }
-  function pending(c, vitality, now) { if (!c.lastCollect.t) return 0; const ms = Math.max(0, Math.min(OFFLINE_CAP_MS, now - c.lastCollect.t)); return incomePerMin(c, vitality) * ms / 60000; }
-  function population(c, vitality) { const ds = Object.keys(DISTRICTS); const avg = ds.reduce((s, d) => s + (vitality[d] || 1), 0) / ds.length; return Math.round(Object.values(c.plots).reduce((s, p) => s + p.lv * 4, 0) * avg); }
-  const cityLevel = c => Object.values(c.plots).reduce((s, p) => s + p.lv, 0);
-  const cityTitle = c => { const L = cityLevel(c); let t = CITY_TITLES[0][1]; for (const [n, name] of CITY_TITLES) if (L >= n) t = name; return t; };
-  const nextTitle = c => { const L = cityLevel(c); for (const [n, name] of CITY_TITLES) if (L < n) return [n, name]; return null; };
-  function contractFor(k) { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CONTRACTS[h % CONTRACTS.length]; }
+  const gritSpent = c => Object.values(c.gspent || {}).reduce((s, v) => s + v, 0);
+  const bucks = c => Object.values(c.ledger || {}).reduce((s, l) => s + l.earned - l.spent, 0);
+  const owned = (c, x, y) => { const r = c.ring.v; return x >= Math.max(RIVER_X + 1, CORE[0] - r) && x < Math.min(W, CORE[1] + r) && y >= Math.max(0, CORE[0] - r) && y < Math.min(W, CORE[1] + r); };
+  const tileAt = (c, x, y) => { const p = c.tiles[kkey(x, y)]; return p && !p.gone ? p : null; };
+  const expandCost = c => Math.round(250 * Math.pow(1.5, c.ring.v));
 
   // =====================================================================
-  // Rendering helpers (isometric, procedural)
+  // Simulation
   // =====================================================================
-  const hsl = (h, s, l, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
+  // vit: {business, body, health, family} in 0..1 → modifier 0.7..1.3
+  const mod = v => 0.7 + 0.6 * clamp(v == null ? 0.5 : v, 0, 1);
+  function analyze(c, vit) {
+    const M = { family: mod(vit.family), business: mod(vit.business), body: mod(vit.body), health: mod(vit.health) };
+    const T = c.tiles; const live = {}; for (const k in T) if (!T[k].gone) live[k] = T[k];
+    const at = (x, y) => live[kkey(x, y)];
+    // road network connected to City Hall
+    let hall = null; for (const k in live) if (live[k].k === 'hall') hall = k.split(',').map(Number);
+    const conn = new Set();
+    if (hall) { const q = []; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const p = at(hall[0] + dx, hall[1] + dy); if (p && p.k === 'road') { const kk = kkey(hall[0] + dx, hall[1] + dy); if (!conn.has(kk)) { conn.add(kk); q.push([hall[0] + dx, hall[1] + dy]); } } }
+      while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const p = at(x + dx, y + dy); const kk = kkey(x + dx, y + dy); if (p && p.k === 'road' && !conn.has(kk)) { conn.add(kk); q.push([x + dx, y + dy]); } } } }
+    const nearRoad = (x, y, r) => { for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) if (Math.abs(dx) + Math.abs(dy) <= r && conn.has(kkey(x + dx, y + dy))) return true; return false; };
+    const info = {}; // per tile
+    for (const k in live) { const [x, y] = k.split(',').map(Number); const p = live[k]; info[k] = { x, y, p, active: false, cov: {}, eff: {}, poll: 0, lv: 0 }; if (ZONES[p.k]) info[k].active = nearRoad(x, y, 2); else if (SERVICES[p.k]) info[k].active = nearRoad(x, y, 1) || p.k === 'park'; else info[k].active = true; }
+    // service coverage & capacity
+    const svc = []; for (const k in live) if (SERVICES[live[k].k] && info[k].active) svc.push({ ...info[k], s: SERVICES[live[k].k], type: live[k].k });
+    const popOf = i => ZONES[i.p.k] ? ZONES[i.p.k].pop[i.p.lv] : 0;
+    for (const s of svc) {
+      const R = s.type === 'park' || s.type === 'stadium' ? Math.max(2, Math.round(s.s.r * M.body)) : s.s.r; let load = 0; const inR = [];
+      for (const k in info) { const i = info[k]; if (Math.max(Math.abs(i.x - s.x), Math.abs(i.y - s.y)) <= R) { inR.push(i); if (s.s.capKind === 'tiles') load += ZONES[i.p.k] ? 1 : 0; else if (s.s.capKind === 'pop') load += popOf(i); } }
+      let cap = s.s.cap || Infinity; if (s.type === 'clinic') cap = Math.round(cap * M.health);
+      const eff = cap === Infinity ? 1 : Math.min(1, cap / Math.max(1, load)); s.load = load; s.cap = cap; s.eff = eff; s.R = R;
+      for (const i of inR) { i.cov[s.type] = true; i.eff[s.type] = Math.max(i.eff[s.type] || 0, eff); }
+    }
+    // pollution
+    const pm = {}; const emit = (x, y, E, r) => { for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) { const d = Math.max(Math.abs(dx), Math.abs(dy)); if (d > r) continue; const kk = kkey(x + dx, y + dy); pm[kk] = (pm[kk] || 0) + E * (1 - d / (r + 1)); } };
+    const pollMul = 1.3 - 0.6 * clamp(vit.health == null ? 0.5 : vit.health, 0, 1);
+    for (const k in info) { const i = info[k]; if (i.p.k === 'i' && i.p.lv > 0 && i.active) emit(i.x, i.y, ZONES.i.poll[i.p.lv] * pollMul, 3); if (i.p.k === 'power' && i.active) emit(i.x, i.y, SERVICES.power.poll * pollMul, SERVICES.power.pr); }
+    for (const k in info) info[k].poll = Math.round(pm[k] || 0);
+    // pop / jobs
+    let pop = 0, jobsC = 0, jobsI = 0, rTiles = 0, rCov = 0, rPark = 0, rPoll = 0, vacantR = 0;
+    for (const k in info) { const i = info[k]; if (!ZONES[i.p.k] || !i.active) continue; if (i.p.k === 'r') { pop += ZONES.r.pop[i.p.lv]; if (i.p.lv > 0) { rTiles++; let n = 0; for (const s of ['power', 'water', 'clinic', 'school', 'fire', 'police']) if (i.cov[s]) n += i.eff[s]; rCov += n / 6; if (i.cov.park) rPark++; rPoll += i.poll; } else vacantR++; } else if (i.p.k === 'c') jobsC += ZONES.c.jobs[i.p.lv]; else jobsI += ZONES.i.jobs[i.p.lv]; }
+    const jobs = jobsC + jobsI, workforce = 0.5 * pop, tax = c.tax.v;
+    const avgCov = rTiles ? rCov / rTiles : 0, parkShare = rTiles ? rPark / rTiles : 0, avgPoll = rTiles ? rPoll / rTiles : 0;
+    const fest = c.fest.until > Date.now() ? 5 : 0;
+    const happiness = clamp(Math.round(50 + 25 * avgCov + 10 * parkShare - 0.1 * avgPoll - 3 * (tax - 7) + 20 * (clamp(vit.family == null ? 0.5 : vit.family, 0, 1) - 0.5) + fest), 0, 100);
+    // land value
+    for (const k in info) { const i = info[k]; let lv = 30; if (i.cov.park) lv += 20; if (i.cov.school || i.cov.clinic) lv += 15; if (i.cov.fire && i.cov.police) lv += 10; let l3 = 0, adjI = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const o = at(i.x + dx, i.y + dy); if (o && ZONES[o.k] && o.lv === 3) l3++; if (o && o.k === 'i') adjI = true; } lv += 5 * l3 - i.poll - (adjI ? 10 : 0); if (i.cov.plaza) lv += 5; i.lv = clamp(Math.round(lv), 0, 100); }
+    for (const k in info) { const i = info[k]; let s = 0, n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const o = info[kkey(i.x + dx, i.y + dy)]; if (o) { s += o.lv; n++; } } i.lvs = Math.round(s / Math.max(1, n)); }
+    // demand
+    const dem = { r: clamp(0.6 * clamp((jobs - workforce) / (workforce + 20), -1, 1) + 0.4 * (happiness - 50) / 50 - 0.05 * (tax - 7), -1, 1),
+                  c: clamp(clamp((0.3 * pop - jobsC) / (0.3 * pop + 10), -1, 1) * M.business - 0.05 * (tax - 7), -1, 1),
+                  i: clamp(clamp((0.25 * pop - jobsI) / (0.25 * pop + 10), -1, 1) - 0.05 * (tax - 7), -1, 1) };
+    if (pop === 0) { dem.r = 0.8; dem.c = 0.3; dem.i = 0.3; }
+    // budget (per day)
+    let avgLV = 0, nz = 0; for (const k in info) if (ZONES[info[k].p.k]) { avgLV += info[k].lvs; nz++; } avgLV = nz ? avgLV / nz : 30;
+    const income = pop * 0.5 * (tax / 7) * (0.75 + 0.5 * avgLV / 100) * M.business + 0.1 * jobs;
+    let upkeep = 0; for (const s of svc) upkeep += s.s.up;
+    const peak = Math.max(pop, c.peakPop.v); let mile = MILES[0]; for (const m of MILES) if (peak >= m[0]) mile = m; const next = MILES.find(m => peak < m[0]) || null;
+    return { M, info, svc, conn, hall, pop, jobs, jobsC, jobsI, workforce, happiness, dem, income, upkeep, avgCov, parkShare, avgPoll, avgLV, vacantR, mile, next, peak, tax, unemployed: Math.max(0, workforce - jobs) };
+  }
+  // growth: run at open and once a minute; returns events for the away report
+  function simulate(c, vit, now) {
+    const ev = { grew: 0, fell: 0 };
+    for (let iter = 0; iter < 4; iter++) {
+      const A = analyze(c, vit); let changed = false;
+      for (const k in A.info) {
+        const i = A.info[k], p = i.p, z = ZONES[p.k]; if (!z) continue;
+        const ok = growthOK(i, A, c), hold = growthOK(i, A, c, true);
+        if (ok.ok && p.lv < 3) { const tm = GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1); if (!p.g) { p.g = now; } else if (now - p.g >= tm) { p.lv++; p.t = now; p.g = now; ev.grew++; changed = true; } }
+        else if (p.g) p.g = 0;
+        // a built tile only declines when it loses what its CURRENT level needs (road, power, water, services) — never for lack of demand
+        if (p.lv > 0 && !hold.ok) { if (!p.d) p.d = now; else if (now - p.d >= DECLINE_H * HOUR) { p.lv--; p.t = now; p.d = now; ev.fell++; changed = true; } } else p.d = 0;
+      }
+      if (!changed) break;
+    }
+    const A = analyze(c, vit); if (A.pop > c.peakPop.v) c.peakPop = { v: A.pop, t: now };
+    c.lastSim.t = now; return ev;
+  }
+  // hold=false: what the NEXT level needs. hold=true: what the CURRENT level needs to stay standing (structure only, never demand/mood).
+  function growthOK(i, A, c, hold) {
+    const p = i.p, need = []; const want = hold ? p.lv : p.lv + 1;
+    if (want >= 1) { if (!i.active) need.push('road within 2 tiles'); if (!i.cov.power) need.push('power'); }
+    if (!hold && want >= 1 && A.dem[p.k] <= 0 && A.pop > 0) need.push('demand');
+    if (want >= 2) { if (!i.cov.water) need.push('water'); if (!(i.cov.clinic || i.cov.school)) need.push('clinic or school'); if (!hold) { if (A.happiness < 60) need.push('happiness 60'); if (i.lvs < 40) need.push('land value 40'); if (A.peak < POP_MAX.L2) need.push('Town (500 pop)'); } }
+    if (want >= 3) { for (const s of ['water', 'clinic', 'school', 'fire', 'police']) if (!i.cov[s]) need.push(s); if (!hold) { if (A.happiness < 75) need.push('happiness 75'); if (i.lvs < 70) need.push('land value 70'); for (const s of ['water', 'clinic', 'school', 'fire', 'police']) if (i.cov[s] && i.eff[s] < 0.99) need.push(s + ' over capacity'); if (A.dem[p.k] <= 0.2) need.push('stronger demand'); if (A.peak < POP_MAX.L3) need.push('City (1500 pop)'); } }
+    if (!hold && p.lv >= 3) return { ok: true, need: [] };
+    return { ok: need.length === 0, need };
+  }
+  function taxPending(c, A, now) { if (!c.lastTax.t) return 0; const ms = clamp(now - c.lastTax.t, 0, TAX_CAP_MS); return Math.max(0, A.income - A.upkeep) * ms / DAY; }
+  function advisor(c, A) {
+    const inf = Object.values(A.info); const zones = inf.filter(i => ZONES[i.p.k]);
+    if (!A.hall) return 'Place City Hall — everything connects to it.';
+    if (!inf.some(i => i.p.k === 'road')) return 'Draw roads from City Hall. Zones only grow within 2 tiles of a road.';
+    if (!inf.some(i => i.p.k === 'power')) return 'No power plant. Nothing grows without electricity — put it downwind of homes.';
+    if (zones.length === 0) return 'Zone some land: Residential first, then a little Commercial and Industrial for jobs.';
+    const un = zones.filter(i => !i.cov.power && i.active); if (un.length) return `${un.length} zoned tile${un.length > 1 ? 's are' : ' is'} outside the power plant’s reach.`;
+    const off = zones.filter(i => !i.active); if (off.length) return `${off.length} zoned tile${off.length > 1 ? 's' : ''} too far from a connected road — nothing will move in.`;
+    if (A.pop >= 50 && A.income - A.upkeep < 0) return 'Upkeep exceeds tax income. Raise tax a point or hold off on the next service.';
+    if (A.pop >= 50 && !inf.some(i => i.p.k === 'water')) return 'Homes want water before they’ll densify. A water tower covers 6 tiles.';
+    if (A.unemployed > 0.15 * A.workforce && A.workforce > 10) return 'Unemployment is high — zone Commercial or Industrial for jobs.';
+    if (A.pop > 0 && A.jobs > A.workforce * 1.6) return 'More jobs than workers. Zone Residential.';
+    if (A.happiness < 50) return A.avgPoll > 30 ? 'Pollution is on your homes. Move industry away or buffer it with a park.' : 'Happiness is low — services in range and a park would lift it.';
+    if (A.pop >= 50 && A.parkShare < 0.3) return 'Fewer than a third of homes are near a park. Land value is waiting on it.';
+    if (A.pop >= 200 && !inf.some(i => i.p.k === 'school')) return 'A school is what unlocks the next density.';
+    const best = Object.entries(A.M).sort((a, b) => b[1] - a[1])[0];
+    return { family: 'Your Family streak is why the lights are on in every window tonight.', business: 'Business is strong — shops are filling and the treasury shows it.', body: 'Body streak: the parks are packed and reach further.', health: 'Health streak: the air is cleaner than it should be for this much industry.' }[best[0]];
+  }
+  const population = (c, vit) => analyze(c, vit || {}).pop;
+  const cityTitle = (c, vit) => analyze(c, vit || {}).mile[1];
+
+  // =====================================================================
+  // Controller: canvas, camera, tools, panel
+  // =====================================================================
   function mount(opts) {
     const { canvas, panel, hud, get, commit, toast, deviceId } = opts;
     const ctx = canvas.getContext('2d');
-    let sel = null, scale = 1, ox = 0, oy = 0, W = 0, H = 0, raf = 0, visible = false, lastFrame = 0, tsec = 0;
-    let citizens = [], cars = [], fx = [], clouds = [];
-    let auction = null, imp = null;
+    let cssW = 0, cssH = 0, dpr = 1, cam = { x: 0, y: 0, z: 1 }, visible = false, raf = 0, lastFrame = 0, tsec = 0;
+    let tool = 'select', sub = null, view = 'none', sel = null, dirtyG = true, dirtyB = true, nightFlag = null;
+    let ground = null, blds = null, GS = 2; // offscreen layers rendered at scale GS
+    let cars = [], smoke = [], fx = [], lastA = null, awayShown = false;
     const now = () => Date.now();
-    const night = () => { const h = new Date().getHours(); return h >= 20 || h < 6 ? 1 : (h >= 18 ? (h - 18) / 2 : h < 7 ? 1 - h / 7 * 0 : 0); };
-
+    const isNight = () => { const h = new Date().getHours(); return h >= 20 || h < 6; };
+    const WORLD_W = W * TW, WORLD_H = W * TH + 220, OX = WORLD_W / 2, OY = 140;
+    const toScreen = (x, y) => [OX + (x - y) * TWH, OY + (x + y) * THH];
+    const toGrid = (sx, sy) => { const x = sx - OX, y = sy - OY; return [Math.floor((x / TWH + y / THH) / 2), Math.floor((y / THH - x / TWH) / 2)]; };
     function size() {
-      const cssW = canvas.clientWidth || 360; const dpr = window.devicePixelRatio || 1;
-      W = cssW; scale = cssW / (N * TW + 24); H = Math.round((N * TH + 150) * scale);
-      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.height = H + 'px';
-      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
-      ox = (W / scale) / 2; oy = 78;
-      if (!clouds.length) for (let i = 0; i < 4; i++) clouds.push({ x: Math.random() * (W / scale), y: 10 + Math.random() * 40, s: 0.6 + Math.random() * 0.8, v: 3 + Math.random() * 4 });
+      cssW = canvas.clientWidth || 360; cssH = Math.round(Math.min(440, cssW * 1.15)); dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr); canvas.style.height = cssH + 'px';
+      if (!ground) { ground = document.createElement('canvas'); blds = document.createElement('canvas'); ground.width = blds.width = WORLD_W * GS; ground.height = blds.height = WORLD_H * GS; fitCamera(); }
     }
-    const toScreen = (mx, my) => [ox + (mx - my) * TWH, oy + (mx + my) * THH];
-    function toGrid(sx, sy) { const x = sx - ox, y = sy - oy; return [Math.floor((x / TWH + y / THH) / 2), Math.floor((y / THH - x / TWH) / 2)]; }
-    // footprint corners for a box of w×d tile-units centred on tile (x,y); returns ground corners back,right,front,left
-    function corners(x, y, w, d) {
-      const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH;
-      const ax = w * TWH / 2, ay = w * THH / 2, bx = d * TWH / 2, by = d * THH / 2;
-      return { c: [cx, cy], b: [cx - ax + bx, cy - ay - by], r: [cx + ax + bx, cy + ay - by], f: [cx + ax - bx, cy + ay + by], l: [cx - ax - bx, cy - ay + by] };
-    }
-    function poly(pts, fill, stroke) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
+    function fitCamera() { cam.z = clamp(cssW / (7 * TW + 20), 0.45, 1.6); const [cx, cy] = toScreen(8, 8); cam.x = cssW / 2 / cam.z - cx; cam.y = cssH / 2 / cam.z - cy - 10; }
+    const toWorld = (px, py) => [px / cam.z - cam.x, py / cam.z - cam.y];
+
+    // ---- drawing primitives (world space) ----
+    let g; // current ctx for helpers
+    const hsl = (h, s, l, a = 1) => `hsla(${h},${s}%,${l}%,${a})`;
+    function corners(x, y, w, d) { const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH; const ax = w * TWH / 2, ay = w * THH / 2, bx = d * TWH / 2, by = d * THH / 2; return { c: [cx, cy], b: [cx - ax + bx, cy - ay - by], r: [cx + ax + bx, cy + ay - by], f: [cx + ax - bx, cy + ay + by], l: [cx - ax - bx, cy - ay + by] }; }
+    function poly(pts, fill, stroke, lw) { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
     const up = (p, h) => [p[0], p[1] - h];
-    // cuboid with shaded faces
-    function cuboid(x, y, w, d, h, hue, sat, lit, opts = {}) {
-      const c = corners(x, y, w, d); const nt = night();
-      const top = hsl(hue, sat, lit + 8), left = hsl(hue, sat, lit - 6), right = hsl(hue, sat, lit - 16);
-      poly([c.l, c.f, up(c.f, h), up(c.l, h)], left);
-      poly([c.f, c.r, up(c.r, h), up(c.f, h)], right);
-      poly([up(c.b, h), up(c.r, h), up(c.f, h), up(c.l, h)], top, 'rgba(0,0,0,.18)');
-      if (opts.windows) {
-        const rows = Math.max(1, Math.floor(h / 11)), cols = opts.windows;
-        for (let r = 0; r < rows; r++) for (let cc = 0; cc < cols; cc++) {
-          const fy = h - 6 - r * 11; const lx = c.l[0] + (c.f[0] - c.l[0]) * (0.18 + cc * 0.64 / Math.max(1, cols - 1)); const ly = c.l[1] + (c.f[1] - c.l[1]) * (0.18 + cc * 0.64 / Math.max(1, cols - 1));
-          const rx = c.f[0] + (c.r[0] - c.f[0]) * (0.18 + cc * 0.64 / Math.max(1, cols - 1)); const ry = c.f[1] + (c.r[1] - c.f[1]) * (0.18 + cc * 0.64 / Math.max(1, cols - 1));
-          const on = nt > 0.3 && ((r * 7 + cc * 13 + Math.floor(x * 3 + y * 5)) % 5 !== 0);
-          ctx.fillStyle = on ? 'rgba(255,225,140,.95)' : 'rgba(255,255,255,.35)';
-          ctx.fillRect(lx - 1.5, ly - fy - 2, 3, 4); ctx.fillRect(rx - 1.5, ry - fy - 2, 3, 4);
-        }
-      }
+    function box(x, y, w, d, h, hue, sat, lit, o = {}) {
+      const c = corners(x, y, w, d);
+      // ground shadow + base band = the "not floating" trick
+      poly([c.b, [c.r[0] + 6, c.r[1] + 2], [c.f[0] + 6, c.f[1] + 4], c.l], 'rgba(0,0,30,.16)');
+      poly([c.l, c.f, up(c.f, h), up(c.l, h)], hsl(hue, sat, lit));
+      poly([c.f, c.r, up(c.r, h), up(c.f, h)], hsl(hue, sat, lit - 14));
+      poly([c.l, c.f, up(c.f, 3), up(c.l, 3)], 'rgba(0,0,0,.22)'); poly([c.f, c.r, up(c.r, 3), up(c.f, 3)], 'rgba(0,0,0,.28)');
+      poly([up(c.b, h), up(c.r, h), up(c.f, h), up(c.l, h)], o.roof || hsl(hue, sat, lit + 12), 'rgba(0,0,0,.15)');
+      if (o.win) windows(c, h, o.win, o.night, o.glass);
       return c;
     }
-    function roofPrism(c, h, rh, hue, sat, lit) { // pitched roof along the w axis on top of cuboid corners c
-      const bl = up(c.l, h), bf = up(c.f, h), br = up(c.r, h), bb = up(c.b, h);
-      const ridge1 = [(bl[0] + bb[0]) / 2, (bl[1] + bb[1]) / 2 - rh], ridge2 = [(bf[0] + br[0]) / 2, (bf[1] + br[1]) / 2 - rh];
-      poly([bl, bf, ridge2, ridge1], hsl(hue, sat, lit - 4)); poly([bf, br, ridge2], hsl(hue, sat, lit - 18)); poly([bb, br, ridge2, ridge1], hsl(hue, sat, lit - 24));
-    }
-    function ellipseIso(cx, cy, rx, ry, fill, stroke, lw) { ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); } }
-    function tree(cx, cy, s, hue = 130) { ctx.fillStyle = hsl(28, 40, 30); ctx.fillRect(cx - 1.2 * s, cy - 6 * s, 2.4 * s, 6 * s); ellipseIso(cx, cy - 9 * s, 5 * s, 5.5 * s, hsl(hue, 45, 34)); ellipseIso(cx - 1.5 * s, cy - 10.5 * s, 3.5 * s, 3.8 * s, hsl(hue, 50, 42)); }
-    function label(txt, cx, cy, size, color) { ctx.font = `${size}px system-ui, "Segoe UI Emoji", "Apple Color Emoji", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; if (color) ctx.fillStyle = color; ctx.fillText(txt, cx, cy); }
-
-    // ---- building shapes ----
-    function drawBuilding(x, y, p, vit) {
-      const b = BUILDINGS[p.type]; const T = tier(p.lv); const hue = DISTRICTS[b.d].hue; const v = Math.max(0.5, Math.min(1.5, vit || 1)); const sat = 28 + 34 * (v - 0.5); const lit = 52 + 6 * (v - 1);
-      const g = 0.72 + Math.min(0.2, p.lv * 0.008); // footprint grows a little
-      const base = 8 + Math.min(70, p.lv * 2.6);
-      const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH;
-      switch (b.shape) {
-        case 'tower': { const h = base + 10; cuboid(x, y, g * 0.8, g * 0.8, h, hue, sat, lit, { windows: T + 1 }); if (T >= 2) cuboid(x, y, g * 0.45, g * 0.45, h + 14, hue, sat, lit + 4, { windows: 1 }); if (T >= 3) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy - h - 14); ctx.lineTo(cx, cy - h - 30); ctx.stroke(); ellipseIso(cx, cy - h - 31, 2, 2, '#ff5d5d'); } break; }
-        case 'antenna': { const h = base + 16; cuboid(x, y, g * 0.55, g * 0.55, h, hue, sat, lit - 4, { windows: 1 }); ctx.strokeStyle = hsl(hue, 20, 80); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy - h); ctx.lineTo(cx, cy - h - 26 - T * 6); ctx.stroke(); for (let i = 0; i < T + 1; i++) ellipseIso(cx, cy - h - 10 - i * 8, 7 - i, 3 - i * 0.6, null, hsl(hue, 30, 85), 1.5); const blink = Math.floor(tsec * 2) % 2 === 0; ellipseIso(cx, cy - h - 27 - T * 6, 2.2, 2.2, blink ? '#ff4d4d' : '#7a2020'); break; }
-        case 'billboard': { cuboid(x, y, g * 0.9, g * 0.35, 6, hue, 10, 40); ctx.strokeStyle = hsl(0, 0, 35); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(cx, cy - 4); ctx.lineTo(cx, cy - 22 - base * 0.4); ctx.stroke(); const bh = 14 + T * 3, bw = 22 + T * 4; const by = cy - 22 - base * 0.4 - bh; ctx.fillStyle = '#f7f1e3'; ctx.fillRect(cx - bw / 2, by, bw, bh); ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1.5; ctx.strokeRect(cx - bw / 2, by, bw, bh); ctx.fillStyle = hsl(hue, 70, 45); ctx.fillRect(cx - bw / 2 + 3, by + 3, bw * 0.55, bh - 6); ctx.fillStyle = '#333'; ctx.fillRect(cx + bw * 0.1, by + 4, bw * 0.35, 2); ctx.fillRect(cx + bw * 0.1, by + 8, bw * 0.3, 2); break; }
-        case 'studio': { const h = base * 0.6 + 8; const c = cuboid(x, y, g, g * 0.8, h, hue, sat - 10, lit - 2); ctx.fillStyle = hsl(hue, 30, 30); poly([up(c.b, h), up(c.r, h), up(c.r, h + 4), up(c.b, h + 4)], hsl(hue, 30, 25)); ellipseIso(cx + 10, cy - h - 6, 5, 3, '#222'); ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx + 10, cy - h - 6); ctx.lineTo(cx + 16, cy - h - 14); ctx.stroke(); if (T >= 2) label('🎬', cx - 8, cy - h - 8, 12); break; }
-        case 'house': { const h = 10 + base * 0.45; const c = cuboid(x, y, g * 0.85, g * 0.85, h, hue, sat - 8, lit + 6, { windows: 1 }); roofPrism(c, h, 9 + T * 3, 8, 45, 40); ctx.fillStyle = hsl(28, 40, 28); const d = c.f; ctx.fillRect(d[0] - 8, d[1] - 9, 4, 9); if (T >= 2) { ctx.fillStyle = hsl(0, 0, 45); ctx.fillRect(cx + 6, cy - h - 16, 4, 9); } if (T >= 3) tree(cx - 20, cy + 4, 0.8); break; }
-        case 'playground': { cuboid(x, y, g, g, 3, 45, 30, 62); ctx.fillStyle = '#e8b13a'; ctx.fillRect(cx - 12, cy - 16, 3, 16); ctx.fillStyle = '#d9532b'; ctx.beginPath(); ctx.moveTo(cx - 12, cy - 16); ctx.lineTo(cx + 8, cy - 4); ctx.lineTo(cx + 8, cy); ctx.lineTo(cx - 9, cy - 12); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#3E7CB1'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 4, cy - 18); ctx.lineTo(cx + 16, cy - 18); ctx.moveTo(cx + 7, cy - 18); ctx.lineTo(cx + 7, cy - 6 + Math.sin(tsec * 3) * 2); ctx.moveTo(cx + 13, cy - 18); ctx.lineTo(cx + 13, cy - 6 - Math.sin(tsec * 3) * 2); ctx.stroke(); if (T >= 2) label('🎠', cx - 14, cy - 2, 11); break; }
-        case 'school': { const h = 12 + base * 0.4; const c = cuboid(x, y, g * 1.05, g * 0.8, h, 35, 35, 58, { windows: 3 }); ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5; const t = up(c.b, h); ctx.beginPath(); ctx.moveTo(t[0] + 6, t[1] + 4); ctx.lineTo(t[0] + 6, t[1] - 14); ctx.stroke(); ctx.fillStyle = hsl(hue, 70, 55); ctx.beginPath(); ctx.moveTo(t[0] + 6, t[1] - 14); ctx.lineTo(t[0] + 16, t[1] - 11); ctx.lineTo(t[0] + 6, t[1] - 8); ctx.fill(); if (T >= 2) { ellipseIso(cx, cy - h - 2, 6, 3, hsl(35, 30, 70)); } break; }
-        case 'park': { cuboid(x, y, g * 1.1, g * 1.1, 2, 130, 40, 40); const n = 3 + T * 2; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; tree(cx + Math.cos(a) * 14, cy + Math.sin(a) * 7 + 4, 0.7 + (i % 2) * 0.25, 120 + i * 8); } if (T >= 2) ellipseIso(cx, cy + 2, 7, 3.5, '#5fb3e0'); if (T >= 3) label('⛲', cx, cy - 6, 12); break; }
-        case 'gym': { const h = 10 + base * 0.4; const c = cuboid(x, y, g * 1.05, g * 0.9, h, hue, sat, lit - 4, { windows: 2 }); poly([up(c.b, h), up(c.r, h), up(c.r, h + 5), up(c.b, h + 5)], hsl(hue, sat, lit - 22)); ctx.fillStyle = '#2b2b2b'; const d = c.f; ctx.fillRect(d[0] - 10, d[1] - 12, 8, 12); label('🏋️', cx, cy - h - 10, 12 + T * 2); break; }
-        case 'track': { cuboid(x, y, g * 1.15, g * 1.15, 2, 20, 30, 45); ellipseIso(cx, cy - 1, 24, 12, hsl(8, 60, 42)); ellipseIso(cx, cy - 1, 14, 7, hsl(130, 40, 42)); ctx.setLineDash([3, 3]); ellipseIso(cx, cy - 1, 19, 9.5, null, 'rgba(255,255,255,.8)', 1); ctx.setLineDash([]); const a = tsec * 1.5; ellipseIso(cx + Math.cos(a) * 19, cy - 1 + Math.sin(a) * 9.5 - 3, 2, 2, '#fff'); if (T >= 2) ellipseIso(cx + Math.cos(a + 2) * 19, cy - 1 + Math.sin(a + 2) * 9.5 - 3, 2, 2, '#ffd166'); break; }
-        case 'pool': { cuboid(x, y, g * 1.1, g * 1.0, 4, 200, 10, 80); const c = corners(x, y, g * 0.85, g * 0.7); poly([up(c.b, 4), up(c.r, 4), up(c.f, 4), up(c.l, 4)], hsl(200, 70, 58)); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1; for (let i = 0; i < 3; i++) { ctx.beginPath(); const yy = cy - 4 + (i - 1) * 5; for (let xx = -16; xx <= 16; xx += 4) ctx.lineTo(cx + xx, yy + Math.sin(xx * 0.5 + tsec * 3 + i) * 1.2); ctx.stroke(); } if (T >= 2) label('🏊', cx + 14, cy - 12, 11); if (T >= 3) { ctx.fillStyle = '#ddd'; ctx.fillRect(cx - 22, cy - 22, 2, 18); ctx.fillRect(cx - 24, cy - 22, 8, 2); } break; }
-        case 'stadium': { const h = 12 + base * 0.35; cuboid(x, y, g * 1.15, g * 1.15, 3, 20, 20, 55); ellipseIso(cx, cy - 1, 27, 14, hsl(hue, 25, 48)); poly([[cx - 27, cy - 1], [cx - 27, cy - 1 - h], [cx + 27, cy - 1 - h], [cx + 27, cy - 1]], hsl(hue, 25, 40)); ellipseIso(cx, cy - 1 - h, 27, 14, hsl(hue, 28, 58), 'rgba(0,0,0,.25)'); ellipseIso(cx, cy - 1 - h, 17, 8, hsl(130, 45, 40)); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.moveTo(cx - 17, cy - 1 - h); ctx.lineTo(cx + 17, cy - 1 - h); ctx.stroke(); if (T >= 2) for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + 0.7; ctx.fillStyle = night() > 0.3 ? '#fff3b0' : '#ddd'; ctx.fillRect(cx + Math.cos(a) * 28 - 1, cy - 1 - h - 14 + Math.sin(a) * 4, 2, 14); } break; }
-        case 'clinic': { const h = 12 + base * 0.45; cuboid(x, y, g * 0.9, g * 0.9, h, 0, 0, 82, { windows: 2 }); ctx.fillStyle = '#d9342b'; ctx.fillRect(cx - 1.5, cy - h - 12, 3, 9); ctx.fillRect(cx - 4.5, cy - h - 9, 9, 3); if (T >= 2) label('🚑', cx + 14, cy + 4, 10); break; }
-        case 'garden': { cuboid(x, y, g * 1.1, g * 1.1, 2, 40, 30, 42); for (let r = 0; r < 3; r++) for (let i = 0; i < 4 + T; i++) { const px = cx - 16 + i * (32 / (3 + T)) + r * 4, py = cy - 8 + r * 7 - i * 2; ellipseIso(px, py, 3.5, 2.5, hsl(120 + r * 15, 50, 38 + r * 5)); } if (T >= 2) label('🌻', cx + 16, cy - 10, 10); break; }
-        case 'lodge': { const h = 8 + base * 0.4; const c = cuboid(x, y, g * 0.95, g * 0.85, h, 25, 35, 38, { windows: 1 }); roofPrism(c, h, 8 + T * 2, 220, 20, 30); if (night() > 0.3) label('🌙', cx + 12, cy - h - 18, 10); if (T >= 2) { ctx.fillStyle = 'rgba(200,200,200,.6)'; ellipseIso(cx + 8 + Math.sin(tsec) * 2, cy - h - 20 - (tsec * 6 % 12), 3, 2, 'rgba(220,220,220,.5)'); } break; }
-        case 'spa': { const h = 8 + base * 0.3; cuboid(x, y, g, g, h, hue, sat, lit); ellipseIso(cx, cy - h - 2, 16, 9, hsl(hue, 35, 62), 'rgba(0,0,0,.2)'); ctx.beginPath(); ctx.arc(cx, cy - h - 2, 14, Math.PI, 0); ctx.fillStyle = hsl(hue, 35, 70); ctx.fill(); for (let i = 0; i < 2 + T; i++) { const ph = (tsec * 0.8 + i * 0.7) % 2; ellipseIso(cx - 8 + i * 8 + Math.sin(ph * 3) * 2, cy - h - 18 - ph * 10, 3, 2, `rgba(255,255,255,${0.6 - ph * 0.3})`); } break; }
-        default: cuboid(x, y, g, g, base, hue, sat, lit);
+    function windows(c, h, spec, night, glass) {
+      const r = spec.rng; const rows = Math.max(1, Math.floor((h - 8) / spec.fp)), cols = spec.cols;
+      for (const [A, B, dark] of [[c.l, c.f, false], [c.f, c.r, true]]) for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
+        const t = (col + 0.5) / cols; const px = A[0] + (B[0] - A[0]) * t, py = A[1] + (B[1] - A[1]) * t - 7 - row * spec.fp;
+        const lit = night && r() < 0.62; g.fillStyle = lit ? 'rgba(255,224,140,.95)' : glass ? (dark ? 'rgba(170,205,235,.55)' : 'rgba(200,228,250,.7)') : (dark ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.45)');
+        if (spec.ribbon) g.fillRect(px - (B[0] - A[0]) / cols / 2 + 1, py - 2, (B[0] - A[0]) / cols - 2, 3); else g.fillRect(px - 1.5, py - 2.5, 3, 4);
       }
-      // level tag
-      ctx.font = 'bold 8px "Chakra Petch", sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`L${p.lv}`, cx, cy + 6);
-      if (T >= 3) { ctx.font = '9px sans-serif'; ctx.fillText('👑', cx + 14, cy + 5); }
     }
-    function drawDecor(x, y, d) {
-      const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH;
-      if (d.type === 'tree') { tree(cx - 8, cy + 4, 0.8, 125); tree(cx + 8, cy + 1, 0.65, 140); tree(cx, cy - 6, 0.7, 115); }
-      else if (d.type === 'road') { const c = corners(x, y, 0.95, 0.95); poly([c.b, c.r, c.f, c.l], hsl(30, 15, 62)); ctx.strokeStyle = 'rgba(0,0,0,.15)'; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(c.l[0] + (c.b[0] - c.l[0]) * i / 4, c.l[1] + (c.b[1] - c.l[1]) * i / 4); ctx.lineTo(c.f[0] + (c.r[0] - c.f[0]) * i / 4, c.f[1] + (c.r[1] - c.f[1]) * i / 4); ctx.stroke(); } }
-      else if (d.type === 'lamp') { ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - 22); ctx.lineTo(cx + 6, cy - 22); ctx.stroke(); const on = night() > 0.3; ellipseIso(cx + 6, cy - 22, 2.5, 2.5, on ? '#ffe28a' : '#ccc'); if (on) { const g = ctx.createRadialGradient(cx + 6, cy - 10, 2, cx + 6, cy - 10, 18); g.addColorStop(0, 'rgba(255,226,138,.35)'); g.addColorStop(1, 'rgba(255,226,138,0)'); ctx.fillStyle = g; ctx.fillRect(cx - 14, cy - 30, 40, 36); } }
-      else if (d.type === 'fountain') { ellipseIso(cx, cy, 13, 6.5, hsl(200, 30, 70), 'rgba(0,0,0,.2)'); ellipseIso(cx, cy - 1, 9, 4.5, hsl(200, 70, 60)); ctx.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 5; i++) { const ph = (tsec * 1.5 + i * 0.4) % 1; ellipseIso(cx + (i - 2) * 3, cy - 4 - Math.sin(ph * Math.PI) * 12, 1.5, 1.5, `rgba(255,255,255,${1 - ph})`); } }
-    }
+    function roof(c, h, rh, hue, sat, lit) { const bl = up(c.l, h), bf = up(c.f, h), br = up(c.r, h), bb = up(c.b, h); const r1 = [(bl[0] + bb[0]) / 2, (bl[1] + bb[1]) / 2 - rh], r2 = [(bf[0] + br[0]) / 2, (bf[1] + br[1]) / 2 - rh]; poly([bl, bf, r2, r1], hsl(hue, sat, lit)); poly([bf, br, r2], hsl(hue, sat, lit - 16)); poly([bb, br, r2, r1], hsl(hue, sat, lit - 22)); }
+    function ell(cx, cy, rx, ry, fill, stroke, lw) { g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+    function cyl(cx, cy, r, h, hue, sat, lit) { g.fillStyle = hsl(hue, sat, lit - 10); g.fillRect(cx - r, cy - h, r, h); g.fillStyle = hsl(hue, sat, lit - 22); g.fillRect(cx, cy - h, r, h); ell(cx, cy, r, r / 2, hsl(hue, sat, lit - 16)); ell(cx, cy - h, r, r / 2, hsl(hue, sat, lit + 8), 'rgba(0,0,0,.2)'); }
+    function tree(cx, cy, s, hue) { ell(cx + 3, cy + 1, 5 * s, 2.5 * s, 'rgba(0,0,30,.18)'); g.fillStyle = hsl(28, 40, 30); g.fillRect(cx - 1.2 * s, cy - 6 * s, 2.4 * s, 6 * s); ell(cx, cy - 8 * s, 5 * s, 5 * s, hsl(hue, 45, 32)); ell(cx - 1, cy - 10 * s, 4 * s, 4 * s, hsl(hue, 50, 40)); ell(cx - 2, cy - 12 * s, 3 * s, 3 * s, hsl(hue, 55, 48)); }
+    function label(txt, cx, cy, sz) { g.font = `${sz}px system-ui, "Segoe UI Emoji", "Apple Color Emoji", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, cx, cy); }
 
-    function drawGround(S) {
-      const nt = night(); const vit = S.vitality;
-      // sky/ground wash
-      const g = ctx.createLinearGradient(0, 0, 0, H / scale);
-      g.addColorStop(0, nt > 0.3 ? '#0b1220' : '#dfe9f2'); g.addColorStop(1, nt > 0.3 ? '#131c28' : '#eef2f5');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W / scale, H / scale);
-      // clouds / stars
-      if (nt > 0.3) { ctx.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 18; i++) { const sx = ((i * 97) % (W / scale)), sy = (i * 41) % 60; if (Math.sin(tsec * 2 + i) > -0.6) ctx.fillRect(sx, sy, 1.2, 1.2); } }
-      else for (const cl of clouds) { ctx.fillStyle = 'rgba(255,255,255,.85)'; ellipseIso(cl.x, cl.y, 14 * cl.s, 6 * cl.s, 'rgba(255,255,255,.85)'); ellipseIso(cl.x + 9 * cl.s, cl.y - 3 * cl.s, 10 * cl.s, 6 * cl.s, 'rgba(255,255,255,.85)'); ellipseIso(cl.x - 9 * cl.s, cl.y - 1, 9 * cl.s, 5 * cl.s, 'rgba(255,255,255,.85)'); }
-      // river along Riverside's outer edge (x = -1 column, y 3..6)
-      const rv = corners(-0.9, 4.5, 1.0, 3.2); poly([rv.b, rv.r, rv.f, rv.l], nt > 0.3 ? hsl(210, 45, 28) : hsl(200, 60, 62));
-      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; for (let i = 0; i < 6; i++) { const t = i / 6; const px = rv.l[0] + (rv.b[0] - rv.l[0]) * t + 6, py = rv.l[1] + (rv.b[1] - rv.l[1]) * t; ctx.beginPath(); for (let k = 0; k <= 4; k++) ctx.lineTo(px + k * 5, py + k * 2.5 + Math.sin(tsec * 2 + i + k) * 1.2); ctx.stroke(); }
-      // tiles
-      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-        const d = districtOf(x, y); const D = DISTRICTS[d]; const v = Math.max(0.5, Math.min(1.5, vit[d] || 1)); const locked = !S.unlocked[d];
-        const [h, s, l] = D.ground; const ss = locked ? 6 : s * (0.5 + v * 0.5), ll = (nt > 0.3 ? l - 34 : l) + (locked ? 6 : 0);
-        const c = corners(x, y, 1, 1); poly([c.b, c.r, c.f, c.l], hsl(h, ss, ll), nt > 0.3 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.10)');
-        // texture speckle
-        ctx.fillStyle = nt > 0.3 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.05)'; for (let i = 0; i < 3; i++) { const hx = ((x * 7 + y * 13 + i * 31) % 20) / 20 - 0.5, hy = ((x * 11 + y * 3 + i * 17) % 20) / 20 - 0.5; ctx.fillRect(c.c[0] + hx * 30, c.c[1] + hy * 12, 2, 1); }
-        if (sel && sel[0] === x && sel[1] === y) { const pulse = 0.5 + Math.sin(tsec * 4) * 0.3; poly([c.b, c.r, c.f, c.l], `rgba(242,178,51,${0.25 * pulse})`); ctx.lineWidth = 2; ctx.strokeStyle = `rgba(242,178,51,${0.6 + pulse * 0.4})`; ctx.stroke(); }
+    // ---- ground layer ----
+    function drawGround() {
+      g = ground.getContext('2d'); g.setTransform(GS, 0, 0, GS, 0, 0); g.clearRect(0, 0, WORLD_W, WORLD_H);
+      const S = get(); const c = S.city; const night = isNight(); const A = lastA || analyze(c, S.vitality);
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+        const cc = corners(x, y, 1, 1); const own = owned(c, x, y); const p = tileAt(c, x, y); const r = rng(hash(x, y, 7));
+        if (x === RIVER_X) { poly([cc.b, cc.r, cc.f, cc.l], night ? hsl(212, 45, 26) : hsl(202, 62, 58)); continue; }
+        const n = r(); const base = own ? hsl(110, 28 + n * 12, (night ? 24 : 58) + n * 6) : hsl(100, 18, (night ? 18 : 46) + n * 4);
+        poly([cc.b, cc.r, cc.f, cc.l], base, night ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.08)');
+        if (!own) { if (r() < 0.35) tree(cc.c[0] + (r() - 0.5) * 20, cc.c[1] + (r() - 0.5) * 8 + 4, 0.7 + r() * 0.5, 100 + r() * 40); continue; }
+        if (p && ZONES[p.k]) { const z = ZONES[p.k]; const i = A.info[kkey(x, y)]; poly([cc.b, cc.r, cc.f, cc.l], p.lv === 0 ? hsl(z.hue, 20, night ? 30 : 66) : hsl(z.hue, 12, night ? 28 : 60)); if (p.lv === 0) { g.setLineDash([3, 3]); poly([cc.b, cc.r, cc.f, cc.l], null, hsl(z.hue, 60, i && i.active ? 45 : 30), 1.5); g.setLineDash([]); if (i && !i.active) label('🚧', cc.c[0], cc.c[1], 9); } }
+        if (p && p.k === 'park') { poly([cc.b, cc.r, cc.f, cc.l], hsl(125, 40, night ? 26 : 46)); }
+        if (p && p.k === 'plaza') { poly([cc.b, cc.r, cc.f, cc.l], hsl(35, 18, night ? 40 : 76)); }
       }
-      // roads between districts (x=3 boundary and y=3 boundary)
-      ctx.lineWidth = 7; ctx.strokeStyle = nt > 0.3 ? '#2a3441' : '#8b929b'; ctx.lineCap = 'butt';
-      let a = toScreen(3, 0), b = toScreen(3, N); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-      a = toScreen(0, 3); b = toScreen(N, 3); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.setLineDash([4, 5]);
-      a = toScreen(3, 0); b = toScreen(3, N); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-      a = toScreen(0, 3); b = toScreen(N, 3); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
-      // district names + landmarks
-      const lm = landmarks(S.city);
-      ctx.font = 'bold 9px "Chakra Petch", sans-serif'; ctx.textAlign = 'center';
-      for (const k in DISTRICTS) { const D = DISTRICTS[k]; const [sx, sy] = toScreen(D.x0 + 1, D.y0 + 1); const locked = !S.unlocked[k]; ctx.fillStyle = nt > 0.3 ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.5)'; ctx.fillText((locked ? '🔒 ' : '') + D.name.toUpperCase() + (!locked && (vit[k] || 1) < 0.8 ? ' · DORMANT' : ''), sx, sy + THH + 30); if (lm[k]) label(D.landmark, sx, sy + THH - 4, 14); }
+      // roads: 4-bit mask
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+        const p = tileAt(c, x, y); if (!p || p.k !== 'road') continue;
+        const isR = (a, b) => { const q = tileAt(c, a, b); return !!(q && (q.k === 'road' || q.k === 'hall')); };
+        const N = isR(x, y - 1), E = isR(x + 1, y), Sx = isR(x, y + 1), Wx = isR(x - 1, y);
+        const cc = corners(x, y, 1, 1);
+        poly([cc.b, cc.r, cc.f, cc.l], night ? '#39424e' : '#8d949c');
+        // sidewalks on edges without road
+        g.fillStyle = night ? '#525b66' : '#c9ced4';
+        const edge = (P, Q) => { const dx = Q[0] - P[0], dy = Q[1] - P[1]; poly([P, Q, [Q[0] - dx * 0.08 + (P[0] + Q[0] > 2 * cc.c[0] ? -3 : 3) * 0, Q[1] - dy * 0.08], [P[0], P[1]]], null); };
+        if (!N) poly([cc.b, cc.r, [cc.r[0] - 5, cc.r[1] + 2.5], [cc.b[0] - 5, cc.b[1] + 2.5]], g.fillStyle); if (!E) poly([cc.r, cc.f, [cc.f[0] - 5, cc.f[1] - 2.5], [cc.r[0] - 5, cc.r[1] - 2.5]], g.fillStyle);
+        if (!Sx) poly([cc.f, cc.l, [cc.l[0] + 5, cc.l[1] - 2.5], [cc.f[0] + 5, cc.f[1] - 2.5]], g.fillStyle); if (!Wx) poly([cc.l, cc.b, [cc.b[0] + 5, cc.b[1] + 2.5], [cc.l[0] + 5, cc.l[1] + 2.5]], g.fillStyle);
+        // center dashes along axes
+        g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1; g.setLineDash([4, 4]);
+        const mid = (P, Q) => [(P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2];
+        const ne = mid(cc.b, cc.r), se = mid(cc.r, cc.f), sw = mid(cc.f, cc.l), nw = mid(cc.l, cc.b);
+        if (N) { g.beginPath(); g.moveTo(cc.c[0], cc.c[1]); g.lineTo(nw[0], nw[1]); g.stroke(); } if (Sx) { g.beginPath(); g.moveTo(cc.c[0], cc.c[1]); g.lineTo(se[0], se[1]); g.stroke(); }
+        if (E) { g.beginPath(); g.moveTo(cc.c[0], cc.c[1]); g.lineTo(ne[0], ne[1]); g.stroke(); } if (Wx) { g.beginPath(); g.moveTo(cc.c[0], cc.c[1]); g.lineTo(sw[0], sw[1]); g.stroke(); }
+        g.setLineDash([]);
+        if ((N || Sx) && (E || Wx)) { g.fillStyle = 'rgba(255,255,255,.75)'; for (let i = -1; i <= 1; i++) g.fillRect(cc.c[0] - 1 + i * 4, cc.c[1] - 1, 2, 2); }
+      }
+      // owned border
+      const r = c.ring.v; const x0 = Math.max(RIVER_X + 1, CORE[0] - r), x1 = Math.min(W, CORE[1] + r), y0 = Math.max(0, CORE[0] - r), y1 = Math.min(W, CORE[1] + r);
+      const a = toScreen(x0, y0), b = toScreen(x1, y0), cpt = toScreen(x1, y1), d = toScreen(x0, y1); g.setLineDash([6, 4]); poly([a, b, cpt, d], null, night ? 'rgba(255,255,255,.35)' : 'rgba(20,32,43,.45)', 1.5); g.setLineDash([]);
+      dirtyG = false;
     }
-    function drawCitizens() {
-      const nt = night();
-      for (const z of citizens) { const [sx, sy] = toScreen(z.x, z.y); const py = sy + THH; ctx.fillStyle = z.c; ctx.fillRect(sx - 1.5, py - 6, 3, 5); ctx.fillStyle = nt > 0.3 ? '#e8d7c3' : '#f1dcc4'; ellipseIso(sx, py - 7.5, 1.6, 1.6, nt > 0.3 ? '#e8d7c3' : '#f1dcc4'); }
-      for (const c of cars) { const [sx, sy] = c.axis === 'x' ? toScreen(c.p, 3) : toScreen(3, c.p); ctx.fillStyle = c.c; poly([[sx - 5, sy - 2], [sx + 5, sy - 2], [sx + 5, sy + 2], [sx - 5, sy + 2]], c.c); ctx.fillStyle = nt > 0.3 ? '#fff3b0' : '#333'; ctx.fillRect(sx + (c.dir > 0 ? 4 : -5), sy - 1, 1.5, 2); }
-    }
-    function drawFx() { for (const f of fx) { ctx.globalAlpha = Math.max(0, 1 - f.age / f.life); if (f.kind === 'coin') { ellipseIso(f.x, f.y, 3, 3, '#E9B53B', '#9a6d10', 1); } else { ctx.font = 'bold 11px "Chakra Petch", sans-serif'; ctx.fillStyle = f.color || '#1F7A5C'; ctx.textAlign = 'center'; ctx.fillText(f.text, f.x, f.y); } ctx.globalAlpha = 1; } }
-    function draw() {
-      const S = get(); const c = S.city; const vit = S.vitality;
-      ctx.clearRect(0, 0, W / scale, H / scale);
-      drawGround(S);
-      const items = [];
-      for (const k in c.plots) { const [x, y] = k.split(',').map(Number); items.push({ x, y, p: c.plots[k] }); }
-      for (const k in c.decor) { const [x, y] = k.split(',').map(Number); if (c.decor[k].on) items.push({ x, y, d: c.decor[k] }); }
-      for (const z of citizens) items.push({ x: z.x, y: z.y, z });
+    // ---- buildings layer ----
+    function drawBuildings() {
+      g = blds.getContext('2d'); g.setTransform(GS, 0, 0, GS, 0, 0); g.clearRect(0, 0, WORLD_W, WORLD_H);
+      const S = get(); const c = S.city; const night = isNight(); const A = lastA || analyze(c, S.vitality);
+      const items = []; for (const k in c.tiles) { const p = c.tiles[k]; if (p.gone || p.k === 'road' || p.k === 'park' || p.k === 'plaza') continue; const [x, y] = k.split(',').map(Number); items.push({ x, y, p }); }
+      for (const k in c.tiles) { const p = c.tiles[k]; if (p.gone || (p.k !== 'park' && p.k !== 'plaza')) continue; const [x, y] = k.split(',').map(Number); items.push({ x, y, p, flat: true }); }
       items.sort((a, b) => (a.x + a.y) - (b.x + b.y) || a.x - b.x);
-      for (const it of items) { if (it.p) drawBuilding(it.x, it.y, it.p, vit[districtOf(it.x, it.y)]); else if (it.d) drawDecor(it.x, it.y, it.d); }
-      drawCitizens(); drawFx();
+      for (const it of items) drawStructure(it.x, it.y, it.p, night, A.info[kkey(it.x, it.y)]);
+      nightFlag = night; dirtyB = false;
     }
+    function drawStructure(x, y, p, night, i) {
+      const r = rng(hash(x, y, p.k.length * 31 + p.lv)); const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH; const lv = p.lv;
+      const active = !i || i.active;
+      if (ZONES[p.k]) {
+        if (lv === 0) return;
+        if (p.k === 'r') {
+          if (lv === 1) { const w = 0.55 + r() * 0.15; const hue = 25 + r() * 20; const h = 12 + r() * 4; poly([corners(x, y, 1, 1).b, corners(x, y, 1, 1).r, corners(x, y, 1, 1).f, corners(x, y, 1, 1).l], hsl(120, 35, night ? 24 : 52)); const c = box(x, y, w, w, h, hue, 45 + r() * 10, 58 + r() * 8, { win: { rng: r, fp: 10, cols: 2 }, night }); roof(c, h, 8 + r() * 3, r() < 0.5 ? 8 : 200, 35, 42); g.fillStyle = hsl(28, 40, 28); g.fillRect(c.f[0] - 7, c.f[1] - 8, 4, 8); if (r() < 0.6) tree(cx - 18, cy + 4, 0.7, 120 + r() * 20); }
+          else if (lv === 2) { const h = 26 + r() * 14; const c = box(x, y, 0.85, 0.85, h, 30 + r() * 15, 40, 60, { win: { rng: r, fp: 9, cols: 3 }, night }); g.fillStyle = 'rgba(0,0,0,.18)'; for (let f = 1; f < Math.floor(h / 9); f++) { const t = 0.5; g.fillRect(c.l[0] + (c.f[0] - c.l[0]) * 0.15, c.l[1] + (c.f[1] - c.l[1]) * 0.15 - f * 9 - 3, 8, 1.5); } g.fillStyle = hsl(30, 30, 40); g.fillRect(cx + 4, cy - h - 12, 5, 8); }
+          else { const h = 60 + r() * 30; const c = box(x, y, 0.8, 0.8, h, 35 + r() * 10, 30, 62, { win: { rng: r, fp: 8, cols: 3 }, night }); cyl(cx + 8, cy - h - 2, 4, 8, 30, 30, 45); g.fillStyle = hsl(30, 20, 35); g.fillRect(cx + 6, cy - h + 6, 1.5, 6); g.fillRect(cx + 10, cy - h + 6, 1.5, 6); }
+        } else if (p.k === 'c') {
+          if (lv === 1) { const h = 12 + r() * 4; const hue = 200 + r() * 40; const c = box(x, y, 0.8, 0.7, h, hue, 18, 62, { win: { rng: r, fp: 9, cols: 3, ribbon: true }, night, glass: true }); const aw = r() < 0.5 ? 0 : 340; for (let k = 0; k < 5; k++) { g.fillStyle = k % 2 ? hsl(aw, 70, 55) : '#f4f4f4'; const t0 = 0.1 + k * 0.16, t1 = t0 + 0.16; poly([[c.l[0] + (c.f[0] - c.l[0]) * t0, c.l[1] + (c.f[1] - c.l[1]) * t0 - h + 3], [c.l[0] + (c.f[0] - c.l[0]) * t1, c.l[1] + (c.f[1] - c.l[1]) * t1 - h + 3], [c.l[0] + (c.f[0] - c.l[0]) * t1, c.l[1] + (c.f[1] - c.l[1]) * t1 - h + 7], [c.l[0] + (c.f[0] - c.l[0]) * t0, c.l[1] + (c.f[1] - c.l[1]) * t0 - h + 7]], g.fillStyle); } g.fillStyle = night ? hsl(aw || 190, 90, 65) : hsl(aw || 190, 60, 45); g.fillRect(c.f[0] + 2, c.f[1] - h + 2, 10, 3); }
+          else if (lv === 2) { const h = 30 + r() * 16; box(x, y, 0.85, 0.8, h, 210 + r() * 20, 22, 55, { win: { rng: r, fp: 9, cols: 4, ribbon: r() < 0.5 }, night, glass: true, roof: hsl(210, 10, 45) }); g.fillStyle = night ? 'rgba(120,220,255,.9)' : 'rgba(40,90,140,.9)'; g.fillRect(cx - 10, cy - 14, 12, 3); }
+          else { const h = 76 + r() * 40; const c = box(x, y, 0.75, 0.75, h, 205 + r() * 25, 35, 52, { win: { rng: r, fp: 7, cols: 4, ribbon: true }, night, glass: true, roof: hsl(210, 20, 40) }); box(x, y, 0.4, 0.4, h + 12, 205, 30, 50, { roof: hsl(210, 20, 42) }); g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx, cy - h - 12); g.lineTo(cx, cy - h - 28); g.stroke(); ell(cx, cy - h - 29, 2, 2, Math.floor(tsec * 2) % 2 ? '#ff5252' : '#7a2020'); }
+        } else { // industrial
+          if (lv === 1) { const h = 14 + r() * 4; const c = box(x, y, 0.85, 0.7, h, 20, 12, 46, { roof: hsl(20, 10, 40) }); cyl(c.b[0] + 8, c.b[1] + 6, 3, 18, 0, 5, 40); g.fillStyle = hsl(25, 30, 35); g.fillRect(c.f[0] - 10, c.f[1] - 10, 8, 10); }
+          else if (lv === 2) { const h = 20 + r() * 6; const c = box(x, y, 0.95, 0.9, h, 25, 15, 44, { roof: hsl(25, 12, 38) }); for (let k = 0; k < 3; k++) { poly([up(c.b, h), up(c.r, h), up([c.r[0], c.r[1]], h + 5), up([c.b[0], c.b[1]], h + 5)], hsl(25, 12, 50)); } cyl(c.b[0] + 6, c.b[1] + 8, 3, 24, 0, 5, 42); cyl(c.b[0] + 16, c.b[1] + 13, 3, 20, 0, 5, 42); g.strokeStyle = hsl(30, 20, 55); g.lineWidth = 2; g.beginPath(); g.moveTo(c.l[0] + 4, c.l[1] - 6); g.lineTo(c.f[0] - 6, c.f[1] - 10); g.stroke(); }
+          else { const h = 26 + r() * 8; const c = box(x, y, 1.0, 0.95, h, 20, 15, 40, { roof: hsl(20, 12, 34) }); cyl(c.l[0] + 10, c.l[1] - 2, 7, 14, 200, 10, 55); cyl(c.f[0] - 12, c.f[1] - 8, 6, 12, 200, 10, 55); cyl(c.b[0] + 4, c.b[1] + 10, 4, 34, 0, 5, 38); cyl(c.b[0] + 14, c.b[1] + 14, 4, 30, 0, 5, 38); ell(c.b[0] + 4, c.b[1] + 10 - 35, 1.8, 1.8, Math.floor(tsec * 2) % 2 ? '#ff5252' : '#7a2020'); }
+        }
+        return;
+      }
+      switch (p.k) {
+        case 'hall': { const c = box(x, y, 0.95, 0.95, 20, 40, 20, 78, { roof: hsl(40, 20, 84) }); for (let k = 0; k < 4; k++) { const t = 0.15 + k * 0.23; g.fillStyle = '#fff'; g.fillRect(c.l[0] + (c.f[0] - c.l[0]) * t - 1, c.l[1] + (c.f[1] - c.l[1]) * t - 18, 2.5, 16); } ell(cx, cy - 22, 12, 6, hsl(45, 25, 70)); g.beginPath(); g.arc(cx, cy - 22, 11, Math.PI, 0); g.fillStyle = hsl(160, 30, 55); g.fill(); g.strokeStyle = '#ddd'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx, cy - 33); g.lineTo(cx, cy - 44); g.stroke(); g.fillStyle = '#E9B53B'; g.beginPath(); g.moveTo(cx, cy - 44); g.lineTo(cx + 8, cy - 41); g.lineTo(cx, cy - 38); g.fill(); break; }
+        case 'power': { const c = box(x, y, 0.95, 0.8, 16, 0, 0, 44, { roof: hsl(0, 0, 38) }); cyl(c.l[0] + 12, c.l[1] - 2, 9, 30, 0, 0, 62); cyl(c.f[0] - 10, c.f[1] - 6, 7, 24, 0, 0, 62); cyl(c.b[0] + 6, c.b[1] + 6, 3, 34, 0, 5, 40); if (!active) label('⚠️', cx, cy - 40, 12); break; }
+        case 'water': { g.strokeStyle = hsl(0, 0, 40); g.lineWidth = 2; for (const dx of [-9, -3, 3, 9]) { g.beginPath(); g.moveTo(cx + dx, cy); g.lineTo(cx + dx * 0.6, cy - 24); g.stroke(); } cyl(cx, cy - 24, 11, 14, 200, 30, 60); g.fillStyle = hsl(200, 40, 40); g.fillRect(cx - 6, cy - 34, 12, 3); break; }
+        case 'clinic': { const c = box(x, y, 0.9, 0.85, 22, 0, 0, 86, { win: { rng: r, fp: 9, cols: 3 }, night }); g.fillStyle = '#d9342b'; g.fillRect(cx - 1.5, cy - 32, 3, 9); g.fillRect(cx - 4.5, cy - 29, 9, 3); ell(cx + 12, cy + 3, 6, 3, '#eee'); break; }
+        case 'school': { const c = box(x, y, 1.0, 0.8, 18, 38, 40, 62, { win: { rng: r, fp: 9, cols: 4 }, night, roof: hsl(15, 45, 45) }); g.strokeStyle = '#ccc'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(c.b[0] + 6, c.b[1] + 4); g.lineTo(c.b[0] + 6, c.b[1] - 14); g.stroke(); g.fillStyle = '#3E7CB1'; g.beginPath(); g.moveTo(c.b[0] + 6, c.b[1] - 14); g.lineTo(c.b[0] + 16, c.b[1] - 11); g.lineTo(c.b[0] + 6, c.b[1] - 8); g.fill(); ell(cx + 10, cy + 4, 8, 4, hsl(20, 40, 50)); break; }
+        case 'park': { const c = corners(x, y, 1, 1); g.strokeStyle = hsl(35, 20, 70); g.lineWidth = 3; g.beginPath(); g.moveTo(c.l[0] + 6, c.l[1]); g.lineTo(c.r[0] - 6, c.r[1]); g.stroke(); for (let k = 0; k < 4; k++) tree(cx + (r() - 0.5) * 34, cy + (r() - 0.5) * 12 + 4, 0.65 + r() * 0.4, 110 + r() * 30); g.fillStyle = hsl(28, 40, 35); g.fillRect(cx + 8, cy + 2, 7, 2); break; }
+        case 'fire': { const c = box(x, y, 0.9, 0.85, 20, 2, 70, 48, { win: { rng: r, fp: 9, cols: 2 }, night, roof: hsl(2, 40, 40) }); g.fillStyle = '#eee'; g.fillRect(c.f[0] - 12, c.f[1] - 12, 10, 12); g.fillStyle = '#c33'; g.fillRect(c.f[0] - 11, c.f[1] - 11, 8, 10); break; }
+        case 'police': { const c = box(x, y, 0.9, 0.85, 20, 215, 45, 42, { win: { rng: r, fp: 9, cols: 3 }, night, roof: hsl(215, 30, 35) }); label('🛡️', cx, cy - 26, 9); if (night) ell(c.f[0] - 4, c.f[1] - 22, 2.5, 2.5, Math.floor(tsec * 3) % 2 ? '#4da3ff' : '#ff5252'); break; }
+        case 'stadium': { const h = 26; poly([corners(x, y, 1.1, 1.1).b, corners(x, y, 1.1, 1.1).r, corners(x, y, 1.1, 1.1).f, corners(x, y, 1.1, 1.1).l], 'rgba(0,0,30,.16)'); ell(cx, cy - 1, 28, 14, hsl(20, 15, 48)); poly([[cx - 28, cy - 1], [cx - 28, cy - 1 - h], [cx + 28, cy - 1 - h], [cx + 28, cy - 1]], hsl(20, 15, 40)); ell(cx, cy - 1 - h, 28, 14, hsl(20, 18, 58), 'rgba(0,0,0,.25)'); ell(cx, cy - 1 - h, 18, 8, hsl(130, 45, 40)); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.7; g.fillStyle = night ? '#fff3b0' : '#ddd'; g.fillRect(cx + Math.cos(a) * 29 - 1, cy - 1 - h - 16 + Math.sin(a) * 4, 2, 16); } break; }
+        case 'tree': { for (let k = 0; k < 3; k++) tree(cx + (r() - 0.5) * 26, cy + (r() - 0.5) * 10 + 4, 0.6 + r() * 0.5, 105 + r() * 40); break; }
+        case 'light': { g.strokeStyle = '#555'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, cy - 22); g.lineTo(cx + 6, cy - 22); g.stroke(); ell(cx + 6, cy - 22, 2.5, 2.5, night ? '#ffe28a' : '#ccc'); if (night) { const gr = g.createRadialGradient(cx + 6, cy - 8, 2, cx + 6, cy - 8, 20); gr.addColorStop(0, 'rgba(255,226,138,.35)'); gr.addColorStop(1, 'rgba(255,226,138,0)'); g.fillStyle = gr; g.fillRect(cx - 16, cy - 30, 44, 40); } break; }
+        case 'plaza': { ell(cx, cy, 12, 6, hsl(200, 30, 72), 'rgba(0,0,0,.2)'); ell(cx, cy - 1, 8, 4, hsl(200, 70, 60)); g.fillStyle = hsl(30, 20, 60); g.fillRect(cx - 22, cy - 2, 6, 2); g.fillRect(cx + 16, cy - 2, 6, 2); break; }
+        case 'statue': { box(x, y, 0.35, 0.35, 8, 0, 0, 70); g.fillStyle = hsl(150, 25, 55); g.fillRect(cx - 2, cy - 22, 4, 12); ell(cx, cy - 24, 2.5, 2.5, hsl(150, 25, 55)); g.fillRect(cx + 2, cy - 30, 1.5, 9); break; }
+      }
+    }
+    // ---- fx layer (every frame, screen space) ----
+    function drawFrame() {
+      const S = get(); const c = S.city; const night = isNight(); if (nightFlag !== null && nightFlag !== night) { dirtyB = true; dirtyG = true; }
+      if (dirtyG) drawGround(); if (dirtyB) drawBuildings();
+      const A = lastA || (lastA = analyze(c, S.vitality));
+      g = ctx; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const sky = g.createLinearGradient(0, 0, 0, cssH); const h = new Date().getHours();
+      if (night) { sky.addColorStop(0, '#0b1030'); sky.addColorStop(1, '#1b2350'); } else if (h < 8 || h >= 18) { sky.addColorStop(0, '#f2a86a'); sky.addColorStop(1, '#8fb0d8'); } else { sky.addColorStop(0, '#8ec5ff'); sky.addColorStop(1, '#e3f2ff'); }
+      g.fillStyle = sky; g.fillRect(0, 0, cssW, cssH);
+      g.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * cam.z * cam.x, dpr * cam.z * cam.y);
+      g.drawImage(ground, 0, 0, WORLD_W, WORLD_H); g.drawImage(blds, 0, 0, WORLD_W, WORLD_H);
+      // water shimmer
+      for (let y = 0; y < W; y++) { const [sx, sy] = toScreen(RIVER_X, y); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1; g.beginPath(); for (let k = 0; k <= 4; k++) g.lineTo(sx - 14 + k * 7 + Math.sin(tsec * 2 + y + k) * 2, sy + THH + Math.sin(tsec * 1.5 + y * 0.7 + k) * 1.5); g.stroke(); }
+      // pollution haze
+      for (const k in A.info) { const i = A.info[k]; if (i.poll < 12) continue; const [sx, sy] = toScreen(i.x, i.y); const gr = g.createRadialGradient(sx, sy + THH - 6, 4, sx, sy + THH - 6, 34); const a = Math.min(0.45, i.poll / 60); gr.addColorStop(0, `rgba(110,90,60,${a})`); gr.addColorStop(1, 'rgba(110,90,60,0)'); g.fillStyle = gr; g.fillRect(sx - 36, sy - 30, 72, 60); }
+      // data views
+      if (view !== 'none') for (const k in A.info) { const i = A.info[k]; if (!owned(c, i.x, i.y)) continue; const cc = corners(i.x, i.y, 1, 1); let col = null; if (view === 'lv') { const t = i.lvs / 100; col = `hsla(${Math.round(220 - 220 * t)},80%,50%,.45)`; } else if (view === 'poll') { if (i.poll > 0) col = `rgba(120,60,20,${Math.min(0.6, i.poll / 40)})`; } else if (SERVICES[view]) { col = i.cov[view] ? (i.eff[view] >= 0.99 ? 'rgba(46,143,91,.45)' : 'rgba(233,181,59,.45)') : null; } if (col) poly([cc.b, cc.r, cc.f, cc.l], col); }
+      // coverage preview for the service tool
+      if (tool === 'service' && sub && SERVICES[sub] && SERVICES[sub].r && hover) { const R = SERVICES[sub].r; for (let dx = -R; dx <= R; dx++) for (let dy = -R; dy <= R; dy++) { const x = hover[0] + dx, y = hover[1] + dy; if (x < 0 || y < 0 || x >= W || y >= W) continue; const cc = corners(x, y, 1, 1); poly([cc.b, cc.r, cc.f, cc.l], 'rgba(62,124,177,.22)'); } }
+      // selection / hover
+      const hl = sel || hover; if (hl) { const cc = corners(hl[0], hl[1], 1, 1); const pulse = 0.6 + Math.sin(tsec * 4) * 0.3; poly([cc.b, cc.r, cc.f, cc.l], `rgba(242,178,51,${0.18 * pulse})`, `rgba(242,178,51,${0.5 + pulse * 0.4})`, 2); }
+      // cars, smoke, fx
+      for (const car of cars) { const [sx, sy] = toScreen(car.x, car.y); g.fillStyle = car.c; poly([[sx - 4, sy + THH - 2], [sx + 4, sy + THH - 2], [sx + 4, sy + THH + 2], [sx - 4, sy + THH + 2]], car.c); if (night) { g.fillStyle = '#fff3b0'; g.fillRect(sx + (car.dx > 0 || car.dy < 0 ? 3 : -4), sy + THH - 1, 1.5, 2); } }
+      for (const s of smoke) { g.globalAlpha = 0.35 * (1 - s.age); ell(s.x, s.y, 2 + s.age * 5, 1.5 + s.age * 3.5, night ? '#8a8a9a' : '#c9c9c9'); g.globalAlpha = 1; }
+      for (const f of fx) { g.globalAlpha = Math.max(0, 1 - f.age / f.life); if (f.kind === 'coin') ell(f.x, f.y, 3, 3, '#E9B53B', '#9a6d10', 1); else { g.font = 'bold 12px "Chakra Petch", sans-serif'; g.fillStyle = f.color || '#E9B53B'; g.textAlign = 'center'; g.fillText(f.text, f.x, f.y); } g.globalAlpha = 1; }
+      // night streetlights on roads
+      if (night) { for (const k in c.tiles) { const p = c.tiles[k]; if (p.gone || p.k !== 'road') continue; const [x, y] = k.split(',').map(Number); if ((x + y) % 2) continue; const [sx, sy] = toScreen(x, y); const gr = g.createRadialGradient(sx, sy + THH, 2, sx, sy + THH, 18); gr.addColorStop(0, 'rgba(255,226,138,.22)'); gr.addColorStop(1, 'rgba(255,226,138,0)'); g.fillStyle = gr; g.fillRect(sx - 18, sy, 36, 36); } }
+    }
+    let hover = null;
     function step(dt) {
-      tsec += dt; const S = get(); const pop = population(S.city, S.vitality);
-      const target = Math.min(28, Math.floor(pop / 10)); const colors = ['#3E7CB1', '#C9491F', '#2E8F5B', '#B33E7E', '#E9B53B', '#555'];
-      while (citizens.length < target) citizens.push({ x: Math.random() * N, y: Math.random() * N, tx: Math.random() * N, ty: Math.random() * N, c: colors[citizens.length % colors.length] });
-      citizens.length = Math.min(citizens.length, target);
-      for (const z of citizens) { const dx = z.tx - z.x, dy = z.ty - z.y, d = Math.hypot(dx, dy); if (d < 0.05) { z.tx = Math.random() * N; z.ty = Math.random() * N; } else { z.x += dx / d * dt * 0.3; z.y += dy / d * dt * 0.3; } }
-      const carN = Math.min(4, Math.floor(pop / 40)); while (cars.length < carN) cars.push({ axis: cars.length % 2 ? 'x' : 'y', p: Math.random() * N, dir: Math.random() < 0.5 ? 1 : -1, c: colors[(cars.length + 2) % colors.length] }); cars.length = Math.min(cars.length, carN);
-      for (const c of cars) { c.p += c.dir * dt * 0.9; if (c.p > N) { c.p = N; c.dir = -1; } if (c.p < 0) { c.p = 0; c.dir = 1; } }
-      for (const cl of clouds) { cl.x += cl.v * dt; if (cl.x > W / scale + 30) cl.x = -30; }
+      tsec += dt; const S = get(); const c = S.city; const A = lastA || analyze(c, S.vitality);
+      // cars on the connected road graph
+      const roads = [...A.conn].map(k => k.split(',').map(Number)); const want = Math.min(14, Math.floor(roads.length / 3) + (A.pop > 50 ? 2 : 0));
+      const colors = ['#3E7CB1', '#C9491F', '#2E8F5B', '#B33E7E', '#E9B53B', '#d8d8d8', '#333'];
+      while (cars.length < want && roads.length) { const r0 = roads[Math.floor(Math.random() * roads.length)]; cars.push({ x: r0[0] + 0.5, y: r0[1] + 0.5, tx: r0[0], ty: r0[1], dx: 0, dy: 0, c: colors[cars.length % colors.length], sp: 0.9 + Math.random() * 0.6 }); }
+      cars.length = Math.min(cars.length, want);
+      for (const car of cars) {
+        const gx = car.tx + 0.5, gy = car.ty + 0.5; const d = Math.hypot(gx - car.x, gy - car.y);
+        if (d < 0.05) { const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => A.conn.has(kkey(car.tx + dx, car.ty + dy)) && !(dx === -car.dx && dy === -car.dy)); const pick = opts.length ? opts[Math.floor(Math.random() * opts.length)] : [-car.dx, -car.dy]; if (!A.conn.has(kkey(car.tx + pick[0], car.ty + pick[1]))) { car.tx = roads.length ? roads[0][0] : car.tx; car.ty = roads.length ? roads[0][1] : car.ty; continue; } car.dx = pick[0]; car.dy = pick[1]; car.tx += pick[0]; car.ty += pick[1]; }
+        else { car.x += (gx - car.x) / d * dt * car.sp; car.y += (gy - car.y) / d * dt * car.sp; }
+      }
+      // smoke from industry & power
+      if (Math.random() < dt * 3) for (const k in A.info) { const i = A.info[k]; if ((i.p.k === 'i' && i.p.lv >= 2) || i.p.k === 'power') if (Math.random() < 0.3) { const [sx, sy] = toScreen(i.x, i.y); smoke.push({ x: sx + (i.p.k === 'power' ? -26 : -14), y: sy + THH - (i.p.k === 'power' ? 40 : 30), age: 0 }); } }
+      for (const s of smoke) { s.age += dt * 0.5; s.x += dt * 6; s.y -= dt * 10; } smoke = smoke.filter(s => s.age < 1);
       for (const f of fx) { f.age += dt; f.x += (f.vx || 0) * dt; f.y += (f.vy || 0) * dt; if (f.vy !== undefined) f.vy += 60 * dt; } fx = fx.filter(f => f.age < f.life);
     }
-    function loop(ts) { if (!visible) { raf = 0; return; } if (ts - lastFrame >= 33) { const dt = Math.min(0.1, (ts - lastFrame) / 1000 || 0.03); lastFrame = ts; step(dt); draw(); if (auction) drawAuction(ts); if (imp) tickImp(); } raf = requestAnimationFrame(loop); }
-    function show(v) { visible = v; if (v) { size(); renderHud(); renderPanel(); if (!raf) raf = requestAnimationFrame(loop); } }
-    function burst(n, text) { const cx = ox, cy = oy + N * THH; for (let i = 0; i < n; i++) fx.push({ kind: 'coin', x: cx + (Math.random() - 0.5) * 40, y: cy, vx: (Math.random() - 0.5) * 80, vy: -90 - Math.random() * 60, age: 0, life: 1.1 }); if (text) fx.push({ kind: 'text', text, x: cx, y: cy - 20, vx: 0, vy: -25, age: 0, life: 1.4, color: '#E9B53B' }); }
+    function loop(ts) { if (!visible) { raf = 0; return; } if (ts - lastFrame >= 33) { const dt = Math.min(0.1, (ts - lastFrame) / 1000 || 0.03); lastFrame = ts; step(dt); drawFrame(); } raf = requestAnimationFrame(loop); }
+    function burst(n, text) { const [sx, sy] = toScreen(8, 8); const px = (sx + cam.x) * cam.z, py = (sy + cam.y) * cam.z; for (let i = 0; i < n; i++) fx.push({ kind: 'coin', x: sx + (Math.random() - 0.5) * 40, y: sy, vx: (Math.random() - 0.5) * 80, vy: -90 - Math.random() * 60, age: 0, life: 1.1 }); if (text) fx.push({ kind: 'text', text, x: sx, y: sy - 20, vx: 0, vy: -25, age: 0, life: 1.4 }); }
+
+    // ---- sim tick + away report ----
+    function tick() {
+      const S = get(); const c = S.city; const t = now();
+      if (!Object.values(c.tiles).some(p => p.k === 'hall' && !p.gone)) { c.tiles[kkey(8, 8)] = { k: 'hall', lv: 0, t, g: 0, d: 0, gone: false }; commit(); dirtyG = dirtyB = true; }
+      const before = c.lastSim.t; const ev = simulate(c, S.vitality, t); lastA = analyze(c, S.vitality); if (!c.lastTax.t && lastA.pop > 0) { c.lastTax.t = t; commit(); }
+      if (ev.grew || ev.fell) { dirtyB = true; dirtyG = true; }
+      if (!awayShown && before && t - before > 2 * HOUR) { awayShown = true; const hrs = Math.round((t - before) / HOUR); toast(`Away ${hrs} h: ${ev.grew} grew${ev.fell ? `, ${ev.fell} declined` : ''}, ${fmt(taxPending(c, lastA, t))} Bucks in taxes`, true); }
+      if (ev.grew || ev.fell || !before) commit(true);
+    }
+    function show(v) { visible = v; if (v) { size(); tick(); renderHud(); renderPanel(); if (!raf) raf = requestAnimationFrame(loop); } }
 
     // ---- HUD ----
     function renderHud() {
-      const S = get(); const c = S.city; const t = now(); const pend = pending(c, S.vitality, t); const inc = incomePerMin(c, S.vitality); const boosted = c.boost.until > t;
-      const nt = nextTitle(c);
+      const S = get(); const c = S.city; const A = lastA || (lastA = analyze(c, S.vitality)); const t = now(); const pend = taxPending(c, A, t); const net = A.income - A.upkeep;
+      const bar = (v, col) => `<div class="rci"><i style="width:${Math.round(50 + v * 50)}%;background:${col}"></i></div>`;
       hud.innerHTML = `
         <div class="ctile"><div class="k">Grit</div><div class="v">${fmt(S.grit)}</div><div class="s">from real life</div></div>
-        <div class="ctile"><div class="k">Bucks</div><div class="v">${fmt(bucks(c))}</div><div class="s">${fmt(inc * 60)}/h${boosted ? ' · 2×' : ''}</div></div>
-        <div class="ctile"><div class="k">${cityTitle(c)}</div><div class="v">${fmt(population(c, S.vitality))}</div><div class="s">pop · city lv ${cityLevel(c)}${nt ? ` → ${nt[1]} at ${nt[0]}` : ''}</div></div>
-        <button class="collect${pend >= 1 ? ' ready' : ''}" id="city-collect" ${pend >= 1 ? '' : 'disabled'}>${c.lastCollect.t ? `Collect ${fmt(pend)} Bucks` : 'Start the clock'}<span class="s">8 h offline cap</span></button>`;
-      hud.querySelector('#city-collect').addEventListener('click', () => {
-        const S2 = get(); const c2 = S2.city; const t2 = now(); const p = Math.floor(pending(c2, S2.vitality, t2));
-        const l = (c2.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.earned += p; c2.lastCollect.t = t2; c2.collects[S2.todayKey] = (c2.collects[S2.todayKey] || 0) + 1;
-        commit(); if (p > 0) { toast(`+${fmt(p)} Bucks collected`); burst(Math.min(14, 3 + Math.floor(p / 50)), `+${fmt(p)}`); } renderHud(); renderPanel();
-      });
+        <div class="ctile"><div class="k">Bucks</div><div class="v">${fmt(bucks(c))}</div><div class="s">${net >= 0 ? '+' : ''}${fmt(net)}/day · tax ${c.tax.v}%</div></div>
+        <div class="ctile"><div class="k">${A.mile[1]}</div><div class="v">${fmt(A.pop)}</div><div class="s">pop · ${A.jobs} jobs${A.next ? ` · ${A.next[1]} at ${fmt(A.next[0])}` : ''}</div></div>
+        <div class="ctile wide"><div class="k">Happiness ${A.happiness} · Demand</div><div class="rcis"><span>R</span>${bar(A.dem.r, '#C9491F')}<span>C</span>${bar(A.dem.c, '#3E7CB1')}<span>I</span>${bar(A.dem.i, '#8a7a4a')}</div></div>
+        <button class="collect${pend >= 1 ? ' ready' : ''}" id="city-collect" ${pend >= 1 ? '' : 'disabled'}>${c.lastTax.t ? `Collect ${fmt(pend)} Bucks in taxes` : 'Open the treasury'}<span class="s">12 h cap</span></button>`;
+      hud.querySelector('#city-collect').addEventListener('click', () => { const S2 = get(); const c2 = S2.city; const t2 = now(); const p = Math.floor(taxPending(c2, lastA || analyze(c2, S2.vitality), t2)); (c2.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += p; c2.lastTax.t = t2; commit(); if (p > 0) { toast(`+${fmt(p)} Bucks`); burst(Math.min(14, 3 + Math.floor(p / 50)), `+${fmt(p)}`); } renderHud(); });
     }
-
-    // ---- Panel ----
+    // ---- Panel: tools + info ----
+    const TOOLS = [['select', '👆', 'Inspect'], ['road', '🛣️', `Road · ${ROAD_GRIT}`], ['r', '🏘️', `Homes · ${ZONES.r.grit}`], ['c', '🏬', `Shops · ${ZONES.c.grit}`], ['i', '🏭', `Industry · ${ZONES.i.grit}`], ['service', '🏛️', 'Services'], ['decor', '🌳', 'Decor (Bucks)'], ['bulldoze', '🧨', 'Bulldoze'], ['view', '📊', 'Views']];
     function renderPanel() {
-      if (auction || imp) return;
-      const S = get(); const c = S.city; const k = S.todayKey;
-      const a = c.auction[k] || { plays: 0 }; const im = c.imp[k] || { plays: 0, best: 0 };
-      const ct = contractFor(k); const ctDone = ct.check(c, k); const ctClaimed = !!(c.contracts[k] && c.contracts[k].claimed);
-      let html = `<div class="contract${ctClaimed ? ' done' : ctDone ? ' ready' : ''}"><span>📜 <b>Today’s contract:</b> ${ct.text}</span>${ctClaimed ? '<span class="s">claimed</span>' : ctDone ? `<button class="btn sm gold" id="ct-claim">Claim ${ct.reward} Bucks</button>` : `<span class="s">+${ct.reward} Bucks</span>`}</div>`;
-      if (!sel) html += `<div class="chint">Tap a plot to build or upgrade. Buildings cost <b>Grit</b> — earned only by real missions. Income is <b>Bucks</b>. Buildings change shape at level 10 and 20; a district with 30 total levels earns a landmark (+25%).</div>`;
-      else {
-        const [x, y] = sel; const d = districtOf(x, y); const key = `${x},${y}`; const p = c.plots[key]; const dec = c.decor[key]; const lvl = S.statLevels[d] || 1; const cap = lvl * 3;
-        if (!S.unlocked[d]) html += `<div class="chint">🔒 <b>${DISTRICTS[d].name}</b> opens when your <b>${d[0].toUpperCase() + d.slice(1)}</b> stat reaches level 2. Earn it in real life.</div>`;
-        else if (p) {
-          const b = BUILDINGS[p.type]; const cost = upgradeCost(b, p.lv); const adj = adjacency(c, x, y); const inc = b.inc * p.lv * (1 + adj) * (S.vitality[d] || 1);
-          const T = tier(p.lv); const nextT = T === 1 ? 10 : T === 2 ? 20 : null;
-          html += `<div class="csel"><span class="e">${b.e}</span><div><b>${b.name}</b> · level ${p.lv} · tier ${T}${p.lv >= cap ? ' (cap)' : ''}<div class="s">${fmt(inc * 60)} Bucks/h${adj ? ` · +${Math.round(adj * 100)}% neighbours` : ''} · ${DISTRICTS[d].name} ${Math.round((S.vitality[d] || 1) * 100)}%${nextT ? ` · new look at L${nextT}` : ''}</div></div></div>
-            <div class="cact">${p.lv >= cap ? `<span class="s">Level cap ${cap} — raise your ${d} stat to level ${lvl + 1} to build higher.</span>` : `<button class="btn primary" data-up="${key}" ${S.grit >= cost ? '' : 'disabled'}>Upgrade · ${fmt(cost)} Grit</button>`}</div>`;
-        } else if (dec && dec.on) html += `<div class="csel"><span class="e">${DECOR[dec.type].e}</span><div><b>${DECOR[dec.type].name}</b><div class="s">+${Math.round(DECOR[dec.type].bonus * 100)}% town income</div></div></div>`;
-        else {
-          const opts = Object.entries(BUILDINGS).filter(([, b]) => b.d === d);
-          html += `<div class="chint"><b>${DISTRICTS[d].name}</b> · empty plot. Build with Grit, or decorate with Bucks.</div><div class="cgrid">` +
-            opts.map(([id, b]) => { const locked = lvl < b.unlock; const ok = !locked && S.grit >= b.cost; return `<button class="cbtn" data-build="${id}" data-key="${key}" ${ok ? '' : 'disabled'}><span class="e">${locked ? '🔒' : b.e}</span><b>${b.name}</b><span class="s">${locked ? `${d} lv ${b.unlock}` : `${b.cost} Grit · ${b.inc}/min`}</span></button>`; }).join('') +
-            Object.entries(DECOR).map(([id, dd]) => `<button class="cbtn decor" data-decor="${id}" data-key="${key}" ${bucks(c) >= dd.bucks ? '' : 'disabled'}><span class="e">${dd.e}</span><b>${dd.name}</b><span class="s">${fmt(dd.bucks)} Bucks · +${Math.round(dd.bonus * 100)}%</span></button>`).join('') + `</div>`;
-        }
-      }
-      const boosted = c.boost.until > now();
-      html += `<div class="crow">
-        <button class="btn" id="city-auction" ${a.plays >= 3 ? 'disabled' : ''}>🎯 Ad Auction · ${3 - a.plays} left</button>
-        <button class="btn" id="city-imp" ${im.plays >= 2 ? 'disabled' : ''}>💥 Impressions · ${2 - im.plays} left${im.best ? ` · best ${im.best}` : ''}</button>
-        <button class="btn" id="city-boost" ${boosted || bucks(c) < BOOST_COST ? 'disabled' : ''}>${boosted ? `⚡ Boost · ${Math.ceil((c.boost.until - now()) / 3600e3)} h left` : `⚡ 2× for 8 h · ${fmt(BOOST_COST)} Bucks`}</button></div>`;
+      const S = get(); const c = S.city; const A = lastA || (lastA = analyze(c, S.vitality)); const peak = A.peak;
+      let html = `<div class="advisor">🧑‍💼 ${advisor(c, A)}</div><div class="tools">${TOOLS.map(([id, e, n]) => `<button class="tool${tool === id ? ' on' : ''}" data-tool="${id}"><span>${e}</span>${n}</button>`).join('')}</div>`;
+      if (tool === 'service') html += `<div class="cgrid">${Object.entries(SERVICES).map(([id, s]) => { const locked = peak < s.mile; return `<button class="cbtn${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : s.e}</span><b>${s.name}</b><span class="s">${locked ? `${MILES.find(m => m[0] === s.mile)[1]} (${s.mile} pop)` : `${s.grit} Grit · reach ${s.r}${s.cap ? ` · ${s.cap} ${s.capKind}` : ''} · ${s.up}/day`}</span></button>`; }).join('')}</div>`;
+      if (tool === 'decor') html += `<div class="cgrid">${Object.entries(DECOR).map(([id, d]) => { const locked = peak < d.mile; return `<button class="cbtn decor${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : d.e}</span><b>${d.name}</b><span class="s">${locked ? `${MILES.find(m => m[0] === d.mile)[1]}` : `${d.bucks} Bucks · +${d.lv} land value`}</span></button>`; }).join('')}<button class="cbtn decor" data-fest="1" ${bucks(c) < FEST_BUCKS || c.fest.until > now() ? 'disabled' : ''}><span class="e">🎉</span><b>Festival</b><span class="s">${c.fest.until > now() ? `on · ${Math.ceil((c.fest.until - now()) / HOUR)} h` : `${FEST_BUCKS} Bucks · +5 happiness 24 h`}</span></button></div>`;
+      if (tool === 'view') html += `<div class="crow">${[['none', 'Normal'], ['lv', 'Land value'], ['poll', 'Pollution'], ['power', 'Power'], ['water', 'Water'], ['school', 'School'], ['clinic', 'Clinic'], ['fire', 'Fire'], ['police', 'Police'], ['park', 'Parks']].map(([id, n]) => `<button class="btn sm${view === id ? ' primary' : ''}" data-view="${id}">${n}</button>`).join('')}</div>`;
+      if (sel) {
+        const [x, y] = sel; const p = tileAt(c, x, y); const i = A.info[kkey(x, y)];
+        if (!owned(c, x, y)) html += `<div class="chint">Outside your land. <b>Expand</b> for ${fmt(expandCost(c))} Grit${peak < 500 ? ' (unlocks at Town, 500 pop)' : ''}.</div>`;
+        else if (!p) html += `<div class="chint">Empty land at ${x},${y}${i ? '' : ''}. Land value ${(A.info[kkey(x, y)] || { lvs: 30 }).lvs}.</div>`;
+        else if (ZONES[p.k]) { const z = ZONES[p.k]; const ok = growthOK(i, A, c); const tm = p.lv < 3 ? GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1) : 0; const left = p.g ? Math.max(0, tm - (now() - p.g)) : tm; html += `<div class="csel"><span class="e">${z.e}</span><div><b>${z.name}</b> · ${p.lv === 0 ? 'vacant lot' : `level ${p.lv}`}${p.k === 'r' ? ` · ${z.pop[p.lv]} people` : ` · ${z.jobs[p.lv]} jobs`}<div class="s">land value ${i.lvs} · pollution ${i.poll} · services: ${['power', 'water', 'school', 'clinic', 'fire', 'police', 'park'].filter(s => i.cov[s]).join(', ') || 'none'}</div><div class="s">${p.lv >= 3 ? 'Maxed out.' : ok.ok ? `Growing → L${p.lv + 1} in ${left > HOUR ? Math.ceil(left / HOUR) + ' h' : Math.ceil(left / 60000) + ' min'}` : `To grow, needs: ${ok.need.join(', ')}`}${p.d && p.lv > 0 ? ` · <span style="color:var(--body)">losing ${growthOK(i, A, c, true).need.join(', ')} — declines in ${Math.ceil((DECLINE_H * HOUR - (now() - p.d)) / HOUR)} h</span>` : ''}</div></div></div>`; }
+        else if (SERVICES[p.k]) { const s = A.svc.find(v => v.x === x && v.y === y); html += `<div class="csel"><span class="e">${SERVICES[p.k].e}</span><div><b>${SERVICES[p.k].name}</b>${i && !i.active ? ' · <span style="color:var(--body)">not next to a road</span>' : ''}<div class="s">${s ? `reach ${s.R} · load ${s.cap === Infinity ? '—' : `${s.load}/${s.cap} (${Math.round(s.eff * 100)}%)`} · upkeep ${SERVICES[p.k].up}/day` : ''}</div></div></div>`; }
+        else if (p.k === 'hall') html += `<div class="csel"><span class="e">🏛️</span><div><b>City Hall</b><div class="s">${A.mile[1]} · ${fmt(A.pop)} people · happiness ${A.happiness} · avg land value ${Math.round(A.avgLV)} · pollution on homes ${Math.round(A.avgPoll)}</div></div></div>`;
+        else if (p.k === 'road') html += `<div class="chint">Road${A.conn.has(kkey(x, y)) ? '' : ' — <b>not connected to City Hall</b>'}.</div>`;
+        else if (DECOR[p.k]) html += `<div class="chint">${DECOR[p.k].name}.</div>`;
+      } else html += `<div class="chint">${tool === 'select' ? 'Tap a tile to inspect it. Drag to pan, pinch to zoom.' : tool === 'road' || ZONES[tool] ? 'Tap or drag across tiles to place. Two fingers to pan.' : tool === 'bulldoze' ? 'Tap a tile to clear it. No refund.' : tool === 'service' ? 'Pick a service, then tap a tile next to a road. The blue area is its reach.' : ''}</div>`;
+      if (peak >= 200) html += `<div class="crow" style="align-items:center"><label class="s" for="tax">Tax ${c.tax.v}%</label><input type="range" id="tax" min="0" max="20" value="${c.tax.v}" style="flex:1"><button class="btn sm" id="expand" ${peak < 500 || S.grit < expandCost(c) || c.ring.v >= 3 ? 'disabled' : ''}>Expand · ${c.ring.v >= 3 ? 'max' : fmt(expandCost(c)) + ' Grit'}</button></div>`;
       panel.innerHTML = html;
     }
     panel.addEventListener('click', e => {
-      if (auction || imp) return;
-      const S = get(); const c = S.city; const k = S.todayKey;
-      const up = e.target.closest('[data-up]'), bd = e.target.closest('[data-build]'), dc = e.target.closest('[data-decor]');
-      if (up) { const p = c.plots[up.dataset.up]; const b = BUILDINGS[p.type]; const cost = upgradeCost(b, p.lv); if (S.grit < cost) return; p.lv++; p.t = now(); commit(); toast(`${b.name} → level ${p.lv}${tier(p.lv) > tier(p.lv - 1) ? ' · NEW TIER' : ''}`, tier(p.lv) > tier(p.lv - 1)); burst(6); }
-      else if (bd) { const b = BUILDINGS[bd.dataset.build]; if (S.grit < b.cost) return; c.plots[bd.dataset.key] = { type: bd.dataset.build, lv: 1, t: now() }; if (!c.lastCollect.t) c.lastCollect.t = now(); commit(); toast(`${b.e} ${b.name} built`); burst(6); }
-      else if (dc) { const dd = DECOR[dc.dataset.decor]; if (bucks(c) < dd.bucks) return; const l = (c.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.spent += dd.bucks; c.decor[dc.dataset.key] = { type: dc.dataset.decor, on: true, t: now() }; commit(); toast(`${dd.e} ${dd.name} placed`); }
-      else if (e.target.closest('#city-boost')) { if (bucks(c) < BOOST_COST) return; const l = (c.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.spent += BOOST_COST; c.boost = { until: now() + BOOST_MS, t: now() }; commit(); toast('⚡ Income doubled for 8 hours'); }
-      else if (e.target.closest('#ct-claim')) { const ct = contractFor(k); if (!ct.check(c, k) || (c.contracts[k] && c.contracts[k].claimed)) return; const l = (c.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.earned += ct.reward; c.contracts[k] = { claimed: now() }; commit(); toast(`📜 Contract paid · +${ct.reward} Bucks`, true); burst(10, `+${ct.reward}`); }
-      else if (e.target.closest('#city-auction')) { startAuction(); return; }
-      else if (e.target.closest('#city-imp')) { startImp(); return; }
-      else return;
-      renderHud(); renderPanel();
+      const S = get(); const c = S.city;
+      const tb = e.target.closest('[data-tool]'), sb = e.target.closest('[data-sub]'), vb = e.target.closest('[data-view]'), fest = e.target.closest('[data-fest]'), ex = e.target.closest('#expand');
+      if (tb) { tool = tb.dataset.tool; sub = null; if (tool !== 'view') view = view; renderPanel(); return; }
+      if (sb) { sub = sb.dataset.sub; if (tool === 'service' && SERVICES[sub]) view = 'none'; renderPanel(); return; }
+      if (vb) { view = vb.dataset.view; renderPanel(); return; }
+      if (fest) { if (bucks(c) < FEST_BUCKS) return; (c.ledger[deviceId] ||= { earned: 0, spent: 0 }).spent += FEST_BUCKS; c.fest = { until: now() + FEST_MS, t: now() }; lastA = null; commit(); toast('🎉 Festival — +5 happiness for 24 h'); renderHud(); renderPanel(); return; }
+      if (ex) { const cost = expandCost(c); if (S.grit < cost) return; c.ring = { v: c.ring.v + 1, t: now() }; c.gspent[deviceId] = (c.gspent[deviceId] || 0) + cost; lastA = null; dirtyG = true; commit(); toast('City limits expanded', true); fitCamera(); renderHud(); renderPanel(); return; }
     });
+    panel.addEventListener('input', e => { if (e.target.id === 'tax') { const c = get().city; c.tax = { v: +e.target.value, t: now() }; lastA = null; commit(); renderHud(); const l = panel.querySelector('label[for=tax]'); if (l) l.textContent = `Tax ${c.tax.v}%`; } });
+
+    // ---- placing ----
+    function place(x, y) {
+      const S = get(); const c = S.city; const t = now(); const A = lastA || analyze(c, S.vitality);
+      if (x < 0 || y < 0 || x >= W || y >= W) return false;
+      if (tool === 'select') { sel = [x, y]; renderPanel(); return false; }
+      if (!owned(c, x, y)) { sel = [x, y]; renderPanel(); return false; }
+      const p = tileAt(c, x, y); const spend = n => { c.gspent[deviceId] = (c.gspent[deviceId] || 0) + n; };
+      if (tool === 'bulldoze') { if (!p || p.k === 'hall') return false; p.gone = true; p.t = t; lastA = null; dirtyG = dirtyB = true; commit(); return true; }
+      if (p) return false; // occupied
+      if (tool === 'road') { if (S.grit < ROAD_GRIT) { toast('Not enough Grit'); return false; } c.tiles[kkey(x, y)] = { k: 'road', lv: 0, t, g: 0, d: 0, gone: false }; spend(ROAD_GRIT); }
+      else if (ZONES[tool]) { if (S.grit < ZONES[tool].grit) { toast('Not enough Grit — earn it in missions'); return false; } c.tiles[kkey(x, y)] = { k: tool, lv: 0, t, g: 0, d: 0, gone: false }; spend(ZONES[tool].grit); }
+      else if (tool === 'service' && sub && SERVICES[sub]) { const s = SERVICES[sub]; if (A.peak < s.mile) return false; if (S.grit < s.grit) { toast(`Needs ${s.grit} Grit`); return false; } c.tiles[kkey(x, y)] = { k: sub, lv: 0, t, g: 0, d: 0, gone: false }; spend(s.grit); const A2 = analyze(c, S.vitality); const inf = A2.info[kkey(x, y)]; toast(inf && !inf.active ? `${s.name} isn’t next to a road — it won’t operate` : `${s.e} ${s.name} built`); }
+      else if (tool === 'decor' && sub && DECOR[sub]) { const d = DECOR[sub]; if (bucks(c) < d.bucks) { toast(`Needs ${d.bucks} Bucks`); return false; } c.tiles[kkey(x, y)] = { k: sub, lv: 0, t, g: 0, d: 0, gone: false }; (c.ledger[deviceId] ||= { earned: 0, spent: 0 }).spent += d.bucks; }
+      else return false;
+      lastA = null; dirtyG = dirtyB = true; commit(); return true;
+    }
+    // ---- pointer: tap / drag-paint / pan / pinch ----
+    const ptrs = new Map(); let drag = null, pinch = null, painted = new Set();
     canvas.addEventListener('pointerdown', e => {
-      if (auction) { stopAuction(); return; }
-      if (imp) { tapImp(e); return; }
-      const r = canvas.getBoundingClientRect(); const sx = (e.clientX - r.left) / scale, sy = (e.clientY - r.top) / scale;
-      const [gx, gy] = toGrid(sx, sy); sel = (gx >= 0 && gy >= 0 && gx < N && gy < N) ? [gx, gy] : null; renderPanel();
+      canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: cam.z, mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2, cx: cam.x, cy: cam.y }; drag = null; return; }
+      const r = canvas.getBoundingClientRect(); const [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top); const [gx, gy] = toGrid(wx, wy);
+      drag = { sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, moved: false, gx, gy }; painted = new Set();
+      hover = [gx, gy];
     });
-
-    // ---- Mini-game 1: Ad Auction (stop the needle) ----
-    function startAuction() {
-      const S = get(); const c = S.city; const k = S.todayKey; const a = (c.auction[k] ||= { plays: 0, hits: 0, perfect: 0, won: 0 }); if (a.plays >= 3) return;
-      const L = c.skill.v; const w = Math.max(0.08, 0.30 * Math.pow(0.94, L)); const T = Math.max(0.55, 1.4 * Math.pow(0.97, L)); const zone = 0.1 + Math.random() * (0.8 - w);
-      const base = Math.max(20, incomePerMin(c, S.vitality) * 60 * 24 * 0.1);
-      auction = { t0: performance.now(), T, w, zone, base, result: null };
-      panel.innerHTML = `<div class="auction"><div class="ah"><b>Ad Auction</b><span class="s">Stop the needle inside the winning bid. Tap the city.</span></div><div class="abar"><div class="azone" style="left:${zone * 100}%;width:${w * 100}%"></div><div class="aneedle" id="aneedle"></div></div><div class="s">Skill ${L} · win ${fmt(base * 2)} Bucks · perfect ${fmt(base * 3)}</div></div>`;
-      panel.onclick = () => stopAuction();
-    }
-    function drawAuction(ts) { if (!auction || auction.result) return; const el = panel.querySelector('#aneedle'); if (!el) return; const ph = ((ts - auction.t0) / 1000 / auction.T) % 2; const pos = ph < 1 ? ph : 2 - ph; auction.pos = pos; el.style.left = `${pos * 100}%`; }
-    function stopAuction() {
-      if (!auction || auction.result) return;
-      const S = get(); const c = S.city; const k = S.todayKey; const a = (c.auction[k] ||= { plays: 0, hits: 0, perfect: 0, won: 0 });
-      const pos = auction.pos || 0; const { zone, w, base } = auction; const hit = pos >= zone && pos <= zone + w; const perfect = hit && Math.abs(pos - (zone + w / 2)) <= w * 0.2;
-      const pay = Math.round(base * (perfect ? 3 : hit ? 2 : 0.5)); a.plays++; if (hit) a.hits++; if (perfect) a.perfect++; a.won += pay;
-      const l = (c.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.earned += pay; c.skill = { v: Math.max(0, c.skill.v + (hit ? 1 : -1)), t: now() };
-      auction.result = perfect ? 'PERFECT BID' : hit ? 'PLACEMENT WON' : 'OUTBID'; commit();
-      const el = panel.querySelector('.auction'); if (el) el.insertAdjacentHTML('beforeend', `<div class="ares ${hit ? 'win' : 'loss'}">${auction.result} · +${fmt(pay)} Bucks${perfect ? ' 🏆' : ''}${hit ? '' : ' — learned the CPM'}</div>`);
-      toast(`${auction.result} · +${fmt(pay)} Bucks`, perfect); if (hit) burst(perfect ? 12 : 6);
-      setTimeout(() => { auction = null; panel.onclick = null; renderHud(); renderPanel(); }, 1400);
-    }
-    // ---- Mini-game 2: Impressions (tap the bubbles before they pop) ----
-    function startImp() {
-      const S = get(); const c = S.city; const k = S.todayKey; const im = (c.imp[k] ||= { plays: 0, best: 0, won: 0 }); if (im.plays >= 2) return;
-      imp = { t0: performance.now(), dur: 10000, bubbles: [], hits: 0, misses: 0, last: 0, done: false };
-      panel.innerHTML = `<div class="auction"><div class="ah"><b>Impressions</b><span class="s">Tap the ad bubbles on the city before they fade. 10 seconds.</span></div><div class="s" id="imp-status">Go!</div></div>`;
-    }
-    function tickImp() {
-      if (!imp || imp.done) return; const t = performance.now(); const el = t - imp.t0;
-      const st = panel.querySelector('#imp-status'); if (st) st.textContent = `${Math.max(0, Math.ceil((imp.dur - el) / 1000))}s · ${imp.hits} popped`;
-      if (t - imp.last > Math.max(320, 700 - el / 20)) { imp.last = t; imp.bubbles.push({ x: 30 + Math.random() * (W / scale - 60), y: 40 + Math.random() * (H / scale - 90), r: 11 + Math.random() * 7, born: t, life: 1400 + Math.random() * 600, e: ['📣', '👁️', '💬', '🛒', '📈'][Math.floor(Math.random() * 5)] }); }
-      imp.bubbles = imp.bubbles.filter(b => { if (t - b.born > b.life) { imp.misses++; return false; } return true; });
-      for (const b of imp.bubbles) { const a = 1 - (t - b.born) / b.life; ctx.globalAlpha = 0.35 + a * 0.65; ellipseIso(b.x, b.y, b.r, b.r, 'rgba(255,255,255,.9)', '#1F7A5C', 2); ctx.globalAlpha = 1; label(b.e, b.x, b.y + 1, b.r); }
-      if (el >= imp.dur) endImp();
-    }
-    function tapImp(e) {
-      if (!imp || imp.done) return; const r = canvas.getBoundingClientRect(); const sx = (e.clientX - r.left) / scale, sy = (e.clientY - r.top) / scale;
-      const i = imp.bubbles.findIndex(b => Math.hypot(b.x - sx, b.y - sy) <= b.r + 6);
-      if (i >= 0) { const b = imp.bubbles.splice(i, 1)[0]; imp.hits++; fx.push({ kind: 'text', text: '+1', x: b.x, y: b.y, vx: 0, vy: -30, age: 0, life: 0.6, color: '#1F7A5C' }); }
-    }
-    function endImp() {
-      imp.done = true; const S = get(); const c = S.city; const k = S.todayKey; const im = (c.imp[k] ||= { plays: 0, best: 0, won: 0 });
-      const base = Math.max(3, incomePerMin(c, S.vitality) * 60 * 24 * 0.004); const pay = Math.round(base * imp.hits);
-      im.plays++; im.best = Math.max(im.best, imp.hits); im.won += pay; const l = (c.ledger[deviceId] ||= { earned: 0, spent: 0 }); l.earned += pay; commit();
-      const el = panel.querySelector('.auction'); if (el) el.insertAdjacentHTML('beforeend', `<div class="ares win">${imp.hits} impressions · +${fmt(pay)} Bucks${imp.hits >= 25 ? ' 🏆' : ''}</div>`);
-      toast(`💥 ${imp.hits} popped · +${fmt(pay)} Bucks`, imp.hits >= 25); burst(Math.min(12, imp.hits / 2));
-      setTimeout(() => { imp = null; renderHud(); renderPanel(); }, 1500);
-    }
-
-    window.addEventListener('resize', () => { if (visible) { size(); } });
-    return { show, refresh: () => { if (visible) { renderHud(); renderPanel(); } } };
+    canvas.addEventListener('pointermove', e => {
+      if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); const z = clamp(pinch.z * d / pinch.d, 0.4, 2.2); const r = canvas.getBoundingClientRect(); const mx = pinch.mx - r.left, my = pinch.my - r.top; cam.x = mx / z - (mx / pinch.z - pinch.cx); cam.y = my / z - (my / pinch.z - pinch.cy); cam.z = z; return; }
+      if (!drag) return;
+      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy; if (Math.hypot(dx, dy) > 6) drag.moved = true;
+      const r = canvas.getBoundingClientRect(); const [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top); const [gx, gy] = toGrid(wx, wy); hover = [gx, gy];
+      const paintTool = tool === 'road' || ZONES[tool] || tool === 'bulldoze';
+      if (paintTool && drag.moved) { const k = kkey(gx, gy); if (!painted.has(k)) { painted.add(k); if (place(gx, gy)) { renderHud(); } } }
+      else if (drag.moved) { cam.x = drag.cx + dx / cam.z; cam.y = drag.cy + dy / cam.z; }
+    });
+    const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (drag && !drag.moved) { const k = kkey(drag.gx, drag.gy); if (!painted.has(k)) { const ok = place(drag.gx, drag.gy); if (ok) { renderHud(); if (tool === 'service' || tool === 'decor') { sel = [drag.gx, drag.gy]; } } } renderPanel(); } drag = null; if (!ptrs.size) hover = null; };
+    canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+    canvas.addEventListener('wheel', e => { e.preventDefault(); const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left, my = e.clientY - r.top; const z = clamp(cam.z * (e.deltaY < 0 ? 1.1 : 0.9), 0.4, 2.2); cam.x = mx / z - (mx / cam.z - cam.x); cam.y = my / z - (my / cam.z - cam.y); cam.z = z; }, { passive: false });
+    window.addEventListener('resize', () => { if (visible) size(); });
+    setInterval(() => { if (visible) { tick(); renderHud(); } }, 60000);
+    return { show, refresh: () => { if (visible) { lastA = null; dirtyG = dirtyB = true; renderHud(); renderPanel(); } },
+      _tap: (x, y) => { const ok = place(x, y); renderHud(); renderPanel(); return ok; }, _tool: (t, s) => { tool = t; sub = s || null; renderPanel(); }, _sel: (x, y) => { sel = [x, y]; renderPanel(); }, _analyze: () => lastA || analyze(get().city, get().vitality),
+      _advance: h => { const c = get().city; for (const k in c.tiles) if (c.tiles[k].g) c.tiles[k].g -= h * HOUR; if (c.lastTax.t) c.lastTax.t -= h * HOUR; tick(); renderHud(); renderPanel(); }, _peak: n => { get().city.peakPop = { v: n, t: now() }; lastA = null; tick(); renderHud(); renderPanel(); } };
   }
 
-  return { DISTRICTS, BUILDINGS, DECOR, norm, merge, emptyCity, gritSpent, bucks, incomePerMin, pending, population, districtLevel, cityLevel, cityTitle, fmt, mount };
+  return { ZONES, SERVICES, DECOR, MILES, norm, merge, emptyCity, gritSpent, bucks, analyze, population, cityTitle, fmt, mount };
 })();
