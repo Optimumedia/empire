@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ERxPctHRNYXqPFK7lcPUnxHMsgxJAfx+rU7MGvCKWqM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uNoL39VEUMDGr2k5V3tz3OekmjbnqfQOyu7G4a7Iz/s='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -181,7 +181,7 @@
   .list .r { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; background: var(--surface-2); border-radius: 12px; font-size: 14.5px; min-height: 52px; }
   .list .r .sub2 { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
   .list .r.dim { opacity: .55; text-decoration: line-through; }
-  textarea.note, input.note { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); resize: vertical; min-height: 48px; }
+  textarea.note, input.note, select.note { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); resize: vertical; min-height: 48px; }
   textarea.note { min-height: 72px; }
   .qa { display: flex; flex-direction: column; gap: 6px; } .qa label { font-size: 14px; font-weight: 600; }
   .scale { display: flex; gap: 6px; }
@@ -372,7 +372,9 @@
     <div class="card"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
     <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
     <div class="card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
-    <div class="card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down.</p></div>
+    <div class="card" id="custom-card"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
+      <div id="custom-form" hidden><input class="note" id="custom-name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
+    <div class="card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
     <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
       <div class="list" id="remind-list"></div>
       <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
@@ -399,8 +401,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260912-135134"></script>
-<script src="city.js?v=20260912-135134"></script>
+<script src="quotes.js?v=20260913-125707"></script>
+<script src="city.js?v=20260913-125707"></script>
 
 <script>
 (() => {
@@ -469,6 +471,9 @@
   const SHINE_DEFAULT = ['That’s the owner talking, not the operator.', 'Counted. The city noticed.', 'A vote for the man you’re becoming.', 'Reps. Volume negates luck.', 'One step less dependent on you.', 'She noticed. They noticed.', 'One brick. Empires are bricks.'];
   const CRATE_LINES = ['The ghost sends its regards. It’s worried.', 'Title unlocked: Bedtime Captain, First Class.', 'Media buyers reported: “He didn’t answer. We handled it.”', 'Your future self wrote back: “Keep going.”', 'The council named a street after you.', 'The iron is scared of you now.'];
   const TITLES = ['Rookie', 'Contender', 'Operator', 'Captain', 'Commander', 'General', 'Warlord', 'Legend', 'Myth', 'Ascended'];
+  const PERKS = { 2: ['Third shield', '3 streak shields a month instead of 2, and you can hold 4'], 3: ['Big stake', 'Iron Week can be staked for 500 Grit — 750 back when cleared'], 4: ['Grit interest', '5% of your unspent Grit paid every Monday for the week before'], 5: ['Your own mission', 'One mission you define, every day, +15 XP'], 6: ['Rare crates', 'Weekly crate pays 0–300 Bucks; one in four is rare and adds 200 Grit'], 7: ['Monument', 'A city landmark only rank can buy — raises land value around it'], 8: ['Sky Tower', 'Second landmark, wider reach'], 9: ['Grand Arch', 'Third landmark'], 10: ['Crown Palace', 'The skyline shows the rank'] };
+  const RARE_LINES = ['The ghost asked for a rematch. Denied.', 'Rare drop. The council is speechless.', 'Your media buyers framed this week.', 'Legend has it he never checked Slack.', 'The boys will tell this one to their boys.'];
+  const STAKE_BIG = 500, RARE_GRIT = 200, INTEREST_RATE = 0.05, INTEREST_CAP = 500, CUSTOM_XP = 15;
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   const titleFor = L => L <= TITLES.length ? TITLES[L - 1] : `Ascended ${ROMAN[Math.min(L - TITLES.length, 10)] || L - TITLES.length}`;
   const WIN_DEFAULT = 0.72, WIN_AFTER_LOSS = 0.5, REVIEW_XP = 25, SHIELD_MONTHLY = 2, SHIELD_CAP = 3, DAYWON_GRIT = 100, STAKE = 300, STIPEND = 400;
@@ -479,6 +484,10 @@
   const needStat = L => Math.round(60 * Math.pow(L, 1.5));
   function levelFrom(xp, fn) { let L = 1, floor = 0; while (xp >= floor + fn(L) && L < 80) { floor += fn(L); L++; } return { level: L, into: xp - floor, need: fn(L), floor }; }
   const cumulative = L => { let f = 0; for (let l = 1; l < L; l++) f += need(l); return f; };
+  // perks: the level you HELD on a given day (levels never go down; the date each was reached is recorded)
+  const levelOn = k => { let L = 1; for (const l in state.levelups) { const r = state.levelups[l]; if (r && r.k && r.k <= k && +l > L) L = +l; } return L; };
+  const shieldCap = k => levelOn(k) >= 2 ? SHIELD_CAP + 1 : SHIELD_CAP;
+  const shieldMonthly = k => levelOn(k) >= 2 ? SHIELD_MONTHLY + 1 : SHIELD_MONTHLY;
 
   // =====================================================================
   // Dates (local; the "day" rolls over at 04:00)
@@ -501,7 +510,7 @@
   // State — every record carries a timestamp so two devices merge instead of overwrite
   // =====================================================================
   const LS_KEY = 'ascent.v2';
-  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, city: City.emptyCity() });
+  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, levelups: {}, interest: {}, custom: {}, city: City.emptyCity() });
   const now = () => Date.now();
   const maxT = (a, b) => (!a ? b : !b ? a : (a.t || 0) >= (b.t || 0) ? a : b);
   const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
@@ -550,7 +559,7 @@
     byT('rewards', m => ({ name: String(m.name || '').slice(0, 80), cost: Math.max(0, num(m.cost)), claimed: num(m.claimed), gone: !!m.gone, t: num(m.t) }));
     byT('identity', m => ({ v: String(m.v || '').slice(0, 160), t: num(m.t) }));
     byT('plans', fixPlan);
-    byT('crates', m => ({ bucks: num(m.bucks), line: String(m.line || '').slice(0, 120), t: num(m.t) }));
+    byT('crates', m => ({ bucks: num(m.bucks), line: String(m.line || '').slice(0, 120), grit: Math.max(0, num(m.grit)), t: num(m.t) }));
     byT('stakes', m => ({ amt: Math.max(0, num(m.amt)), t: num(m.t) }));
     byT('letters', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
     byT('words', m => ({ v: String(m.v || '').slice(0, 2000), t: num(m.t) }));
@@ -560,6 +569,10 @@
     byT('friends', m => ({ name: String(m.name || '').slice(0, 60), bday: /^\d{4}-\d{2}-\d{2}$/.test(m.bday || '') ? m.bday : '', kind: m.kind === 'family' ? 'family' : 'friend', gone: !!m.gone, t: num(m.t) }));
     for (const k of union(a.seen, b.seen)) { const v = (a.seen && a.seen[k]) || (b.seen && b.seen[k]); out.seen[k] = typeof v === 'object' ? v : true; }
     out.peakLevel = Math.max(num(a.peakLevel, 1), num(b.peakLevel, 1), 1);
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    for (const l of union(a.levelups, b.levelups)) { const x = a.levelups && a.levelups[l], y = b.levelups && b.levelups[l]; const ok = v => isObj(v) && dateRe.test(v.k || ''); const m = ok(x) && ok(y) ? (x.k <= y.k ? x : y) : ok(x) ? x : ok(y) ? y : null; if (m && +l >= 2) out.levelups[l] = { k: m.k, t: num(m.t) }; } // earliest date wins: a level is reached once
+    byT('interest', m => ({ amt: Math.max(0, num(m.amt)), t: num(m.t) }));
+    byT('custom', m => ({ name: String(m.name || '').slice(0, 80), stat: STATS[m.stat] ? m.stat : 'business', tm: /^\d{2}:\d{2}$/.test(m.tm || '') ? m.tm : '18:00', from: dateRe.test(m.from || '') ? m.from : '', until: dateRe.test(m.until || '') ? m.until : '', t: num(m.t) }));
     out.city = City.merge(a.city, b.city);
     return out;
   }
@@ -592,8 +605,11 @@
       const md = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       const bdays = Object.entries(state.friends).filter(([, f]) => !f.gone && f.bday && bdayMD(f.bday, d.getFullYear()) === md)
         .map(([id, f]) => ({ id: 'bday:' + id, t: '12:00', grp: 'work', name: `🎂 ${f.name}’s birthday — call, don’t text`, desc: f.kind === 'family' ? 'Family. Make it a moment.' : 'Two minutes on the phone beats a paragraph.', stat: 'family', xp: 15, days: 'all', dyn: true, min: 5 }));
+      const cm = state.custom.m1; const cmH = cm && cm.tm ? +cm.tm.slice(0, 2) + (+cm.tm.slice(3) || 0) / 60 : 18;
+      const custom = cm && cm.name && levelOn(k) >= 5 && (!cm.from || k >= cm.from) && (!cm.until || k <= cm.until)
+        ? [{ id: 'custom', t: cm.tm || '18:00', grp: cmH < 10 ? 'am' : cmH < 19.5 ? 'work' : 'pm', name: cm.name, desc: 'Your own mission — the level 5 perk. You chose it; nobody else can retire it.', stat: cm.stat, xp: CUSTOM_XP, days: 'all', dyn: true, min: 15 }] : [];
       const tw = {}; for (const id in (state.tweaks || {})) { const v = state.tweaks[id]; if (!v.from || k >= v.from) tw[id] = v; } // a tweak only shapes days from the day it was made
-      return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off) && (!m.from || k >= m.from) && (!m.until || k <= m.until)).concat(bdays)
+      return MISSIONS.filter(m => (m.days === 'all' || (m.days === 'wk' && !we) || (m.days === 'we' && we) || (m.days === 'sun' && dow === 0)) && !retired.has(m.id) && !(tw[m.id] && tw[m.id].off) && (!m.from || k >= m.from) && (!m.until || k <= m.until)).concat(bdays).concat(custom)
         .map(m => { const v = tw[m.id]; if (!v || !v.t) return m; const hf = +v.t.slice(0, 2) + (+v.t.slice(3) || 0) / 60; return { ...m, t: v.t, grp: hf < 10 ? 'am' : hf < 19.5 ? 'work' : 'pm', moved: true }; })
         .map(m => { const ez = easyDay(k) && m.id !== 'train' && !!m.tiny; return { ...m, baseXp: m.xp, xp: focus.has(m.id) ? m.xp * 2 : m.xp, focus: focus.has(m.id), name: (tiny.has(m.id) || ez) && m.tiny ? m.tiny : m.name, isTiny: (tiny.has(m.id) || ez) && !!m.tiny, easy: ez }; })
         .sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
@@ -653,14 +669,15 @@
   function season(tk) {
     return cached('se:' + tk, () => {
       let stock = 0, month = null, streak = 0, lostYesterday = false, best = 0; const shielded = {}, lost = {}; let won = 0; const wonByWeek = {};
-      const start = parse(seasonStart()), end = parse(tk);
+      const start = parse(seasonStart()), end = parse(tk); const lv2Day = state.levelups[2] && state.levelups[2].k || '';
       const revDays = new Set(Object.values(state.reviews).filter(r => r.at > 0).map(r => key(new Date(r.at)))); // review shield lands the day the review was saved
       const planDays = new Set(Object.values(state.plans).filter(p => p.proposals.some(x => x.type === 'shield' && x.status === 'accepted')).map(p => p.from || key(parse(Object.keys(state.plans).find(w => state.plans[w] === p)))));
       for (let d = start; d <= end; d = addDays(d, 1)) {
         const k = key(d), wk = weekKey(d), mo = k.slice(0, 7);
-        if (mo !== month) { stock = Math.min(SHIELD_CAP, stock + SHIELD_MONTHLY); month = mo; }
-        if (revDays.has(k)) stock = Math.min(SHIELD_CAP, stock + 1);
-        if (planDays.has(k)) stock = Math.min(SHIELD_CAP, stock + 1);
+        if (mo !== month) { stock = Math.min(shieldCap(k), stock + shieldMonthly(k)); month = mo; }
+        if (lv2Day === k) stock = Math.min(shieldCap(k), stock + 1); // level 2 perk: the third slot fills the day it is earned
+        if (revDays.has(k)) stock = Math.min(shieldCap(k), stock + 1);
+        if (planDays.has(k)) stock = Math.min(shieldCap(k), stock + 1);
         const prevLost = lostYesterday; lostYesterday = false;
         const th = Math.ceil(dayMax(k) * (prevLost ? WIN_AFTER_LOSS : winRatio(wk, k)));
         const w = dayXP(k).xp >= th;
@@ -680,6 +697,8 @@
     let earned = STIPEND + T.xp + DAYWON_GRIT * S.won, spent = City.gritSpent(state.city);
     for (const id in state.rewards) if (state.rewards[id].claimed && !state.rewards[id].gone) spent += state.rewards[id].cost;
     for (const wk in state.stakes) { const s = state.stakes[wk]; if (!s.amt) continue; spent += s.amt; if (wk < curWk && questState(wk, IRON).cleared) earned += Math.round(s.amt * 1.5); }
+    for (const wk in state.crates) earned += state.crates[wk].grit || 0; // rare crates (level 6)
+    for (const wk in state.interest) earned += state.interest[wk].amt || 0; // Grit interest (level 4)
     return { earned, spent, grit: earned - spent }; // may go negative after un-ticking; spends are blocked until it recovers
   }
   function vitality(tk) {
@@ -766,6 +785,14 @@
   // context computed once per render
   function ctx() { const tk = key(logicalToday()), wk = weekKey(logicalToday()); const T = totals(wk), S = season(tk); return { tk, wk, selKey: key(addDays(logicalToday(), selOffset)), T, S, G: gritInfo(T, S, wk), W: weekXP(wk), h: clockHours() }; }
   let prevXP = null;
+  function payInterest(C) { // level 4 perk: 5% of unspent Grit, once per completed week, only for weeks lived at level 4+
+    if (state.peakLevel < 4) return false; const pw = weekKey(addDays(parse(C.tk), -7)); if (state.interest[pw]) return false;
+    const l4 = state.levelups[4]; if (!l4 || !l4.k || l4.k > key(addDays(parse(pw), 6))) return false;
+    const amt = Math.max(0, Math.min(INTEREST_CAP, Math.round(C.G.grit * INTEREST_RATE)));
+    state.interest[pw] = { amt, t: now() }; persist(); render();
+    if (amt > 0) milestone(`<div class="bignum">💰</div><h1>+${amt} Grit interest</h1><p class="muted">5% on what you didn’t spend last week. Patience pays.</p>`, 2600);
+    return true;
+  }
 
   // =====================================================================
   // Render — top bar + hero always; only the visible view
@@ -773,7 +800,10 @@
   function render() {
     const C = ctx(); const { tk, wk, T, S, G, W } = C;
     const Lc = levelFrom(T.xp, need);
-    if (Lc.level > state.peakLevel) { state.peakLevel = Lc.level; persist(); milestone(`<div class="bignum">${Lc.level}</div><div class="cap" style="font-size:14px">Level up</div><h1>${esc(titleFor(Lc.level))}</h1><p class="muted">Harder missions look the same. You don’t.</p>`, 2600); }
+    let lvTouched = false; for (let l = 2; l <= Math.max(state.peakLevel, Lc.level); l++) if (!state.levelups[l]) { state.levelups[l] = { k: tk, t: now() }; lvTouched = true; }
+    if (Lc.level > state.peakLevel) { state.peakLevel = Lc.level; persist(); const pk = PERKS[Lc.level]; milestone(`<div class="bignum">${Lc.level}</div><div class="cap" style="font-size:14px">Level up</div><h1>${esc(titleFor(Lc.level))}</h1><p class="muted">${pk ? `Unlocked: <b>${esc(pk[0])}</b> — ${esc(pk[1])}` : 'Harder missions look the same. You don’t.'}</p>`, 3200); }
+    else if (lvTouched) persist();
+    if (payInterest(C)) return; // Monday payout re-renders with the new balance
     const L = state.peakLevel > Lc.level ? levelFrom(Math.max(T.xp, cumulative(state.peakLevel)), need) : Lc;
     const d = parse(tk);
     $('top-cap').textContent = `Day ${Math.max(1, dayDiff(tk, seasonStart()) + 1)} · ${S.won} won · best streak ${S.best}`;
@@ -861,12 +891,12 @@
     $('week-tiles').innerHTML = `<div class="tile${you > ghost && ghost > 0 ? ' won' : ''}"><div class="k">You vs ghost</div><div class="v">${you} <small>/ ${ghost}</small></div><div class="tiny">${label}${T.bestWk ? ` · best week ${T.best}` : ' · set the record'}</div></div><div class="tile${dd.xp >= dth.need ? ' won' : ''}"><div class="k">${fmt(parse(dsel))}</div><div class="v">${dd.xp} <small>/ ${dth.need}</small></div><div class="tiny">${dsel === tk ? 'today' : missionsFor(parse(dsel)).filter(m => doneOn(dsel).has(m.id)).map(m => m.name.split('—')[0].trim()).slice(0, 3).join(', ') || 'nothing logged'}</div></div>`;
     const wonWk = S.wonByWeek[wk] || 0, crate = state.crates[wk];
     $('crate').hidden = !(wonWk >= 5 || crate);
-    $('crate').innerHTML = crate ? `<div><b>Crate opened</b><div class="tiny">+${crate.bucks} Bucks · “${esc(crate.line)}”</div></div><span style="font-size:28px">📦</span>` : `<div><b>Weekly crate unlocked</b><div class="tiny">${wonWk} days won this week. 0–150 Bucks and a word from the ghost.</div></div><button class="btn sm" id="crate-open" style="background:var(--xp);color:#1A1300;border-color:var(--xp)">Open</button>`;
+    $('crate').innerHTML = crate ? `<div><b>${crate.grit ? 'Rare crate' : 'Crate'} opened</b><div class="tiny">+${crate.bucks} Bucks${crate.grit ? ` · +${crate.grit} Grit` : ''} · “${esc(crate.line)}”</div></div><span style="font-size:28px">${crate.grit ? '💎' : '📦'}</span>` : `<div><b>Weekly crate unlocked</b><div class="tiny">${wonWk} days won this week. 0–${state.peakLevel >= 6 ? 300 : 150} Bucks${state.peakLevel >= 6 ? ', one in four rare' : ''} and a word from the ghost.</div></div><button class="btn sm" id="crate-open" style="background:var(--xp);color:#1A1300;border-color:var(--xp)">Open</button>`;
     const stake = state.stakes[wk];
     $('quests').innerHTML = questsFor(wk).map(q => { const s = questState(wk, q); let ctl = `<span class="c-${q.stat}">${STATS[q.stat]}</span>`;
       if (q.manual) ctl = `<button class="btn sm" data-quest="${q.id}">${s.cleared ? 'Undo' : 'Mark done'}</button>`;
       if (q.counter) ctl = `<span><button class="btn sm" data-qdec="${q.id}" aria-label="minus one">−</button> <button class="btn sm" data-qinc="${q.id}" aria-label="plus one">+1</button></span>`;
-      if (q.boss) ctl = stake && stake.amt ? `<span class="tiny">Staked ${stake.amt} · back ${Math.round(stake.amt * 1.5)} if cleared</span>` : `<button class="btn sm" id="stake-btn">Stake ${STAKE} Grit</button>`;
+      if (q.boss) ctl = stake && stake.amt ? `<span class="tiny">Staked ${stake.amt} · back ${Math.round(stake.amt * 1.5)} if cleared</span>` : `<button class="btn sm" id="stake-btn">Stake ${STAKE}${state.peakLevel >= 3 ? ` / ${STAKE_BIG}` : ''} Grit</button>`;
       return `<div class="quest${q.boss || q.council ? ' boss' : ''}${s.cleared ? ' cleared' : ''}">${q.boss ? '<div class="tag">Boss quest</div>' : q.council ? '<div class="tag">Council quest</div>' : ''}<div class="rowq"><span class="name">${esc(q.name)}</span><span class="reward c-${q.stat}">+${q.xp}</span></div><div class="bar" role="progressbar" aria-valuenow="${s.n}" aria-valuemax="${q.target}"><i style="width:${Math.round(100 * s.n / q.target)}%"></i></div><div class="prog"><span>${s.cleared ? 'Cleared' : `${s.raw} / ${q.target}`}</span>${ctl}</div></div>`; }).join('');
     renderBody(); renderIdentity(T); renderLoot(G); renderFriends(tk); renderAllTime(T, S, G, levelFrom(T.xp, need));
   }
@@ -904,7 +934,7 @@
     const count = ids => Object.keys(state.days).reduce((n, k) => { const dd = doneOn(k); return n + ids.filter(id => dd.has(id)).length; }, 0);
     $('alltime').innerHTML = `<div class="tile"><div class="k">Days won</div><div class="v">${S.won}</div></div><div class="tile"><div class="k">Workouts</div><div class="v">${count(['train', 'train_we'])}</div></div><div class="tile"><div class="k">Handed off</div><div class="v">${count(['delegate'])}</div></div><div class="tile"><div class="k">Bedtimes</div><div class="v">${count(['boys_pm'])}</div></div><div class="tile"><div class="k">Dry nights</div><div class="v">${count(['dry'])}</div></div><div class="tile"><div class="k">Grit earned</div><div class="v">${City.fmt(G.earned)}</div></div>`;
     $('milestones').innerHTML = MILESTONES.map(m => `<span class="chip">${S.won >= m ? '🏅 ' : ''}${m} days${S.won >= m ? '' : ` · ${m - S.won} to go`}</span>`).join('');
-    let floor = 0, rows = ''; for (let l = 1; l <= Math.max(TITLES.length, L.level + 1); l++) { rows += `<div class="r${l === L.level ? ' cur' : ''}"><span class="lv">${l}</span><span>${titleFor(l)}</span><span class="tiny num">${floor} XP</span></div>`; floor += need(l); }
+    let floor = 0, rows = ''; for (let l = 1; l <= Math.max(TITLES.length, L.level + 1); l++) { rows += `<div class="r${l === L.level ? ' cur' : ''}"><span class="lv">${l}</span><span>${titleFor(l)}${PERKS[l] ? `<div class="tiny">${state.peakLevel >= l ? '🔓' : '🔒'} <b>${PERKS[l][0]}</b> — ${PERKS[l][1]}</div>` : ''}</span><span class="tiny num">${floor} XP</span></div>`; floor += need(l); }
     $('ladder').innerHTML = rows;
   }
 
@@ -945,10 +975,20 @@
     if (document.activeElement !== $('letter-text')) $('letter-text').value = cur && cur.v ? cur.v : '';
     if (document.activeElement !== $('shine-text')) $('shine-text').value = shineLines().join('\n');
     if (document.activeElement !== $('bundle-text')) $('bundle-text').value = state.words.bundles && state.words.bundles.v ? state.words.bundles.v : '';
+    renderCustom(C);
     renderCouncil(C);
     renderLab(C);
     renderRemind();
   }
+  function renderCustom(C) {
+    const cm = state.custom.m1, live = cm && cm.name && (!cm.until || cm.until >= C.tk), unlocked = state.peakLevel >= 5;
+    $('custom-sub').textContent = !unlocked ? '· level 5' : live ? '· live' : '· empty';
+    $('custom-why').textContent = unlocked ? `One mission you define, every day, +${CUSTOM_XP} XP. It joins today's list the moment you save.` : `Unlocks at level 5 (${titleFor(5)}): one mission you choose yourself, every day, worth ${CUSTOM_XP} XP.`;
+    $('custom-form').hidden = !unlocked;
+    if (unlocked && !['custom-name', 'custom-stat', 'custom-time'].includes(document.activeElement.id)) { $('custom-name').value = live ? cm.name : ''; $('custom-stat').value = cm ? cm.stat : 'business'; $('custom-time').value = cm && cm.tm ? cm.tm : '18:00'; }
+  }
+  $('custom-save').addEventListener('click', () => { const name = $('custom-name').value.trim(); if (!name) { toast('Name the mission'); return; } if (state.peakLevel < 5) return; const tm = /^\d{2}:\d{2}$/.test($('custom-time').value) ? $('custom-time').value : '18:00'; const prev = state.custom.m1; const from = prev && prev.from && (!prev.until || prev.until >= key(logicalToday())) ? prev.from : key(logicalToday()); state.custom.m1 = { name, stat: STATS[$('custom-stat').value] ? $('custom-stat').value : 'business', tm, from, until: '', t: now() }; toast('Your mission is live'); persist(); render(); });
+  $('custom-off').addEventListener('click', () => { const cm = state.custom.m1; if (!cm || !cm.name) return; state.custom.m1 = { ...cm, until: key(addDays(logicalToday(), -1)), t: now() }; toast('Removed from today on'); persist(); render(); });
   // ---- Council ----
   function councilTarget(tk) { const d = parse(tk), dow = d.getDay(), wk = weekKey(d); return (dow === 0 || dow === 6 || planFor(wk)) ? nextWeek(wk) : wk; }
   function councilData(tk, target) {
@@ -1186,14 +1226,14 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   $('quests').addEventListener('click', e => {
     const wk = weekKey(logicalToday()); const w = (state.weeks[wk] ||= { t: 0 });
     const q = e.target.closest('[data-quest]'), inc = e.target.closest('[data-qinc]'), dec = e.target.closest('[data-qdec]');
-    if (e.target.closest('#stake-btn')) { const C = ctx(); if (C.G.grit < STAKE) { toast(`Need ${STAKE} Grit to stake`); return; } openSheet(`<h2>Stake ${STAKE} Grit on Iron Week?</h2><p>Four workouts by Sunday and you get ${Math.round(STAKE * 1.5)} back. Fewer, and it burns. Optional — a commitment device, not a tax.</p><div class="acts"><button class="btn" data-x>Not this week</button><button class="btn primary" id="st-ok">Stake it</button></div>`, sh => sh.querySelector('#st-ok').addEventListener('click', () => { state.stakes[wk] = { amt: STAKE, t: now() }; closeSheet(); toast('Staked. Now the iron owes you.'); persist(); render(); })); return; }
+    if (e.target.closest('#stake-btn')) { const C = ctx(); const big = state.peakLevel >= 3; if (C.G.grit < STAKE) { toast(`Need ${STAKE} Grit to stake`); return; } openSheet(`<h2>Stake Grit on Iron Week?</h2><p>Four workouts by Sunday and you get 1.5× back. Fewer, and it burns. Optional — a commitment device, not a tax.</p><div class="acts"><button class="btn" data-x>Not this week</button><button class="btn primary" data-stake="${STAKE}">Stake ${STAKE}</button>${big ? `<button class="btn primary" data-stake="${STAKE_BIG}">Stake ${STAKE_BIG}</button>` : ''}</div>${big ? '' : `<p class="tiny" style="margin-top:8px">Level 3 unlocks the ${STAKE_BIG} stake.</p>`}`, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-stake]'); if (!b) return; const amt = +b.dataset.stake; if (amt > STAKE && state.peakLevel < 3) return; if (ctx().G.grit < amt) { toast(`Need ${amt} Grit`); return; } state.stakes[wk] = { amt, t: now() }; closeSheet(); toast('Staked. Now the iron owes you.'); persist(); render(); })); return; }
     if (q) { w[q.dataset.quest] = !w[q.dataset.quest]; const Q = QUESTS.find(x => x.id === q.dataset.quest); toast(w[q.dataset.quest] ? `+${Q.xp} ${STATS[Q.stat]} XP` : 'Undone'); }
     else if (inc) { const c = (isObj(w[inc.dataset.qinc]) ? w[inc.dataset.qinc] : (w[inc.dataset.qinc] = {})); c[deviceId] = (c[deviceId] || 0) + 1; toast('SOP recorded'); }
     else if (dec) { const c = w[dec.dataset.qdec]; if (isObj(c) && c[deviceId] > 0) c[deviceId]--; else return; }
     else return;
     w.t = now(); persist(); render();
   });
-  $('crate').addEventListener('click', e => { if (!e.target.closest('#crate-open')) return; const wk = weekKey(logicalToday()); if (state.crates[wk]) return; const b = Math.floor(Math.random() * 151); const line = CRATE_LINES[Math.floor(Math.random() * CRATE_LINES.length)]; state.crates[wk] = { bucks: b, line, t: now() }; (state.city.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += b; milestone(`<div class="bignum">📦</div><h1>+${b} Bucks</h1><p class="muted">“${esc(line)}”</p>`, 2600); persist(); render(); });
+  $('crate').addEventListener('click', e => { if (!e.target.closest('#crate-open')) return; const wk = weekKey(logicalToday()); if (state.crates[wk]) return; const rich = state.peakLevel >= 6; const b = Math.floor(Math.random() * (rich ? 301 : 151)); const rare = rich && Math.random() < 0.25; const line = (rare ? RARE_LINES : CRATE_LINES)[Math.floor(Math.random() * (rare ? RARE_LINES : CRATE_LINES).length)]; state.crates[wk] = { bucks: b, line, grit: rare ? RARE_GRIT : 0, t: now() }; (state.city.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += b; milestone(`<div class="bignum">${rare ? '💎' : '📦'}</div><h1>+${b} Bucks${rare ? ` · +${RARE_GRIT} Grit` : ''}</h1><p class="muted">${rare ? '<b>Rare crate.</b> ' : ''}“${esc(line)}”</p>`, 2600); persist(); render(); });
   $('weight-btn').addEventListener('click', () => { const v = parseNum($('weight-in').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } const k = key(logicalToday()); state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; $('weight-in').value = ''; if (!doneOn(k).has('weigh')) complete(k, 'weigh'); else { persist(); render(); toast('Weigh-in updated'); } });
   $('waist-btn').addEventListener('click', () => { const v = parseNum($('waist-in').value); if (!v || v < 50 || v > 200) { toast('Enter waist in cm'); return; } state.waist[key(logicalToday())] = { cm: Math.round(v * 2) / 2, t: now() }; $('waist-in').value = ''; toast('Waist logged'); persist(); render(); });
   $('statgrid').addEventListener('click', e => { const b = e.target.closest('[data-identity]'); if (!b) return; const s = b.dataset.identity, cur = (state.identity[s] && state.identity[s].v) || IDENTITY[s]; openSheet(`<h2>${STATS[s]} — who are you becoming?</h2><p>One line, present tense. This is what a completed mission votes for.</p><input class="note" id="id-in" maxlength="160" value="${esc(cur)}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="id-ok">Save</button></div>`, sh => sh.querySelector('#id-ok').addEventListener('click', () => { state.identity[s] = { v: sh.querySelector('#id-in').value.trim() || IDENTITY[s], t: now() }; closeSheet(); persist(); render(); })); });
@@ -1376,7 +1416,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   let cityCache = { v: -1, val: null };
   city = City.mount({
     canvas: $('city-canvas'), panel: $('city-panel'), hud: $('city-hud'), toast, deviceId,
-    get: () => { if (cityCache.v === ver) return cityCache.val; const C = ctx(); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(C.T.by[s], needStat).level; cityCache = { v: ver, val: { city: state.city, grit: C.G.grit, vitality: vitality(C.tk), statLevels, todayKey: C.tk } }; return cityCache.val; },
+    get: () => { if (cityCache.v === ver) return cityCache.val; const C = ctx(); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(C.T.by[s], needStat).level; cityCache = { v: ver, val: { city: state.city, grit: C.G.grit, vitality: vitality(C.tk), statLevels, level: state.peakLevel, todayKey: C.tk } }; return cityCache.val; },
     commit: () => { persist(); const C = ctx(); if ($('loot-bal')) $('loot-bal').textContent = City.fmt(C.G.grit); },
   });
   render();
