@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uNoL39VEUMDGr2k5V3tz3OekmjbnqfQOyu7G4a7Iz/s='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-y+CT2/lexT4SsSjseRtU6q61W1eytSN1Y9/h+SFF+es='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -159,6 +159,20 @@
   .bday { background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--brand); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
   .bday.today { background: var(--brand); color: #fff; border-color: var(--brand); }
   .bday + .bday { margin-top: 6px; }
+  .mrow .body b .pill { display: inline-block; margin-top: 0; white-space: nowrap; }
+  .qod { background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--brand); border-radius: 12px; padding: 10px 12px; font-size: 14px; display: flex; gap: 10px; align-items: center; }
+  .qod .q { flex: 1; min-width: 0; font-style: italic; color: var(--ink-2); line-height: 1.35; } .qod .q b { font-style: normal; color: var(--ink-3); font-weight: 600; white-space: nowrap; }
+  .qod .qr { display: flex; gap: 4px; } .qod .qr button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: 16px; cursor: pointer; } .qod .qr button[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); }
+  .qmark { font-family: var(--font-display); font-size: 72px; line-height: .5; color: var(--brand); font-weight: 800; }
+  .qtext { font-family: var(--font-display); font-size: 27px; line-height: 1.22; font-weight: 700; letter-spacing: -.015em; }
+  .qrate { display: flex; gap: 8px; } .qrate .btn { flex: 1; min-height: 52px; }
+  .card[data-fold] > h3 { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .card[data-fold] > h3 .tiny { flex: 1; font-weight: 500; }
+  .card[data-fold] > h3::after { content: "▾"; color: var(--ink-3); font-size: 14px; margin-left: auto; transition: transform .2s; }
+  .card[data-fold].open > h3::after { transform: rotate(180deg); }
+  .card[data-fold]:not(.open) > :not(h3) { display: none !important; }
+  .coach:not(.open) p.more { display: none; }
+  .linkbtn { background: none; border: 0; color: var(--brand); font-weight: 600; font-size: 14px; padding: 6px 0 0; cursor: pointer; }
   .bundles { display: flex; flex-wrap: wrap; gap: 6px; }
   .bundles span { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); }
   .bundles span.open { border-color: var(--go); color: var(--go); font-weight: 600; }
@@ -322,6 +336,7 @@
     <div class="stats4" id="stats4"></div>
     <div id="bdays" hidden></div>
     <div class="next" id="next"></div>
+    <div class="qod" id="qod" hidden></div>
     <div id="woop-today"></div>
     <div class="bundles" id="bundles" hidden></div>
     <div class="sec">
@@ -362,29 +377,31 @@
     <div class="coach"><div class="avatar">C</div><div><div class="cap">Coach · game plan</div><div id="coach-plan"></div><div class="row" style="margin-top:10px"><button class="btn sm dark" id="ask-coach" hidden>Ask coach about today</button></div></div></div>
     <div class="card" id="ask-out" hidden><h3>Coach says</h3><div id="ask-text" style="white-space:pre-wrap;font-size:15px;line-height:1.5"></div></div>
     <div class="card" id="council"><h3>Weekly Council <span class="tiny" id="council-for"></span></h3><p class="sub">Reads your last four weeks and proposes changes. It tunes the scoring on its own; anything that changes what you do is a proposal you accept or decline. Never more than one extra load.</p><div class="row"><button class="btn sm dark" id="council-run">Run the Council</button><button class="btn sm" id="council-stop" hidden>Stop</button><span class="tiny" id="council-note"></span></div><div id="council-out" class="list" style="gap:10px"></div></div>
-    <div class="card"><h3 id="review-h">Sunday review</h3><p class="sub">Ten minutes. Earns 25 XP, one shield, and feeds the Council.</p>
+    <div class="card" id="review-card" data-fold="1"><h3><span id="review-h">Sunday review</span><span class="tiny" id="review-sub"></span></h3><p class="sub">Ten minutes. Earns 25 XP, one shield, and feeds the Council.</p>
       <div class="qa"><label>Energy this week</label><div class="scale" id="rv-energy"><button data-e="1">1</button><button data-e="2">2</button><button data-e="3">3</button><button data-e="4">4</button><button data-e="5">5</button></div></div>
       <div class="qa"><label for="r1">Biggest win — what did I hand off, build, or show up for?</label><textarea class="note" id="r1"></textarea></div>
       <div class="qa"><label for="r2">Biggest obstacle — what got in the way?</label><textarea class="note" id="r2"></textarea></div>
       <div class="qa"><label for="r3">One thing I'll do differently next week</label><textarea class="note" id="r3"></textarea></div>
       <div class="qa"><label for="r4">Known disruptions next week</label><textarea class="note" id="r4" style="min-height:48px"></textarea></div>
       <div class="row"><button class="btn sm dark" id="review-btn">Save review</button><span class="tiny" id="review-note"></span></div></div>
-    <div class="card"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
-    <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
-    <div class="card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
-    <div class="card" id="custom-card"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
+    <div class="card" id="freedom-card" data-fold="1"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
+    <div class="sec-h" style="margin-top:6px"><h2>Tools</h2><span class="cap">tap a card to open</span></div>
+    <div class="card" id="letter-card" data-fold="1"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
+    <div class="card" id="words-card" data-fold="1"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
+    <div class="card" id="custom-card" data-fold="1"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
       <div id="custom-form" hidden><input class="note" id="custom-name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
-    <div class="card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
-    <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
+    <div class="card" id="rules-card" data-fold="1"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
+    <div class="sec-h" style="margin-top:6px"><h2>Settings</h2></div>
+    <div class="card" id="remind-card" data-fold="1" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
       <div class="list" id="remind-list"></div>
       <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
-    <div class="card" id="syncai" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
+    <div class="card" id="syncai" data-fold="1" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
       <div class="qa"><label for="gh-token">GitHub token — syncs progress across devices via a secret Gist</label><input class="note" id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></div>
       <p class="tiny" style="margin:0">github.com → Settings → Developer settings → Fine-grained tokens → permission <b>Gists: Read and write</b>, nothing else. Paste the same token on each device.</p>
       <div class="qa"><label for="an-key">Anthropic API key — turns on the AI Council and “Ask coach”</label><input class="note" id="an-key" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
       <div class="row"><button class="btn sm dark" id="cfg-save">Save</button><button class="btn sm" id="cfg-sync">Sync now</button></div><div class="tiny" id="cfg-note"></div></div>
-    <div class="card" id="lab"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report for the developer</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
-    <div class="card"><h3>Your data</h3><p class="sub">Progress lives on this device and, if sync is on, in your Gist. App updates never touch it. Restoring <b>merges</b>; it never overwrites.</p><div class="tiny" id="data-status"></div><div class="row"><button class="btn sm dark" id="backup-btn">Download backup</button><button class="btn sm" id="restore-btn">Restore from backup</button></div><textarea class="note" id="restore-text" placeholder="Paste a backup here, then tap Restore" hidden></textarea></div>
+    <div class="card" id="lab" data-fold="1"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report for the developer</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
+    <div class="card" id="data-card" data-fold="1"><h3>Your data</h3><p class="sub">Progress lives on this device and, if sync is on, in your Gist. App updates never touch it. Restoring <b>merges</b>; it never overwrites.</p><div class="tiny" id="data-status"></div><div class="row"><button class="btn sm dark" id="backup-btn">Download backup</button><button class="btn sm" id="restore-btn">Restore from backup</button></div><textarea class="note" id="restore-text" placeholder="Paste a backup here, then tap Restore" hidden></textarea></div>
     <div class="foot" id="sync-note">Saved on this device</div>
   </div>
 </div>
@@ -401,8 +418,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-125707"></script>
-<script src="city.js?v=20260913-125707"></script>
+<script src="quotes.js?v=20260913-131350"></script>
+<script src="city.js?v=20260913-131350"></script>
 
 <script>
 (() => {
@@ -510,7 +527,7 @@
   // State — every record carries a timestamp so two devices merge instead of overwrite
   // =====================================================================
   const LS_KEY = 'ascent.v2';
-  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, levelups: {}, interest: {}, custom: {}, city: City.emptyCity() });
+  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, levelups: {}, interest: {}, custom: {}, quotes: {}, city: City.emptyCity() });
   const now = () => Date.now();
   const maxT = (a, b) => (!a ? b : !b ? a : (a.t || 0) >= (b.t || 0) ? a : b);
   const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
@@ -572,6 +589,7 @@
     const dateRe = /^\d{4}-\d{2}-\d{2}$/;
     for (const l of union(a.levelups, b.levelups)) { const x = a.levelups && a.levelups[l], y = b.levelups && b.levelups[l]; const ok = v => isObj(v) && dateRe.test(v.k || ''); const m = ok(x) && ok(y) ? (x.k <= y.k ? x : y) : ok(x) ? x : ok(y) ? y : null; if (m && +l >= 2) out.levelups[l] = { k: m.k, t: num(m.t) }; } // earliest date wins: a level is reached once
     byT('interest', m => ({ amt: Math.max(0, num(m.amt)), t: num(m.t) }));
+    byT('quotes', m => ({ i: Math.max(0, Math.floor(num(m.i))), r: m.r === 1 ? 1 : m.r === -1 ? -1 : 0, seen: !!m.seen, t: num(m.t) }));
     byT('custom', m => ({ name: String(m.name || '').slice(0, 80), stat: STATS[m.stat] ? m.stat : 'business', tm: /^\d{2}:\d{2}$/.test(m.tm || '') ? m.tm : '18:00', from: dateRe.test(m.from || '') ? m.from : '', until: dateRe.test(m.until || '') ? m.until : '', t: num(m.t) }));
     out.city = City.merge(a.city, b.city);
     return out;
@@ -795,6 +813,26 @@
   }
 
   // =====================================================================
+  // Quote of the day — one per day, rated 👍/👎; the ratings steer who you hear from next
+  // =====================================================================
+  function quoteTaste() { const au = {}, th = {}; let n = 0; const Q = window.QUOTES || [];
+    for (const k in state.quotes) { const r = state.quotes[k]; if (!r.r || !Q[r.i]) continue; n++; const q = Q[r.i]; au[q.a] = (au[q.a] || 0) + r.r; th[q.t] = (th[q.t] || 0) + r.r; }
+    const top = o => Object.entries(o).sort((a, b) => b[1] - a[1]); return { au, th, n, likedA: top(au).filter(x => x[1] >= 2).map(x => x[0]), dislikedA: top(au).filter(x => x[1] <= -2).map(x => x[0]).reverse(), likedT: top(th).filter(x => x[1] >= 2).map(x => x[0]) }; }
+  function quoteFor(k) { const Q = window.QUOTES || []; if (!Q.length) return null;
+    const rec = state.quotes[k]; if (rec && Q[rec.i]) return { ...Q[rec.i], i: rec.i };
+    const recent = new Set(); for (const kk in state.quotes) { const dd = dayDiff(k, kk); if (dd >= 0 && dd < 45) recent.add(state.quotes[kk].i); }
+    const T = quoteTaste(); const d = parse(k), we = d.getDay() === 0 || d.getDay() === 6; const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const w = Q.map((q, i) => { if (recent.has(i)) return 0; const a = T.au[q.a] || 0, t = T.th[q.t] || 0; let x = Math.pow(1.6, cl(a, -3, 3)) * Math.pow(1.4, cl(t, -3, 3)); if (a <= -3) x = 0.05; if (we && (q.t === 'family' || q.t === 'mindset')) x *= 1.5; if (!we && q.t === 'business') x *= 1.2; return x; });
+    let h = 0; for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0; const rnd = (Math.imul(h, 2654435761) >>> 0) / 4294967296; const total = w.reduce((a, b) => a + b, 0) || 1;
+    let acc = 0, idx = h % Q.length; for (let i = 0; i < Q.length; i++) { acc += w[i]; if (rnd * total < acc) { idx = i; break; } }
+    return { ...Q[idx], i: idx }; }
+  function rateQuote(k, r) { const q = quoteFor(k); if (!q) return; const cur = state.quotes[k]; const nr = cur && cur.r === r ? 0 : r; state.quotes[k] = { i: q.i, r: nr, seen: true, t: now() }; persist(); render(); toast(nr === 1 ? 'Noted — more of that voice.' : nr === -1 ? 'Noted — less of that.' : 'Rating cleared'); }
+  function maybeQuote() { if (!state.seen.intro || document.hidden || !$('overlay').hidden || $('milestone').classList.contains('show')) return; const tk = key(logicalToday()); const r = state.quotes[tk]; if (r && r.seen) return; quotePopup(tk); }
+  function quotePopup(tk) { const q = quoteFor(tk); if (!q) return; state.quotes[tk] = { i: q.i, r: 0, seen: true, t: now() }; persist();
+    overlay(`<div class="row" style="justify-content:space-between"><span class="cap">Quote of the day</span><button class="btn ghost sm" id="q-x">Skip</button></div><div class="grow"></div><div class="qmark">“</div><h1 class="qtext">${esc(q.q)}</h1><p class="lead">— ${esc(q.a)} <span class="tiny">· ${esc(q.t)}</span></p><div class="grow"></div><p class="tiny" style="text-align:center">Rate it. The app learns whose voice lands with you.</p><div class="qrate"><button class="btn" data-qr="-1">👎 Not for me</button><button class="btn primary" data-qr="1">👍 That one hits</button></div>`,
+      o => { o.querySelector('#q-x').addEventListener('click', () => { closeOverlay(); render(); }); o.addEventListener('click', e => { const b = e.target.closest('[data-qr]'); if (!b) return; closeOverlay(); rateQuote(tk, +b.dataset.qr); }); }); }
+
+  // =====================================================================
   // Render — top bar + hero always; only the visible view
   // =====================================================================
   function render() {
@@ -806,12 +844,12 @@
     if (payInterest(C)) return; // Monday payout re-renders with the new balance
     const L = state.peakLevel > Lc.level ? levelFrom(Math.max(T.xp, cumulative(state.peakLevel)), need) : Lc;
     const d = parse(tk);
-    $('top-cap').textContent = `Day ${Math.max(1, dayDiff(tk, seasonStart()) + 1)} · ${S.won} won · best streak ${S.best}`;
+    $('top-cap').textContent = `Day ${Math.max(1, dayDiff(tk, seasonStart()) + 1)} · ${S.won} won`; $('chip-streak').parentElement.title = `Streak ${S.streak} · best ${S.best}`;
     $('top-date').textContent = `${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`;
     $('chip-streak').textContent = S.streak; $('chip-shield').textContent = S.stock;
     $('hero-level').textContent = L.level; $('hero-title').textContent = titleFor(L.level);
     $('hero-xpbar').style.width = `${Math.max(0, Math.min(100, Math.round(100 * L.into / L.need)))}%`;
-    $('hero-next').textContent = `${Math.max(0, L.need - L.into)} XP to level ${L.level + 1} · ${T.xp} total${W.mult > 1 ? ` · ×${W.mult.toFixed(1)} this week` : ''}`;
+    $('hero-next').textContent = `${Math.max(0, L.need - L.into)} XP to level ${L.level + 1}${W.mult > 1 ? ` · ×${W.mult.toFixed(1)} this week` : ''}`;
     $('stats4').innerHTML = Object.keys(STATS).map(s => { const sl = levelFrom(T.by[s], needStat); return `<div class="c-${s}"><span>${STATS[s]} ${sl.level}</span><i><b style="width:${Math.round(100 * sl.into / sl.need)}%"></b></i></div>`; }).join('');
     if (curView === 'today') renderToday(C);
     if (curView === 'week') renderWeek(C);
@@ -861,6 +899,8 @@
     else if (!nx) { N.className = 'next done'; N.innerHTML = `<div class="cap">${won ? 'Day won' : 'Board clear'}</div><h2>${won ? 'Nothing left to prove today.' : 'All missions logged.'}</h2><p>${rec.close ? 'Day closed. Sleep is a mission.' : 'Close the day when the boys are down.'}</p>${!rec.close && isToday ? `<div class="acts"><button class="btn primary" id="close-btn">Close the day</button></div>` : ''}`; }
     else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}${easyDay(selKey) ? ' · easy day' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'Check in' : nx.kind === 'pulse' ? 'Pulse' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : nx.kind === 'meal' ? 'See meals' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
     const p = planApplies(weekKey(d), selKey); $('woop-today').innerHTML = p && p.woop ? `<div class="woop"><b>This week’s plan:</b> ${esc(p.woop.plan)}</div>` : '';
+    const qd = isToday ? quoteFor(tk) : null, qr = state.quotes[tk]; $('qod').hidden = !qd;
+    if (qd) $('qod').innerHTML = `<div class="q">“${esc(qd.q)}” <b>— ${esc(qd.a)}</b></div><div class="qr"><button data-qr="1" aria-pressed="${!!(qr && qr.r === 1)}" aria-label="Good quote">👍</button><button data-qr="-1" aria-pressed="${!!(qr && qr.r === -1)}" aria-label="Bad quote">👎</button></div>`;
     const bl = bundles(); $('bundles').hidden = !bl.length;
     $('bundles').innerHTML = bl.map(b => done.has(b.mission) ? `<span class="open">🔓 ${esc(b.name)} — unlocked</span>` : `<span>🔒 ${esc(b.name)} after ${esc(((missionOn(selKey, b.mission) || BYID[b.mission] || {}).name || b.mission).split('—')[0].trim())}</span>`).join('');
     // blocks
@@ -956,17 +996,21 @@
     const dry = [], wet = [];
     for (const k in state.days) { const r = state.days[k]; if (!r.rest) continue; (isOn(day(key(addDays(parse(k), -1))), 'dry') ? dry : wet).push(r.rest.v); }
     if (dry.length >= 5 && wet.length >= 5) { const m = a => (a.reduce((s, v) => s + v, 0) / a.length).toFixed(1); lines.push(`Evidence: you wake rested ${m(dry)}/5 after dry nights versus ${m(wet)}/5 after drinking. Your data.`); }
+    const QT = quoteTaste(); if (QT.n >= 5) lines.push(`Quote taste after ${QT.n} ratings: ${QT.likedA.length ? `${QT.likedA.slice(0, 2).join(' and ')} land` : 'no clear favourite yet'}${QT.dislikedA.length ? `; ${QT.dislikedA.slice(0, 2).join(' and ')} don’t` : ''}${QT.likedT.length ? `. Themes that hit: ${QT.likedT.slice(0, 2).join(', ')}` : ''}. Mornings now lean that way.`);
     if (S.lost[key(addDays(parse(tk), -1))] && S.streak === 0 && S.best >= 3) lines.push(`Streak reset. Lifetime best stays ${S.best}. Monday is a clean sheet, and today’s bar is lower.`);
     return lines;
   }
   function renderCoach(C) {
     const { tk, wk } = C;
-    $('coach-plan').innerHTML = coachPlan(C).map(t => `<p>${esc(t)}</p>`).join('');
+    const lines = coachPlan(C), coachOpen = $('coach-plan').closest('.coach').classList.contains('open');
+    $('coach-plan').innerHTML = lines.map((t, i) => `<p${i >= 2 ? ' class="more"' : ''}>${esc(t)}</p>`).join('') + (lines.length > 2 ? `<button class="linkbtn" id="coach-more">${coachOpen ? 'Less ▴' : `More ▾ (${lines.length - 2})`}</button>` : '');
     const rwk = reviewWeek(tk); const r = state.reviews[rwk]; const focused = ['r1', 'r2', 'r3', 'r4'].some(id => document.activeElement === $(id));
     $('review-h').textContent = rwk === wk ? 'Sunday review' : `Review · week of ${fmt(parse(rwk))}`;
     if (renderedWk !== rwk || (r && !focused && !['r1', 'r2', 'r3', 'r4'].some(id => $(id).value))) { $('r1').value = r ? r.a1 : ''; $('r2').value = r ? r.a2 : ''; $('r3').value = r ? r.a3 : ''; $('r4').value = r ? r.a4 : ''; renderedWk = rwk; }
     $('rv-energy').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', !!(r && r.energy === +b.dataset.e)));
     $('review-note').textContent = reviewValid(rwk) ? `Saved · +${REVIEW_XP} XP · +1 shield` : '';
+    const dow = parse(tk).getDay(); $('review-sub').textContent = reviewValid(rwk) ? '· saved' : dow === 0 ? '· due today' : dow === 1 || dow === 2 ? '· still open' : '· Sunday';
+    fold('review-card', (dow === 0 || dow === 1 || dow === 2) && !reviewValid(rwk)); fold('freedom-card', true); fold('letter-card', false); fold('words-card', false); fold('custom-card', state.peakLevel >= 5 && !(state.custom.m1 && state.custom.m1.name)); fold('rules-card', false); fold('remind-card', false); fold('syncai', STANDALONE && !cfg.get().ghToken); fold('data-card', false);
     const fl = freedomLevel(); $('freedom-lv').textContent = `· Level ${fl} of 7`;
     $('gates').innerHTML = LADDER.map(lv => { const cleared = lv.gates.every(([g]) => state.ladder[g] && state.ladder[g].v); return `<div class="gate-lv${cleared ? ' cleared' : ''}"><div class="h"><span>L${lv.lv} · ${lv.name}</span><small>${lv.when}</small></div>${lv.gates.map(([g, text]) => `<button class="gate" data-gate="${g}" aria-pressed="${!!(state.ladder[g] && state.ladder[g].v)}"><i></i><span>${text}</span></button>`).join('')}</div>`; }).join('');
     const prevL = state.letters[String(fl - 1)], cur = state.letters[String(fl)];
@@ -977,9 +1021,14 @@
     if (document.activeElement !== $('bundle-text')) $('bundle-text').value = state.words.bundles && state.words.bundles.v ? state.words.bundles.v : '';
     renderCustom(C);
     renderCouncil(C);
-    renderLab(C);
+    renderLab(C); fold('lab', labSug.some(x => x.sev === 'high'));
     renderRemind();
   }
+  const foldOpen = {};
+  function fold(id, auto) { const c = $(id); if (!c) return; if (!(id in foldOpen)) foldOpen[id] = !!auto; c.classList.toggle('open', foldOpen[id]); }
+  document.addEventListener('click', e => { const h = e.target.closest('.card[data-fold] > h3'); if (!h) return; const c = h.parentElement; foldOpen[c.id] = !c.classList.contains('open'); c.classList.toggle('open', foldOpen[c.id]); if (foldOpen[c.id]) use('fold:' + c.id); });
+  $('coach-plan').addEventListener('click', e => { if (!e.target.closest('#coach-more')) return; $('coach-plan').closest('.coach').classList.toggle('open'); render(); });
+  $('qod').addEventListener('click', e => { const b = e.target.closest('[data-qr]'); if (!b) return; rateQuote(key(logicalToday()), +b.dataset.qr); });
   function renderCustom(C) {
     const cm = state.custom.m1, live = cm && cm.name && (!cm.until || cm.until >= C.tk), unlocked = state.peakLevel >= 5;
     $('custom-sub').textContent = !unlocked ? '· level 5' : live ? '· live' : '· empty';
@@ -1003,6 +1052,7 @@
     return { target_week: target, win_rate_4w: winRate, days: days.slice(-14), missions, streak: { current: S.streak, best: S.best, shields: S.stock },
       quests_last_week: questsFor(lastWk).map(q => ({ id: q.id, cleared: questState(lastWk, q).cleared, progress: questState(lastWk, q).raw + '/' + q.target })),
       condition: (() => { const ks = days.map(d => d.date); const am = ks.map(k => day(k).am).filter(Boolean), md = ks.map(k => day(k).md).filter(Boolean); const avg = (a, f) => a.length ? +(a.reduce((x, y) => x + y[f], 0) / a.length).toFixed(1) : null; return { easy_days: ks.filter(k => easyDay(k)).length, am_energy: avg(am, 'e'), am_stress: avg(am, 's'), md_energy: avg(md, 'e'), md_stress: avg(md, 's') }; })(),
+      quote_taste: (() => { const T = quoteTaste(); return { ratings: T.n, liked_authors: T.likedA.slice(0, 3), disliked_authors: T.dislikedA.slice(0, 3), liked_themes: T.likedT.slice(0, 3) }; })(),
       freedom_level: freedomLevel(), threshold_now: (() => { const pl = planApplies(lastWk, weekDays(lastWk)[6]); return pl ? pl.applied.threshold : Math.round(100 * WIN_DEFAULT); })(), stat_xp_4w: weeks.reduce((o, wk) => { const b = weekXP(wk).by; for (const s in STATS) o[s] = (o[s] || 0) + (b[s] || 0); return o; }, {}),
       user_review: rv && rv.at ? { energy: rv.energy, win: rv.a1.slice(0, 300), obstacle: rv.a2.slice(0, 300), change: rv.a3.slice(0, 300), disruptions: rv.a4.slice(0, 200) } : null,
       last_plan: last ? { summary: last.summary, proposals: last.proposals.map(p => ({ type: p.type, mission: p.mission, status: p.status })) } : null };
@@ -1168,7 +1218,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   // ---- close the day (peak-end ritual) ----
   function closeDay() {
     const k = key(logicalToday()); const r = rec(k); const C = ctx(); const x = dayXP(k), th = winThreshold(k, C.S); const done = missionsFor(parse(k)).filter(m => doneOn(k).has(m.id) && m.id !== 'close');
-    const best = done.slice().sort((a, b) => b.xp - a.xp)[0]; const p = planApplies(C.wk, k); const Q = window.QUOTES || []; let h = 0; for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0; const q = Q.length ? Q[h % Q.length] : null;
+    const best = done.slice().sort((a, b) => b.xp - a.xp)[0]; const p = planApplies(C.wk, k); const q = quoteFor(k);
     const step = { mood: r.close ? r.close.mood : 0, best: r.close ? r.close.best : (best ? best.name.split('—')[0].trim() : ''), note: r.close ? r.close.note : '', first: r.close ? r.close.first : (p && p.woop ? p.woop.plan : '') };
     overlay(`<div class="row" style="justify-content:space-between"><span class="cap">Close the day</span><button class="btn ghost sm" id="ov-x">Later</button></div>
       <div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill${x.xp >= th.need ? ' won' : ''}" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ov-ring"/></svg><div class="in"><b class="num" style="font-size:52px">${x.xp}</b><span>${x.xp >= th.need ? 'won' : `of ${th.need}`}</span></div></div>
@@ -1195,7 +1245,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
       if (screen === 0) overlay(`${dots}<h1>Which one is you this year?</h1><p class="lead">Pick what matters. Missions, not lectures — ten minutes a day runs it.</p><div class="list">${Object.keys(STATS).map(s => `<button class="opt" data-p="${s}" aria-pressed="${picks.has(s)}"><i></i><span>${esc(IDENTITY[s])}</span></button>`).join('')}</div><div class="grow"></div><button class="btn primary wide" id="ob-next">Continue</button>`, o => { o.querySelector('.list').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; picks.has(b.dataset.p) ? picks.delete(b.dataset.p) : picks.add(b.dataset.p); b.setAttribute('aria-pressed', picks.has(b.dataset.p)); }); o.querySelector('#ob-next').addEventListener('click', () => { screen = 1; draw(); }); });
       if (screen === 1) overlay(`${dots}<h1>Your four walls.</h1><p class="lead">The day is built around moments that already exist. Nothing to schedule.</p><div class="list"><div class="r"><span><b>08:30</b> — boys dropped off. Train until 10:00.</span></div><div class="r"><span><b>10:00</b> — the agency, then Dineline at 12:00.</span></div><div class="r"><span><b>20:00</b> — hard stop. Laptop closed, boys, wife.</span></div><div class="r"><span><b>23:00</b> — lights out, phone outside the room.</span></div></div><p class="tiny">Wrong? Tell the coach and we move the walls.</p><div class="grow"></div><button class="btn primary wide" id="ob-next">That’s my day</button>`, o => o.querySelector('#ob-next').addEventListener('click', () => { screen = 2; draw(); }));
       if (screen === 2) overlay(`${dots}<h1>Commit to three.</h1><p class="lead">These go first every day this week. Everything else is bonus until they hold.</p><div class="list">${core.map(id => `<button class="opt" data-s="${id}" aria-pressed="${starters.has(id)}"><i></i><span>${esc(BYID[id].name)}</span></button>`).join('')}</div><div class="grow"></div><button class="btn primary wide" id="ob-next">Lock them in</button>`, o => { o.querySelector('.list').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; if (starters.has(b.dataset.s)) starters.delete(b.dataset.s); else if (starters.size < 3) starters.add(b.dataset.s); else toast('Three. That’s the point.'); b.setAttribute('aria-pressed', starters.has(b.dataset.s)); }); o.querySelector('#ob-next').addEventListener('click', () => { screen = 3; draw(); }); });
-      if (screen === 3) overlay(`${dots}<div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ob-ring"/></svg><div class="in"><b class="num" style="font-size:52px">1</b><span>level</span></div></div><h1>Day 1. Two shields pre-loaded.</h1><p class="lead">Fill the ring to 72% and the day is won. A lost day gets covered by a shield. Miss twice and tomorrow’s bar drops to 50% — one miss is a day, two is a habit.</p><p class="lead">400 Grit in the treasury. Your city is waiting for roads.</p><div class="grow"></div><button class="btn primary wide" id="ob-go">Show me the first mission</button>`, o => { requestAnimationFrame(() => { o.querySelector('#ob-ring').style.strokeDashoffset = ringOffset(0.72); }); o.querySelector('#ob-go').addEventListener('click', () => { for (const s of picks) state.identity[s] = { v: IDENTITY[s], t: now() }; state.seen.intro = true; state.seen.starter = { ids: [...starters], t: now() }; persist(); closeOverlay(); render(); toast('Level 1. The board is yours.', true); }); });
+      if (screen === 3) overlay(`${dots}<div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ob-ring"/></svg><div class="in"><b class="num" style="font-size:52px">1</b><span>level</span></div></div><h1>Day 1. Two shields pre-loaded.</h1><p class="lead">Fill the ring to 72% and the day is won. A lost day gets covered by a shield. Miss twice and tomorrow’s bar drops to 50% — one miss is a day, two is a habit.</p><p class="lead">400 Grit in the treasury. Your city is waiting for roads.</p><div class="grow"></div><button class="btn primary wide" id="ob-go">Show me the first mission</button>`, o => { requestAnimationFrame(() => { o.querySelector('#ob-ring').style.strokeDashoffset = ringOffset(0.72); }); o.querySelector('#ob-go').addEventListener('click', () => { for (const s of picks) state.identity[s] = { v: IDENTITY[s], t: now() }; state.seen.intro = true; state.seen.starter = { ids: [...starters], t: now() }; persist(); closeOverlay(); render(); setTimeout(maybeQuote, 400); toast('Level 1. The board is yours.', true); }); });
     };
     draw();
   }
@@ -1403,7 +1453,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     return [`No Limit — diagnostic report ${new Date().toISOString()}`, `ua: ${navigator.userAgent}`, `mode: ${STANDALONE ? 'standalone' : 'claude'} · device ${deviceId} · sync ${dbRef ? 'on' : 'off'} · viewport ${innerWidth}×${innerHeight}`,
       `day ${dayDiff(C.tk, seasonStart()) + 1} · won ${C.S.won} · streak ${C.S.streak}/${C.S.best} · shields ${C.S.stock} · level ${state.peakLevel} · grit ${C.G.grit} (earned ${C.G.earned}, spent ${C.G.spent}) · week ${C.W.xp}`,
       `days logged ${Object.keys(state.days).length} · plans ${Object.keys(state.plans).length} · friends ${Object.values(state.friends).filter(f => !f.gone).length} · city tiles ${Object.values(state.city.tiles || {}).filter(p => !p.gone).length}`,
-      `tweaks: ${tw.join(', ') || 'none'}`, `usage: ${JSON.stringify(diag.use)}`,
+      `tweaks: ${tw.join(', ') || 'none'}`, `usage: ${JSON.stringify(diag.use)}`, (() => { const T = quoteTaste(); return `quote taste: ${T.n} ratings · liked ${T.likedA.join(', ') || '—'} · disliked ${T.dislikedA.join(', ') || '—'} · themes ${T.likedT.join(', ') || '—'}`; })(),
       `errors (${diag.errors.length}):`, ...diag.errors.slice(-15).map(e => `  ${new Date(e.t).toISOString()} [${e.view}] ${e.msg} @ ${e.src}`),
       `failed checks (${diag.checks.length}):`, ...diag.checks.slice(-15).map(c => `  ${new Date(c.t).toISOString()} ${c.code} ${c.ctx}`),
       'suggestions:', ...labSug.map(x => `  [${x.sev}] ${x.title} — ${x.why}`)].join('\n'); }
@@ -1420,8 +1470,9 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     commit: () => { persist(); const C = ctx(); if ($('loot-bal')) $('loot-bal').textContent = City.fmt(C.G.grit); },
   });
   render();
-  if (!state.seen.intro) onboarding();
-  setInterval(() => { const sig = key(logicalToday()) + ':' + Math.floor(clockHours() * 4); if (sig !== lastRender && !document.activeElement.matches('input,textarea')) { lastRender = sig; render(); } }, 60 * 1000);
+  if (!state.seen.intro) onboarding(); else maybeQuote();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); maybeQuote(); } });
+  setInterval(() => { const sig = key(logicalToday()) + ':' + Math.floor(clockHours() * 4); if (sig !== lastRender && !document.activeElement.matches('input,textarea')) { lastRender = sig; render(); maybeQuote(); } }, 60 * 1000);
   connect();
   setupSample();
 })();
