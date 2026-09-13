@@ -40,7 +40,25 @@ window.City = (() => {
     palace:   { name: 'Crown Palace', e: '👑', bucks: 900, lv: 25, mile: 0, rank: 10, r: 5 },
   };
   const ROAD_GRIT = 5, FEST_BUCKS = 300, FEST_MS = DAY;
+  const WHAT = {
+    r: 'Homes. People move in over hours once there is a road within 2 tiles and power. Each resident pays tax every day; the rate, your land value and your Business stat set how much. Level 2 needs water plus a clinic or school, Town size and happiness 60; level 3 needs every service, happiness 75 and City size.',
+    c: 'Shops and offices. They create jobs (4 / 15 / 50 per level), pay a small business levy per job, and grow when residents outnumber jobs — faster with a strong Business stat.',
+    i: 'Factories. The most jobs per tile (6 / 20 / 60) but they pollute 3 tiles around, which drags land value and happiness on nearby homes. Keep them downwind, behind a park.',
+    road: 'Connects everything to City Hall. Zones need a road within 2 tiles; services need one next door. Cars appear on connected roads.',
+    hall: 'The seat of government. Every road network starts here.',
+    power: 'Required for anything to grow. Covers 60 zoned tiles within reach 8; beyond that, homes stall. Pollutes 4 tiles around.',
+    water: 'Needed for level 2 homes and up. Covers 40 zoned tiles within reach 6.',
+    park: 'Homes in reach get +20 land value and count toward the parks share of happiness. Reach stretches with your Body stat.',
+    school: 'Unlocks level 2 homes (with a clinic as the alternative). +15 land value in reach. Serves 250 people; over capacity it works at a fraction.',
+    clinic: 'Unlocks level 2 homes (or a school). +15 land value. Serves 300 people — more when your Health stat is strong.',
+    fire: 'Needed for level 3 towers. With police in reach, +10 land value. Serves 400 people.',
+    police: 'Needed for level 3 towers. With fire in reach, +10 land value. Serves 400 people.',
+    stadium: 'Landmark. Homes in reach count as park-covered and get +10 land value. Reach stretches with your Body stat.',
+    tree: 'Cosmetic. Bucks only.', light: 'Cosmetic. Bucks only.', plaza: 'Cosmetic plaza; +5 land value next to it.', statue: 'Cosmetic. Bucks only.',
+    monument: 'Rank landmark: +12 land value on every tile within reach 3.', tower: 'Rank landmark: +16 land value within reach 4.', arch: 'Rank landmark: +20 land value within reach 4.', palace: 'Rank landmark: +25 land value within reach 5.',
+  };
   const MILES = [[0, 'Outpost'], [50, 'Hamlet'], [200, 'Village'], [500, 'Town'], [1500, 'City'], [4000, 'Metropolis'], [10000, 'Empire City']];
+  const HIST_MAX = 168;                       // hourly samples kept for the City Report (7 days)
   const LAND_GATE = [50, 200, 500];         // peak pop needed to buy ring 1, 2, 3
   const GROW_H = [2, 24, 72];                 // hours to reach L1, L2, L3 when conditions hold
   const DECLINE_H = 48;
@@ -56,7 +74,7 @@ window.City = (() => {
   // =====================================================================
   // State (merge-friendly: every record carries t)
   // =====================================================================
-  const emptyCity = () => ({ v: 3, tiles: {}, ring: { v: 0, t: 0 }, tax: { v: 7, t: 0 }, ledger: {}, gspent: {}, lastTax: { t: 0 }, lastSim: { t: 0 }, fest: { until: 0, t: 0 }, peakPop: { v: 0, t: 0 }, seen: {} });
+  const emptyCity = () => ({ v: 3, tiles: {}, ring: { v: 0, t: 0 }, tax: { v: 7, t: 0 }, ledger: {}, gspent: {}, lastTax: { t: 0 }, lastSim: { t: 0 }, fest: { until: 0, t: 0 }, peakPop: { v: 0, t: 0 }, seen: {}, hist: [] });
   const KINDS = new Set(['road', 'r', 'c', 'i', 'hall', ...Object.keys(SERVICES), ...Object.keys(DECOR)]);
   function norm(c) {
     const out = emptyCity(); if (!c || typeof c !== 'object' || c.v !== 3) return out; // v1/v2 towns are retired; the founder's stipend rebuilds
@@ -69,6 +87,7 @@ window.City = (() => {
     out.fest = { until: +(c.fest && c.fest.until) || 0, t: +(c.fest && c.fest.t) || 0 };
     out.peakPop = { v: +(c.peakPop && c.peakPop.v) || 0, t: +(c.peakPop && c.peakPop.t) || 0 };
     for (const k in c.seen || {}) out.seen[k] = true;
+    out.hist = (Array.isArray(c.hist) ? c.hist : []).filter(h => h && +h.t > 0).map(h => ({ t: +h.t, pop: +h.pop || 0, hap: +h.hap || 0, net: +h.net || 0 })).slice(-HIST_MAX);
     return out;
   }
   function merge(a, b) {
@@ -80,6 +99,7 @@ window.City = (() => {
     for (const k of keys(a.ledger, b.ledger)) { const x = a.ledger[k] || { earned: 0, spent: 0 }, y = b.ledger[k] || { earned: 0, spent: 0 }; out.ledger[k] = { earned: Math.max(x.earned, y.earned), spent: Math.max(x.spent, y.spent) }; }
     for (const k of keys(a.gspent, b.gspent)) out.gspent[k] = Math.max(a.gspent[k] || 0, b.gspent[k] || 0);
     out.lastTax = { t: Math.max(a.lastTax.t, b.lastTax.t) }; out.lastSim = { t: Math.max(a.lastSim.t, b.lastSim.t) };
+    const hm = new Map(); for (const h of [...a.hist, ...b.hist]) hm.set(h.t, h); out.hist = [...hm.values()].sort((x, y) => x.t - y.t).slice(-HIST_MAX);
     for (const k of keys(a.seen, b.seen)) out.seen[k] = true;
     return out;
   }
@@ -123,15 +143,15 @@ window.City = (() => {
     for (const k in info) { const i = info[k]; if (i.p.k === 'i' && i.p.lv > 0 && i.active) emit(i.x, i.y, ZONES.i.poll[i.p.lv] * pollMul, 3); if (i.p.k === 'power' && i.active) emit(i.x, i.y, SERVICES.power.poll * pollMul, SERVICES.power.pr); }
     for (const k in info) info[k].poll = Math.round(pm[k] || 0);
     // pop / jobs
-    let pop = 0, jobsC = 0, jobsI = 0, rTiles = 0, rCov = 0, rPark = 0, rPoll = 0, vacantR = 0;
-    for (const k in info) { const i = info[k]; if (!ZONES[i.p.k] || !i.active) continue; if (i.p.k === 'r') { pop += ZONES.r.pop[i.p.lv]; if (i.p.lv > 0) { rTiles++; let n = 0; for (const s of ['power', 'water', 'clinic', 'school', 'fire', 'police']) if (i.cov[s]) n += i.eff[s]; rCov += n / 6; if (i.cov.park) rPark++; rPoll += i.poll; } else vacantR++; } else if (i.p.k === 'c') jobsC += ZONES.c.jobs[i.p.lv]; else jobsI += ZONES.i.jobs[i.p.lv]; }
+    let pop = 0, jobsC = 0, jobsI = 0, rTiles = 0, rCov = 0, rPark = 0, rPoll = 0, vacantR = 0; const zc = { r: [0, 0, 0, 0], c: [0, 0, 0, 0], i: [0, 0, 0, 0] }; let zonedOff = 0;
+    for (const k in info) { const i = info[k]; if (!ZONES[i.p.k]) continue; if (!i.active) { zonedOff++; continue; } zc[i.p.k][i.p.lv]++; if (i.p.k === 'r') { pop += ZONES.r.pop[i.p.lv]; if (i.p.lv > 0) { rTiles++; let n = 0; for (const s of ['power', 'water', 'clinic', 'school', 'fire', 'police']) if (i.cov[s]) n += i.eff[s]; rCov += n / 6; if (i.cov.park || i.cov.stadium) rPark++; rPoll += i.poll; } else vacantR++; } else if (i.p.k === 'c') jobsC += ZONES.c.jobs[i.p.lv]; else jobsI += ZONES.i.jobs[i.p.lv]; }
     const jobs = jobsC + jobsI, workforce = 0.5 * pop, tax = c.tax.v;
     const avgCov = rTiles ? rCov / rTiles : 0, parkShare = rTiles ? rPark / rTiles : 0, avgPoll = rTiles ? rPoll / rTiles : 0;
     const fest = c.fest.until > Date.now() ? 5 : 0;
     const happiness = clamp(Math.round(50 + 25 * avgCov + 10 * parkShare - 0.1 * avgPoll - 3 * (tax - 7) + 20 * (clamp(vit.family == null ? 0.5 : vit.family, 0, 1) - 0.5) + fest), 0, 100);
     // land value
     const lms = []; for (const k in live) { const d = DECOR[live[k].k]; if (d && d.rank) { const [x, y] = k.split(',').map(Number); lms.push({ x, y, r: d.r, b: d.lv }); } }
-    for (const k in info) { const i = info[k]; let lv = 30; for (const lm of lms) if (Math.max(Math.abs(i.x - lm.x), Math.abs(i.y - lm.y)) <= lm.r) lv += lm.b; if (i.cov.park) lv += 20; if (i.cov.school || i.cov.clinic) lv += 15; if (i.cov.fire && i.cov.police) lv += 10; let l3 = 0, adjI = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const o = at(i.x + dx, i.y + dy); if (o && ZONES[o.k] && o.lv === 3) l3++; if (o && o.k === 'i') adjI = true; } lv += 5 * l3 - i.poll - (adjI ? 10 : 0); if (i.cov.plaza) lv += 5; i.lv = clamp(Math.round(lv), 0, 100); }
+    for (const k in info) { const i = info[k]; let lv = 30; for (const lm of lms) if (Math.max(Math.abs(i.x - lm.x), Math.abs(i.y - lm.y)) <= lm.r) lv += lm.b; if (i.cov.park) lv += 20; if (i.cov.school || i.cov.clinic) lv += 15; if (i.cov.fire && i.cov.police) lv += 10; let l3 = 0, adjI = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const o = at(i.x + dx, i.y + dy); if (o && ZONES[o.k] && o.lv === 3) l3++; if (o && o.k === 'i') adjI = true; } lv += 5 * l3 - i.poll - (adjI ? 10 : 0); if (i.cov.plaza) lv += 5; if (i.cov.stadium) lv += 10; i.lv = clamp(Math.round(lv), 0, 100); }
     for (const k in info) { const i = info[k]; let s = 0, n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const o = info[kkey(i.x + dx, i.y + dy)]; if (o) { s += o.lv; n++; } } i.lvs = Math.round(s / Math.max(1, n)); }
     // demand
     const dem = { r: clamp(0.6 * clamp((jobs - workforce) / (workforce + 20), -1, 1) + 0.4 * (happiness - 50) / 50 - 0.05 * (tax - 7), -1, 1),
@@ -140,10 +160,11 @@ window.City = (() => {
     if (pop === 0) { dem.r = 0.8; dem.c = 0.3; dem.i = 0.3; } else if (pop < 50) { dem.r = Math.max(dem.r, 0.3); dem.c = Math.max(dem.c, 0.2); dem.i = Math.max(dem.i, 0.2); } // a young town always wants to grow
     // budget (per day)
     let avgLV = 0, nz = 0; for (const k in info) if (ZONES[info[k].p.k]) { avgLV += info[k].lvs; nz++; } avgLV = nz ? avgLV / nz : 30;
-    const income = pop * 0.5 * (tax / 7) * (0.75 + 0.5 * avgLV / 100) * M.business + 0.1 * jobs;
-    let upkeep = 0; for (const s of svc) upkeep += s.s.up;
+    const lvF = 0.75 + 0.5 * avgLV / 100; const incomeR = pop * 0.5 * (tax / 7) * lvF * M.business, incomeJ = 0.1 * jobs; const income = incomeR + incomeJ;
+    let upkeep = 0; const upkeepBy = {}; for (const s of svc) { upkeep += s.s.up; const u = upkeepBy[s.type] || (upkeepBy[s.type] = { n: 0, up: 0, load: 0, cap: 0, eff: 0 }); u.n++; u.up += s.s.up; u.load += s.load; u.cap += s.cap === Infinity ? 0 : s.cap; u.eff += s.eff; }
+    const hapF = { base: 50, services: 25 * avgCov, parks: 10 * parkShare, pollution: -0.1 * avgPoll, tax: -3 * (tax - 7), family: 20 * (clamp(vit.family == null ? 0.5 : vit.family, 0, 1) - 0.5), festival: fest };
     const peak = Math.max(pop, c.peakPop.v); let mile = MILES[0]; for (const m of MILES) if (peak >= m[0]) mile = m; const next = MILES.find(m => peak < m[0]) || null;
-    return { M, info, svc, conn, hall, pop, jobs, jobsC, jobsI, workforce, happiness, dem, income, upkeep, avgCov, parkShare, avgPoll, avgLV, vacantR, mile, next, peak, tax, unemployed: Math.max(0, workforce - jobs) };
+    return { M, info, svc, conn, hall, pop, jobs, jobsC, jobsI, workforce, happiness, dem, income, upkeep, avgCov, parkShare, avgPoll, avgLV, vacantR, mile, next, peak, tax, unemployed: Math.max(0, workforce - jobs), incomeR, incomeJ, lvF, upkeepBy, hapF, zc, zonedOff, pollMul };
   }
   // growth: run at open and once a minute; returns events for the away report
   function simulate(c, vit, now) {
@@ -365,7 +386,14 @@ window.City = (() => {
       // selection / hover
       const hl = sel || hover; if (hl) { const cc = corners(hl[0], hl[1], 1, 1); const pulse = 0.6 + Math.sin(tsec * 4) * 0.3; poly([cc.b, cc.r, cc.f, cc.l], `rgba(242,178,51,${0.18 * pulse})`, `rgba(242,178,51,${0.5 + pulse * 0.4})`, 2); }
       // cars, smoke, fx
-      for (const car of cars) { const [sx, sy] = toScreen(car.x, car.y); g.fillStyle = car.c; poly([[sx - 4, sy + THH - 2], [sx + 4, sy + THH - 2], [sx + 4, sy + THH + 2], [sx - 4, sy + THH + 2]], car.c); if (night) { g.fillStyle = '#fff3b0'; g.fillRect(sx + (car.dx > 0 || car.dy < 0 ? 3 : -4), sy + THH - 1, 1.5, 2); } }
+      for (const car of cars.slice().sort((a, b) => (a.x + a.y) - (b.x + b.y))) {
+        const alongX = car.dx !== 0 || (car.dy === 0 && true); const ox = car.dy > 0 ? -0.2 : car.dy < 0 ? 0.2 : 0, oy = car.dx > 0 ? 0.2 : car.dx < 0 ? -0.2 : 0; // drive on the right
+        const bx = car.x - 0.5 + ox, by = car.y - 0.5 + oy; const w = alongX ? 0.34 : 0.2, d = alongX ? 0.2 : 0.34;
+        const cc = corners(bx, by, w, d); ell(cc.c[0] + 2, cc.c[1] + 1, alongX ? 12 : 8, alongX ? 5 : 6, 'rgba(0,0,30,.28)');
+        const body = box(bx, by, w, d, 4, car.hue, car.sat, car.lit, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 14)) });
+        box(bx, by, alongX ? 0.17 : 0.15, alongX ? 0.15 : 0.17, 8, 205, 35, 62, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 10)) });
+        if (night) { const f = car.dx > 0 ? body.r : car.dx < 0 ? body.l : car.dy > 0 ? body.f : body.b; g.fillStyle = '#fff3b0'; ell(f[0], f[1] - 3, 1.6, 1.2, '#fff3b0'); const gr = g.createRadialGradient(f[0], f[1], 1, f[0], f[1], 14); gr.addColorStop(0, 'rgba(255,243,176,.35)'); gr.addColorStop(1, 'rgba(255,243,176,0)'); g.fillStyle = gr; g.fillRect(f[0] - 14, f[1] - 14, 28, 28); }
+      }
       for (const s of smoke) { g.globalAlpha = 0.35 * (1 - s.age); ell(s.x, s.y, 2 + s.age * 5, 1.5 + s.age * 3.5, night ? '#8a8a9a' : '#c9c9c9'); g.globalAlpha = 1; }
       for (const f of fx) { g.globalAlpha = Math.max(0, 1 - f.age / f.life); if (f.kind === 'coin') ell(f.x, f.y, 3, 3, '#E9B53B', '#9a6d10', 1); else { g.font = 'bold 12px "Chakra Petch", sans-serif'; g.fillStyle = f.color || '#E9B53B'; g.textAlign = 'center'; g.fillText(f.text, f.x, f.y); } g.globalAlpha = 1; }
       // night streetlights on roads
@@ -377,7 +405,7 @@ window.City = (() => {
       // cars on the connected road graph
       const roads = [...A.conn].map(k => k.split(',').map(Number)); const want = Math.min(14, Math.floor(roads.length / 3) + (A.pop > 50 ? 2 : 0));
       const colors = ['#3E7CB1', '#C9491F', '#2E8F5B', '#B33E7E', '#E9B53B', '#d8d8d8', '#333'];
-      while (cars.length < want && roads.length) { const r0 = roads[Math.floor(Math.random() * roads.length)]; cars.push({ x: r0[0] + 0.5, y: r0[1] + 0.5, tx: r0[0], ty: r0[1], dx: 0, dy: 0, c: colors[cars.length % colors.length], sp: 0.9 + Math.random() * 0.6 }); }
+      while (cars.length < want && roads.length) { const r0 = roads[Math.floor(Math.random() * roads.length)]; cars.push({ x: r0[0] + 0.5, y: r0[1] + 0.5, tx: r0[0], ty: r0[1], dx: 0, dy: 0, c: colors[cars.length % colors.length], hue: [210, 15, 145, 320, 45, 0, 0][cars.length % 7], sat: cars.length % 7 >= 5 ? 0 : 65, lit: cars.length % 7 === 5 ? 82 : cars.length % 7 === 6 ? 22 : 50, sp: 0.9 + Math.random() * 0.6 }); }
       cars.length = Math.min(cars.length, want);
       for (const car of cars) {
         const gx = car.tx + 0.5, gy = car.ty + 0.5; const d = Math.hypot(gx - car.x, gy - car.y);
@@ -399,6 +427,7 @@ window.City = (() => {
       if (!Object.values(c.tiles).some(p => p.k === 'hall' && !p.gone)) { c.tiles[kkey(8, 8)] = { k: 'hall', lv: 0, t, g: 0, d: 0, gone: false }; commit(); dirtyG = dirtyB = true; }
       const before = c.lastSim.t; const ev = simulate(c, S.vitality, t); lastA = analyze(c, S.vitality); if (!c.lastTax.t && lastA.pop > 0) { c.lastTax.t = t; commit(); }
       if (ev.grew || ev.fell) { dirtyB = true; dirtyG = true; }
+      const lastH = c.hist[c.hist.length - 1]; if (!lastH || t - lastH.t >= HOUR) { c.hist.push({ t, pop: lastA.pop, hap: lastA.happiness, net: Math.round(lastA.income - lastA.upkeep) }); if (c.hist.length > HIST_MAX) c.hist.splice(0, c.hist.length - HIST_MAX); commit(); }
       if (!awayShown && before && t - before > 2 * HOUR) { awayShown = true; const hrs = Math.round((t - before) / HOUR); toast(`Away ${hrs} h: ${ev.grew} grew${ev.fell ? `, ${ev.fell} declined` : ''}, ${fmt(taxPending(c, lastA, t))} Bucks in taxes`, true); }
       if (ev.grew || ev.fell || ev.touched || !before) commit(true);
     }
@@ -409,35 +438,79 @@ window.City = (() => {
       const S = get(); const c = S.city; const A = lastA || (lastA = analyze(c, S.vitality)); const t = now(); const pend = taxPending(c, A, t); const net = A.income - A.upkeep;
       const bar = (v, col) => `<div class="rci"><i style="width:${Math.round(50 + v * 50)}%;background:${col}"></i></div>`;
       hud.innerHTML = `
-        <div class="ctile"><div class="k">Grit</div><div class="v">${fmt(S.grit)}</div><div class="s">from real life</div></div>
-        <div class="ctile"><div class="k">Bucks</div><div class="v">${fmt(bucks(c))}</div><div class="s">${net >= 0 ? '+' : ''}${fmt(net)}/day · tax ${c.tax.v}%</div></div>
-        <div class="ctile"><div class="k">${A.mile[1]}</div><div class="v">${fmt(A.pop)}</div><div class="s">pop · ${A.jobs} jobs${A.next ? ` · ${A.next[1]} at ${fmt(A.next[0])}` : ''}</div></div>
-        <div class="ctile wide"><div class="k">Happiness ${A.happiness} · Demand</div><div class="rcis"><span>R</span>${bar(A.dem.r, '#C9491F')}<span>C</span>${bar(A.dem.c, '#3E7CB1')}<span>I</span>${bar(A.dem.i, '#8a7a4a')}</div></div>
+        <div class="ctile" data-rep="1"><div class="k">Grit</div><div class="v">${fmt(S.grit)}</div><div class="s">from real life</div></div>
+        <div class="ctile" data-rep="1"><div class="k">Bucks ${trendArrow(c, 'net')}</div><div class="v">${fmt(bucks(c))}</div><div class="s">${net >= 0 ? '+' : ''}${fmt(net)}/day · +${fmt(A.income)} −${fmt(A.upkeep)}</div></div>
+        <div class="ctile" data-rep="1"><div class="k">${A.mile[1]} ${trendArrow(c, 'pop')}</div><div class="v">${fmt(A.pop)}</div><div class="s">pop · ${A.jobs} jobs${A.next ? ` · ${A.next[1]} at ${fmt(A.next[0])}` : ''}</div></div>
+        <div class="ctile wide" data-rep="1"><div class="k">Happiness ${A.happiness} ${trendArrow(c, 'hap')} · Demand</div><div class="rcis"><span>R</span>${bar(A.dem.r, '#C9491F')}<span>C</span>${bar(A.dem.c, '#3E7CB1')}<span>I</span>${bar(A.dem.i, '#8a7a4a')}</div></div>
         <button class="collect${pend >= 1 ? ' ready' : ''}" id="city-collect" ${pend >= 1 ? '' : 'disabled'}>${c.lastTax.t ? `Collect ${fmt(pend)} Bucks in taxes` : 'Open the treasury'}<span class="s">12 h cap</span></button>`;
+      hud.querySelectorAll('[data-rep]').forEach(el => el.addEventListener('click', () => { tool = 'report'; sub = null; renderPanel(); panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
       hud.querySelector('#city-collect').addEventListener('click', () => { const S2 = get(); const c2 = S2.city; const t2 = now(); const p = Math.floor(taxPending(c2, lastA || analyze(c2, S2.vitality), t2)); (c2.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += p; c2.lastTax.t = t2; commit(); if (p > 0) { toast(`+${fmt(p)} Bucks`); burst(Math.min(14, 3 + Math.floor(p / 50)), `+${fmt(p)}`); } renderHud(); });
     }
+    // ---- City Report + Building Guide ----
+    function sampleAgo(c, ms) { const t0 = now() - ms; let best = null; for (const h of c.hist) { if (h.t <= t0) best = h; else break; } return best || c.hist[0] || null; }
+    function trendArrow(c, f) { const cur = c.hist[c.hist.length - 1], old = sampleAgo(c, DAY); if (!cur || !old || cur === old) return ''; const d = cur[f] - old[f]; return d > 0 ? '<span style="color:var(--go)">↑</span>' : d < 0 ? '<span style="color:var(--body)">↓</span>' : '<span style="opacity:.5">→</span>'; }
+    const kv = (k, v, sub) => `<div class="kv"><span>${k}${sub ? `<small>${sub}</small>` : ''}</span><b>${v}</b></div>`;
+    const signed = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(v % 1 ? 1 : 0);
+    const sparkline = (c, f) => { const h = c.hist.slice(-48); if (h.length < 2) return ''; const vs = h.map(x => x[f]); const lo = Math.min(...vs), hi = Math.max(...vs); const W2 = 120, H2 = 28; const pts = vs.map((v, i) => `${(i / (vs.length - 1) * W2).toFixed(1)},${(H2 - 2 - (hi === lo ? H2 / 2 : (v - lo) / (hi - lo) * (H2 - 4))).toFixed(1)}`).join(' '); return `<svg class="spk" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2"/></svg>`; };
+    function reportHtml(c, A) {
+      const net = A.income - A.upkeep; const old = sampleAgo(c, DAY); const d = f => old ? (A[f === 'hap' ? 'happiness' : f === 'net' ? 'income' : 'pop'] - (f === 'net' ? old.net + A.upkeep : old[f])) : 0;
+      const head = [['Population', fmt(A.pop), 'pop'], ['Income / day', (net >= 0 ? '+' : '') + fmt(net), 'net'], ['Happiness', A.happiness, 'hap']].map(([k, v, f]) => { const dd = f === 'net' ? (old ? Math.round(net - old.net) : 0) : d(f); return `<div class="rtile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${old ? `${dd > 0 ? '↑' : dd < 0 ? '↓' : '→'} ${Math.abs(dd)} in 24 h` : 'first day'}</div>${sparkline(c, f)}</div>`; }).join('');
+      const issues = [];
+      if (A.zonedOff) issues.push(`${A.zonedOff} zoned tile${A.zonedOff > 1 ? 's are' : ' is'} too far from a connected road — nothing moves in.`);
+      const unpow = Object.values(A.info).filter(i => ZONES[i.p.k] && i.active && !i.cov.power).length; if (unpow) issues.push(`${unpow} zoned tile${unpow > 1 ? 's' : ''} without power.`);
+      for (const [t, u] of Object.entries(A.upkeepBy)) if (u.cap && u.load > u.cap) issues.push(`${SERVICES[t].name}${u.n > 1 ? 's' : ''} over capacity (${u.load}/${u.cap}) — build another or homes stall.`);
+      if (A.pop > 0 && net < 0) issues.push(`Losing ${fmt(-net)} Bucks a day: upkeep ${fmt(A.upkeep)} against ${fmt(A.income)} tax. Grow the population or pause the next service.`);
+      if (A.unemployed > 0.15 * A.workforce && A.workforce > 10) issues.push(`${Math.round(A.unemployed)} unemployed — zone Commercial or Industrial.`);
+      if (A.pop > 0 && A.jobs > A.workforce * 1.6) issues.push('More jobs than workers — zone Residential.');
+      if (A.avgPoll > 15) issues.push(`Pollution on homes averages ${Math.round(A.avgPoll)} — move industry, add parks.`);
+      const svcRows = Object.entries(SERVICES).map(([id, sv]) => { const u = A.upkeepBy[id]; if (!u) return `<div class="kv"><span>${sv.e} ${sv.name}</span><b class="dim">${A.peak < sv.mile ? `🔒 ${MILES.find(m => m[0] === sv.mile)[1]}` : 'none'}</b></div>`; const covered = Object.values(A.info).filter(i => ZONES[i.p.k] && i.cov[id]).length; return `<div class="kv"><span>${sv.e} ${sv.name} ×${u.n}<small>${covered} zoned tiles in reach · ${u.up} Bucks/day</small></span><b style="color:${u.cap && u.load > u.cap ? 'var(--body)' : 'var(--go)'}">${u.cap ? `${u.load}/${u.cap}` : 'ok'}</b></div>`; }).join('');
+      const hf = A.hapF; const fac = [['Base', hf.base], ['Services in reach', hf.services], ['Parks share', hf.parks], ['Pollution on homes', hf.pollution], [`Tax ${A.tax}% (7% is neutral)`, hf.tax], ['Your Family stat', hf.family], ['Festival', hf.festival]];
+      const zoneRow = (k, name, per) => `<div class="kv"><span>${ZONES[k].e} ${name}<small>${A.zc[k][0]} building · L1 ${A.zc[k][1]} · L2 ${A.zc[k][2]} · L3 ${A.zc[k][3]}</small></span><b>${per}</b></div>`;
+      return `<div class="rep">
+        <div class="rtiles">${head}</div>
+        <h4>Highlights</h4>${issues.length ? issues.map(t => `<div class="chint">• ${t}</div>`).join('') : '<div class="chint">• Nothing urgent. Grow, then densify.</div>'}
+        <h4>Budget · per day</h4>${kv('Residential tax', '+' + fmt(A.incomeR), `${fmt(A.pop)} people × 0.5 × tax ${A.tax}/7 × land value ${A.lvF.toFixed(2)} × Business ${A.M.business.toFixed(2)}`)}${kv('Business levy', '+' + fmt(A.incomeJ), `${A.jobs} jobs × 0.1`)}${Object.entries(A.upkeepBy).map(([t, u]) => kv(`${SERVICES[t].name}${u.n > 1 ? ` ×${u.n}` : ''}`, '−' + fmt(u.up))).join('')}${kv('<b>Net</b>', `<span style="color:${net >= 0 ? 'var(--go)' : 'var(--body)'}">${net >= 0 ? '+' : ''}${fmt(net)}</span>`)}<div class="chint">Taxes accrue for 12 h, then wait for you to collect. Bucks buy decor and festivals only.</div>
+        <h4>People &amp; jobs</h4>${zoneRow('r', 'Homes', `${fmt(A.pop)} people`)}${zoneRow('c', 'Shops', `${A.jobsC} jobs`)}${zoneRow('i', 'Industry', `${A.jobsI} jobs`)}${kv('Workforce', fmt(A.workforce), 'half the population')}${kv('Unemployed', fmt(Math.round(A.unemployed)))}${kv('Demand R / C / I', `${Math.round(A.dem.r * 100)} / ${Math.round(A.dem.c * 100)} / ${Math.round(A.dem.i * 100)}`, 'above 0 grows; jobs vs workers, happiness and tax drive it')}
+        <h4>Happiness ${A.happiness}</h4>${fac.map(([k, v]) => kv(k, signed(v))).join('')}
+        <h4>Services</h4>${svcRows}
+        <h4>Land</h4>${kv('Average land value', Math.round(A.avgLV), 'parks +20 · school/clinic +15 · fire+police +10 · landmarks · towers next door +5 · pollution and industry −')}${kv('Pollution on homes', Math.round(A.avgPoll), `Health stat ×${A.pollMul.toFixed(2)} on every source`)}${kv('Peak population', fmt(A.peak), A.next ? `${A.next[1]} at ${fmt(A.next[0])}` : 'top tier')}
+        <h4>Your stats are the weather</h4>${kv('Family', `×${A.M.family.toFixed(2)}`, 'homes grow faster, +happiness')}${kv('Business', `×${A.M.business.toFixed(2)}`, 'shops grow faster, more tax')}${kv('Body', `×${A.M.body.toFixed(2)}`, 'park and stadium reach')}${kv('Health', `×${A.M.health.toFixed(2)}`, 'clinic capacity, less pollution')}
+      </div>`;
+    }
+    function guideHtml(A, S) {
+      const lock = m => A.peak < m ? ` · 🔒 ${MILES.find(x => x[0] === m)[1]} (${m} pop)` : '';
+      const z = Object.entries(ZONES).map(([k, zz]) => `<div class="gitem"><span class="e">${zz.e}</span><div><b>${zz.name}</b> · ${zz.grit} Grit a tile<div class="s">${k === 'r' ? `People ${zz.pop.slice(1).join(' / ')} per level` : `Jobs ${zz.jobs.slice(1).join(' / ')} per level`}${zz.poll ? ` · pollution ${zz.poll.slice(1).join(' / ')}` : ''}</div><div class="s">${WHAT[k]}</div></div></div>`).join('');
+      const sv = Object.entries(SERVICES).map(([k, x]) => `<div class="gitem"><span class="e">${x.e}</span><div><b>${x.name}</b> · ${x.grit} Grit · ${x.up} Bucks/day upkeep${lock(x.mile)}<div class="s">reach ${x.r}${x.cap ? ` · capacity ${x.cap} ${x.capKind}` : ''}${x.poll ? ` · pollutes ${x.pr} tiles` : ''}</div><div class="s">${WHAT[k]}</div></div></div>`).join('');
+      const dc = Object.entries(DECOR).map(([k, x]) => `<div class="gitem"><span class="e">${x.e}</span><div><b>${x.name}</b> · ${x.bucks} Bucks${x.rank ? ` · 🔒 level ${x.rank}` : lock(x.mile)}<div class="s">+${x.lv} land value${x.r ? ` within ${x.r}` : ''} · ${WHAT[k]}</div></div></div>`).join('');
+      const growth = ['<b>Level 1</b>: road within 2 tiles, power, demand above zero. ~2 h.', '<b>Level 2</b>: water, clinic or school, happiness 60, land value 40, Town (500 peak). ~24 h.', '<b>Level 3</b>: water, clinic, school, fire, police all in reach and under capacity, happiness 75, land value 70, stronger demand, City (1500 peak). ~72 h.', 'Family speeds homes, Business speeds shops. Losing a requirement it stands on declines a building after 48 h.'].map(t => `<div class="chint">• ${t}</div>`).join('');
+      const miles = MILES.map(([p, n]) => { const un = [...Object.entries(SERVICES).filter(([, x]) => x.mile === p).map(([, x]) => x.name), ...Object.entries(DECOR).filter(([, x]) => x.mile === p && !x.rank).map(([, x]) => x.name), ...(p === 500 ? ['level 2 homes'] : p === 1500 ? ['level 3 towers'] : [])]; return `<div class="kv"><span>${n}<small>${un.join(', ') || '—'}</small></span><b>${fmt(p)}</b></div>`; }).join('');
+      return `<div class="rep"><h4>Zones</h4>${z}<h4>How buildings grow</h4>${growth}<h4>Services · Grit</h4>${sv}<h4>Decor &amp; landmarks · Bucks</h4>${dc}<h4>Land</h4><div class="chint">Ring 1 · ${fmt(expandCost({ ring: { v: 0 } }))} Grit at 50 people · Ring 2 · ${fmt(expandCost({ ring: { v: 1 } }))} at 200 · Ring 3 · ${fmt(expandCost({ ring: { v: 2 } }))} at 500. Roads ${ROAD_GRIT} Grit a tile.</div><h4>Milestones · peak population</h4>${miles}<h4>Taxes</h4><div class="chint">Each resident pays 0.5 Bucks a day at 7%; the rate scales it, land value adds up to +25%, and your Business stat multiplies it. Jobs add 0.1 each. Above 12% happiness falls 3 points per point. Taxes accrue 12 hours, then wait to be collected.</div></div>`;
+    }
     // ---- Panel: tools + info ----
-    const TOOLS = [['select', '👆', 'Inspect'], ['road', '🛣️', 'Road'], ['r', '🏘️', 'Homes'], ['c', '🏬', 'Shops'], ['i', '🏭', 'Industry'], ['service', '🏫', 'Services'], ['decor', '🌳', 'Decor'], ['land', '🗺️', 'Land & tax'], ['bulldoze', '🧨', 'Bulldoze'], ['view', '📊', 'Views']];
+    const TOOLS = [['select', '👆', 'Inspect'], ['road', '🛣️', 'Road'], ['r', '🏘️', 'Homes'], ['c', '🏬', 'Shops'], ['i', '🏭', 'Industry'], ['service', '🏫', 'Services'], ['decor', '🌳', 'Decor'], ['land', '🗺️', 'Land & tax'], ['report', '📈', 'Report'], ['guide', '📖', 'Guide'], ['bulldoze', '🧨', 'Bulldoze'], ['view', '📊', 'Views']];
     function renderPanel() {
       const S = get(); const c = S.city; const A = lastA || (lastA = analyze(c, S.vitality)); const peak = A.peak;
       let html = `<div class="advisor">🧑‍💼 ${advisor(c, A)}</div><div class="tools">${TOOLS.map(([id, e, n]) => `<button class="tool${tool === id ? ' on' : ''}" data-tool="${id}"><span>${e}</span>${n}</button>`).join('')}</div>`;
-      if (tool === 'service') html += `<div class="cgrid">${Object.entries(SERVICES).map(([id, s]) => { const locked = peak < s.mile; return `<button class="cbtn${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : s.e}</span><b>${s.name}</b><span class="s">${locked ? `${MILES.find(m => m[0] === s.mile)[1]} (${s.mile} pop)` : `${s.grit} Grit · reach ${s.r}${s.cap ? ` · ${s.cap} ${s.capKind}` : ''} · ${s.up}/day`}</span></button>`; }).join('')}</div>`;
+      if (tool === 'service') html += `<div class="cgrid">${Object.entries(SERVICES).map(([id, s]) => { const locked = peak < s.mile; return `<button class="cbtn${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : s.e}</span><b>${s.name}</b><span class="s">${locked ? `${MILES.find(m => m[0] === s.mile)[1]} (${s.mile} pop)` : `${s.grit} Grit · reach ${s.r}${s.cap ? ` · ${s.cap} ${s.capKind}` : ''} · ${s.up}/day`}</span><span class="s">${WHAT[id].split('.')[0]}.</span></button>`; }).join('')}</div>`;
       if (tool === 'decor') html += `<div class="cgrid">${Object.entries(DECOR).map(([id, d]) => { const rankLock = d.rank && (S.level || 1) < d.rank; const locked = peak < d.mile || rankLock; return `<button class="cbtn decor${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : d.e}</span><b>${d.name}</b><span class="s">${rankLock ? `Level ${d.rank}` : locked ? `${MILES.find(m => m[0] === d.mile)[1]}` : `${d.bucks} Bucks · +${d.lv} land value${d.rank ? ` · reach ${d.r}` : ''}`}</span></button>`; }).join('')}<button class="cbtn decor" data-fest="1" ${bucks(c) < FEST_BUCKS || c.fest.until > now() ? 'disabled' : ''}><span class="e">🎉</span><b>Festival</b><span class="s">${c.fest.until > now() ? `on · ${Math.ceil((c.fest.until - now()) / HOUR)} h` : `${FEST_BUCKS} Bucks · +5 happiness 24 h`}</span></button></div>`;
       if (tool === 'land') { const r = c.ring.v; const L = landSize(r), N = landSize(r + 1); const gate = LAND_GATE[r] || Infinity; const cost = expandCost(c); const gated = peak < gate; const can = r < 3 && !gated && S.grit >= cost;
         html += `<div class="csel"><span class="e">🗺️</span><div><b>Your land: ${L.w}×${L.h} tiles</b><div class="s">${r >= 3 ? 'City limits at their maximum.' : `Next ring: ${N.w}×${N.h} tiles for ${fmt(cost)} Grit.${gated ? ` Unlocks at ${MILES.find(m => m[0] === gate)[1]} — ${fmt(gate)} people (you peaked at ${fmt(peak)}).` : S.grit < cost ? ` You have ${fmt(S.grit)} Grit.` : ''}`}</div></div></div>`;
         html += `<div class="crow"><button class="btn sm${can ? ' primary' : ''}" id="expand" ${can ? '' : 'disabled'}>${r >= 3 ? 'Max size' : `Expand · ${fmt(cost)} Grit`}</button></div>`;
         html += `<div class="crow" style="align-items:center"><label class="s" for="tax">Tax ${c.tax.v}%</label><input type="range" id="tax" min="0" max="20" value="${c.tax.v}" style="flex:1"></div><div class="chint">Tax pays Bucks for decor and festivals. Above 12% happiness slips${peak < 200 ? '; at Village (200) tax starts to matter' : ''}.</div>`; }
+      if (tool === 'report') html += reportHtml(c, A);
+      if (tool === 'guide') html += guideHtml(A, S);
       if (tool === 'view') html += `<div class="crow">${[['none', 'Normal'], ['lv', 'Land value'], ['poll', 'Pollution'], ['power', 'Power'], ['water', 'Water'], ['school', 'School'], ['clinic', 'Clinic'], ['fire', 'Fire'], ['police', 'Police'], ['park', 'Parks']].map(([id, n]) => `<button class="btn sm${view === id ? ' primary' : ''}" data-view="${id}">${n}</button>`).join('')}</div>`;
       if (sel) {
         const [x, y] = sel; const p = tileAt(c, x, y); const i = A.info[kkey(x, y)];
         if (!owned(c, x, y)) html += `<div class="chint">Outside your land. Open <b>Land &amp; tax</b> to expand${c.ring.v < 3 ? ` — ${fmt(expandCost(c))} Grit${peak < (LAND_GATE[c.ring.v] || 0) ? `, from ${fmt(LAND_GATE[c.ring.v])} people` : ''}` : ''}.</div>`;
         else if (!p) html += `<div class="chint">Empty land at ${x},${y}${i ? '' : ''}. Land value ${(A.info[kkey(x, y)] || { lvs: 30 }).lvs}.</div>`;
-        else if (ZONES[p.k]) { const z = ZONES[p.k]; const ok = growthOK(i, A, c); const tm = p.lv < 3 ? GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1) : 0; const left = p.g ? Math.max(0, tm - (now() - p.g)) : tm; html += `<div class="csel"><span class="e">${z.e}</span><div><b>${z.name}</b> · ${p.lv === 0 ? (p.g ? 'under construction' : 'vacant lot') : `level ${p.lv}`}${p.k === 'r' ? ` · ${z.pop[p.lv]} people` : ` · ${z.jobs[p.lv]} jobs`}<div class="s">land value ${i.lvs} · pollution ${i.poll} · services: ${['power', 'water', 'school', 'clinic', 'fire', 'police', 'park'].filter(s => i.cov[s]).join(', ') || 'none'}</div><div class="s">${p.lv >= 3 ? 'Maxed out.' : ok.ok ? `Growing → L${p.lv + 1} in ${left > HOUR ? Math.ceil(left / HOUR) + ' h' : Math.ceil(left / 60000) + ' min'}` : `To grow, needs: ${ok.need.join(', ')}`}${p.d && p.lv > 0 ? ` · <span style="color:var(--body)">losing ${growthOK(i, A, c, true).need.join(', ')} — declines in ${Math.ceil((DECLINE_H * HOUR - (now() - p.d)) / HOUR)} h</span>` : ''}</div></div></div>`; }
-        else if (SERVICES[p.k]) { const s = A.svc.find(v => v.x === x && v.y === y); html += `<div class="csel"><span class="e">${SERVICES[p.k].e}</span><div><b>${SERVICES[p.k].name}</b>${i && !i.active ? ' · <span style="color:var(--body)">not next to a road</span>' : ''}<div class="s">${s ? `reach ${s.R} · load ${s.cap === Infinity ? '—' : `${s.load}/${s.cap} (${Math.round(s.eff * 100)}%)`} · upkeep ${SERVICES[p.k].up}/day` : ''}</div></div></div>`; }
+        else if (ZONES[p.k]) { const z = ZONES[p.k]; const ok = growthOK(i, A, c); const yieldTxt = p.k === 'r' ? `${z.pop[p.lv]} residents pay ${(z.pop[p.lv] * 0.5 * (A.tax / 7) * A.lvF * A.M.business).toFixed(1)} Bucks/day` : `${z.jobs[p.lv]} jobs · ${(z.jobs[p.lv] * 0.1).toFixed(1)} Bucks/day levy`; const tm = p.lv < 3 ? GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1) : 0; const left = p.g ? Math.max(0, tm - (now() - p.g)) : tm; html += `<div class="csel"><span class="e">${z.e}</span><div><b>${z.name}</b> · ${p.lv === 0 ? (p.g ? 'under construction' : 'vacant lot') : `level ${p.lv}`}${p.k === 'r' ? ` · ${z.pop[p.lv]} people` : ` · ${z.jobs[p.lv]} jobs`}<div class="s">land value ${i.lvs} · pollution ${i.poll} · services: ${['power', 'water', 'school', 'clinic', 'fire', 'police', 'park'].filter(s => i.cov[s]).join(', ') || 'none'}</div><div class="s">${yieldTxt}</div><div class="s">${p.lv >= 3 ? 'Maxed out.' : ok.ok ? `Growing → L${p.lv + 1} in ${left > HOUR ? Math.ceil(left / HOUR) + ' h' : Math.ceil(left / 60000) + ' min'}` : `To grow, needs: ${ok.need.join(', ')}`}${p.d && p.lv > 0 ? ` · <span style="color:var(--body)">losing ${growthOK(i, A, c, true).need.join(', ')} — declines in ${Math.ceil((DECLINE_H * HOUR - (now() - p.d)) / HOUR)} h</span>` : ''}</div></div></div>`; }
+        else if (SERVICES[p.k]) { const s = A.svc.find(v => v.x === x && v.y === y); const cov = s ? Object.values(A.info).filter(o => ZONES[o.p.k] && Math.max(Math.abs(o.x - x), Math.abs(o.y - y)) <= s.R).length : 0; html += `<div class="csel"><span class="e">${SERVICES[p.k].e}</span><div><b>${SERVICES[p.k].name}</b>${i && !i.active ? ' · <span style="color:var(--body)">not next to a road</span>' : ''}<div class="s">${s ? `reach ${s.R} · ${cov} zoned tiles in reach · load ${s.cap === Infinity ? '—' : `${s.load}/${s.cap} (${Math.round(s.eff * 100)}%)`} · upkeep ${SERVICES[p.k].up} Bucks/day` : ''}</div><div class="s">${WHAT[p.k]}</div></div></div>`; }
         else if (p.k === 'hall') html += `<div class="csel"><span class="e">🏛️</span><div><b>City Hall</b><div class="s">${A.mile[1]} · ${fmt(A.pop)} people · happiness ${A.happiness} · avg land value ${Math.round(A.avgLV)} · pollution on homes ${Math.round(A.avgPoll)}</div></div></div>`;
-        else if (p.k === 'road') html += `<div class="chint">Road${A.conn.has(kkey(x, y)) ? '' : ' — <b>not connected to City Hall</b>'}.</div>`;
-        else if (DECOR[p.k]) html += `<div class="chint">${DECOR[p.k].name}.</div>`;
+        else if (p.k === 'road') html += `<div class="chint">Road${A.conn.has(kkey(x, y)) ? '' : ' — <b>not connected to City Hall</b>'}. ${WHAT.road}</div>`;
+        else if (DECOR[p.k]) html += `<div class="chint"><b>${DECOR[p.k].name}.</b> ${WHAT[p.k]}</div>`;
       } else if (tool !== 'land') html += `<div class="chint">${tool === 'select' ? 'Tap a tile to inspect it. Drag to pan, pinch or use the buttons to zoom.' : tool === 'road' ? `Road · ${ROAD_GRIT} Grit a tile. Tap or drag from City Hall. Two fingers to pan.` : ZONES[tool] ? `${ZONES[tool].name} · ${ZONES[tool].grit} Grit a tile, within 2 tiles of a road. It builds itself over hours once it has power.` : tool === 'bulldoze' ? 'Tap a tile to clear it. No refund.' : tool === 'service' ? 'Pick a service, then tap a tile next to a road. The blue area is its reach.' : tool === 'decor' ? 'Paid in Bucks from taxes. Landmarks unlock by your level.' : ''}</div>`;
+      else if (tool !== 'report' && tool !== 'guide') html += '';
       panel.innerHTML = html;
     }
     panel.addEventListener('click', e => {

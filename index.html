@@ -260,6 +260,7 @@
   body.game .ghead { display: flex; }
   body.game #view-city { gap: 10px; }
   body.game .citywrap { margin: 0 -12px; border-radius: 0; border-left: 0; border-right: 0; }
+  .ctile[data-rep] { cursor: pointer; }
   .ctile { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; padding: 10px 12px; min-width: 0; }
   .ctile .k { font-size: 11px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ctile .v { font-family: var(--font-display); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 2px; letter-spacing: -.02em; }
@@ -273,13 +274,23 @@
   .collect.ready { background: var(--go); color: #fff; border-color: var(--go); } .collect.ready .s { color: rgba(255,255,255,.8); } .collect:disabled { opacity: .6; cursor: default; }
   .cpanel { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-card); padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
   .chint { color: var(--ink-2); font-size: 14px; }
+  .rep { display: flex; flex-direction: column; gap: 6px; }
+  .rep h4 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 10px 0 2px; }
+  .rtiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .rtile { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+  .rtile .k { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rtile .v { font-family: var(--font-display); font-size: 20px; font-weight: 800; line-height: 1.1; }
+  .rtile .s { font-size: 11px; color: var(--ink-3); } .rtile .spk { width: 100%; height: 22px; color: var(--xp); display: block; margin-top: 4px; }
+  .kv { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line-2); font-size: 14px; }
+  .kv small { display: block; font-size: 11.5px; color: var(--ink-3); } .kv b { font-variant-numeric: tabular-nums; white-space: nowrap; } .kv b.dim { color: var(--ink-3); font-weight: 500; }
+  .gitem { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line-2); font-size: 14px; } .gitem .e { font-size: 24px; text-align: center; } .gitem .s { font-size: 12.5px; color: var(--ink-2); display: block; margin-top: 2px; }
   .csel { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; } .csel .e { font-size: 30px; text-align: center; }
   .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .cbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 12px; padding: 8px 10px; cursor: pointer; min-height: 56px; }
   .cbtn .e { font-size: 20px; } .cbtn b { font-size: 13px; } .cbtn:disabled { opacity: .5; cursor: default; } .cbtn.decor { border-style: dashed; } .cbtn.on { border-color: var(--xp); background: var(--xp-soft); }
   .crow { display: flex; gap: 8px; flex-wrap: wrap; }
   .advisor { font-size: 14px; padding: 10px 12px; border-radius: 12px; background: var(--xp-soft); border-left: 3px solid var(--xp); }
-  .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .tool { font-size: 11px !important; }
   .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 12px; padding: 6px 2px; font-size: 10px; font-weight: 600; color: var(--ink-3); cursor: pointer; min-height: 50px; text-align: center; line-height: 1.15; }
   .tool span { font-size: 18px; } .tool.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
@@ -389,7 +400,7 @@
     <div class="chud" id="city-hud"></div>
     <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas><div class="czoom"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit city">⤢</button></div></div>
     <div class="cpanel" id="city-panel"></div>
-    <div class="card"><h3>How the City works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers — while they have a road within 2 tiles, power, demand, and the services each level asks for. Tap a tile to see what it's waiting on; a crane means it's building. <b>Land &amp; tax</b> buys more land (first ring at 50 people) and sets the tax rate; the corner buttons zoom. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
+    <div class="card"><h3>How the City works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers — while they have a road within 2 tiles, power, demand, and the services each level asks for. Tap a tile to see what it's waiting on; a crane means it's building. <b>Land &amp; tax</b> buys more land (first ring at 50 people) and sets the tax rate; the corner buttons zoom. <b>Report</b> (or tap any number up top) breaks down budget, people, happiness and services with 24-hour trends; <b>Guide</b> lists every building, what it does, what it costs and what it yields. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
   </div>
 
   <!-- COACH -->
@@ -441,8 +452,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-132736"></script>
-<script src="city.js?v=20260913-132736"></script>
+<script src="quotes.js?v=20260913-133411"></script>
+<script src="city.js?v=20260913-133411"></script>
 
 <script>
 (() => {
