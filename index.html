@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-jdT0WdAOoa/bLBU/CWhHSU+f8ZNY/YhPUHVV//CRCas='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gXgsBMmDNuniC6j/n87oqkgacSErqdi1sXx2kQfdVSg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -452,8 +452,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-133411"></script>
-<script src="city.js?v=20260913-133411"></script>
+<script src="quotes.js?v=20260913-135101"></script>
+<script src="city.js?v=20260913-135101"></script>
 
 <script>
 (() => {
@@ -631,6 +631,7 @@
   let state = base();
   try { const raw = localStorage.getItem(LS_KEY); if (raw) state = merge(base(), JSON.parse(raw)); } catch (e) {}
   if (!Object.keys(state.rewards).length) for (const [id, name, cost] of DEFAULT_REWARDS) state.rewards[id] = { name, cost, claimed: 0, gone: false, t: 1 };
+  let sanitizeAtBoot = true;
 
   // memo: everything derived from state is cached until state changes (ver bumps)
   let ver = 1; const memo = { v: 0, m: new Map() };
@@ -787,7 +788,7 @@
     if (!r.ok) throw new Error('GitHub ' + r.status); return r.status === 204 ? null : r.json();
   }
   async function gistRead(id) { const g = await gh('/gists/' + id); const f = g.files && g.files[GIST_FILE]; if (!f) return null; let content = f.content; if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url)).text(); try { return JSON.parse(content); } catch (e) { return null; } }
-  function absorb(remote) { const remoteN = merge(base(), remote || {}); const merged = merge(state, remoteN); const ms = JSON.stringify(merged); if (ms !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); render(); } if (ms !== JSON.stringify(remoteN)) { dirty = true; return true; } lastPushed = ms; return false; }
+  function absorb(remote) { const remoteN = merge(base(), remote || {}); const merged = merge(state, remoteN); const ms = JSON.stringify(merged); if (ms !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); render(); } let cleaned = false; try { cleaned = sanitize(); } catch (e) {} if (cleaned) { render(); dirty = true; return true; } if (ms !== JSON.stringify(remoteN)) { dirty = true; return true; } lastPushed = ms; return false; }
   async function gistConnect() {
     const c = cfg.get(); if (!c.ghToken) { note('Sync off — add a GitHub token in Sync & AI'); return; }
     try {
@@ -837,6 +838,18 @@
   // context computed once per render
   function ctx() { const tk = key(logicalToday()), wk = weekKey(logicalToday()); const T = totals(wk), S = season(tk); return { tk, wk, selKey: key(addDays(logicalToday(), selOffset)), T, S, G: gritInfo(T, S, wk), W: weekXP(wk), h: clockHours() }; }
   let prevXP = null;
+  // Records that could not have been earned are dropped: a level far above what the XP supports (max-merge would
+  // otherwise keep a bad value forever), level-ups above it, quote ratings before the season, a custom mission below level 5.
+  function sanitize() {
+    let touched = false; const wk = weekKey(logicalToday()); const real = levelFrom(totals(wk).xp, need).level;
+    if (state.peakLevel > real + 1) { state.peakLevel = real; touched = true; }
+    for (const l in state.levelups) if (+l > state.peakLevel) { delete state.levelups[l]; touched = true; }
+    const s0 = seasonStart(); for (const k in state.quotes) if (k < s0) { delete state.quotes[k]; touched = true; }
+    if (state.peakLevel < 5 && state.custom.m1) { delete state.custom.m1; touched = true; }
+    for (const w in state.interest) if (state.peakLevel < 4) { delete state.interest[w]; touched = true; }
+    if (touched) { bump(); saveLocal(); }
+    return touched;
+  }
   function payInterest(C) { // level 4 perk: 5% of unspent Grit, once per completed week, only for weeks lived at level 4+
     if (state.peakLevel < 4) return false; const pw = weekKey(addDays(parse(C.tk), -7)); if (state.interest[pw]) return false;
     const l4 = state.levelups[4]; if (!l4 || !l4.k || l4.k > key(addDays(parse(pw), 6))) return false;
@@ -1533,6 +1546,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     get: () => { if (cityCache.v === ver) return cityCache.val; const C = ctx(); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(C.T.by[s], needStat).level; cityCache = { v: ver, val: { city: state.city, grit: C.G.grit, vitality: vitality(C.tk), statLevels, level: state.peakLevel, todayKey: C.tk } }; return cityCache.val; },
     commit: () => { persist(); const C = ctx(); if ($('loot-bal')) $('loot-bal').textContent = City.fmt(C.G.grit); },
   });
+  if (sanitizeAtBoot) { sanitizeAtBoot = false; try { if (sanitize()) push(false); } catch (e) {} }
   render();
   if (!state.seen.intro) onboarding(); else maybeQuote();
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); maybeQuote(); } });
