@@ -1,5 +1,5 @@
-/* No Limit — service worker. Build 20260913-140535 */
-const BUILD = '20260913-140535';
+/* Life — service worker. Build 20260913-141322 */
+const BUILD = '20260913-141322';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
@@ -24,7 +24,7 @@ self.addEventListener('fetch', e => {
 
 // Web Push from the reminders workflow
 self.addEventListener('push', e => {
-  let d = { title: 'No Limit', body: 'Reminder', tag: 'reminder' };
+  let d = { title: 'Life', body: 'Reminder', tag: 'reminder' };
   try { d = Object.assign(d, e.data ? e.data.json() : {}); } catch (err) { if (e.data) d.body = e.data.text(); }
   e.waitUntil(self.registration.showNotification(d.title, { body: d.body, tag: d.tag, icon: './icon-192.png', badge: './icon-192.png', renotify: true, data: { url: './' } }));
 });
