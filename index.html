@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MtPqraooT8oxDT+e7pPpRhqtReldkPoNtYOUZ8s5ESM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MfOrS/v/niiNCflAUlsc82gf/smKT6SlNAOzrgJy2Tw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Life">
@@ -313,6 +313,10 @@
   .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line-2); padding: 6px 8px calc(8px + var(--sab)); }
   .nav-in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .nav button { background: none; border: 0; padding: 8px 2px 6px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--ink-3); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; min-height: 50px; }
+  .nav button { position: relative; }
+  .nbadge { position: absolute; top: 4px; right: calc(50% - 22px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 5px; letter-spacing: 0; }
+  .coach-alert { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--brand); border-radius: 12px; padding: 10px 14px; font-size: 14px; color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .coach-alert b { color: var(--brand); } .coach-alert .chev { color: var(--ink-3); font-size: 18px; }
   .nav button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .nav button[aria-selected="true"] { color: var(--ink); background: var(--surface-2); }
 
@@ -373,6 +377,7 @@
     </div>
     <div class="stats4" id="stats4"></div>
     <div id="bdays" hidden></div>
+    <button class="coach-alert" id="coach-alert" hidden></button>
     <div class="next" id="next"></div>
     <div class="qod" id="qod" hidden></div>
     <div id="woop-today"></div>
@@ -451,7 +456,7 @@
   <button role="tab" data-view="today" aria-selected="true" aria-controls="view-today"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Today</button>
   <button role="tab" data-view="week" aria-selected="false" aria-controls="view-week"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16V10M11 16V6M16 16v-4"/></svg>Progress</button>
   <button role="tab" data-view="city" aria-selected="false" aria-controls="view-city"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l4-2v15M9 21V10l5-3v14M14 21V12l5-2v11"/></svg>Life</button>
-  <button role="tab" data-view="coach" aria-selected="false" aria-controls="view-coach"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5 5.6.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.6-.7z"/></svg>Coach</button>
+  <button role="tab" data-view="coach" aria-selected="false" aria-controls="view-coach"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5 5.6.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.6-.7z"/></svg>Coach<span class="nbadge" id="coach-badge" hidden>0</span></button>
 </div></nav>
 <div class="sheet-bg" id="sheet-bg" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
@@ -460,8 +465,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-224546"></script>
-<script src="city.js?v=20260913-224546"></script>
+<script src="quotes.js?v=20260913-225100"></script>
+<script src="city.js?v=20260913-225100"></script>
 
 <script>
 (() => {
@@ -879,6 +884,30 @@
     if (!g.done && pop >= g.target) { g.done = now(); g.t = now(); persist(); milestone(`<div class="bignum">🏙️</div><h1>City goal: ${g.target} people</h1><p class="muted">+${CITY_GOAL_GRIT} Grit. The city grows when you do.</p>`, 2600); }
     return { ...g, pop };
   }
+  // In-app alerts: what in Coach needs a decision right now. Badge on the tab, a banner on Today, one toast when something new appears.
+  function coachAlerts(C) {
+    return cached('alerts:' + C.tk, () => {
+      const { tk } = C; const out = []; const dow = parse(tk).getDay();
+      const target = councilTarget(tk); const pl = state.plans[target]; const pend = pl ? pl.proposals.filter(x => x.status === 'pending').length + (pl.boss && pl.boss.status === 'pending' ? 1 : 0) : 0;
+      if (pend) out.push({ id: 'council:' + target + ':' + pend, label: `${pend} Council proposal${pend > 1 ? 's' : ''} waiting` });
+      else if (pl && pl.t && !pend) out.push({ id: 'plan:' + target + ':' + pl.t, label: `Council plan set for ${fmt(parse(target))}`, quiet: true });
+      const rwk = reviewWeek(tk); if (!reviewValid(rwk) && (dow === 0 || dow === 1 || dow === 2)) out.push({ id: 'review:' + rwk, label: dow === 0 ? 'Sunday review due today' : 'Sunday review still open' });
+      const fl = freedomLevel(); const nl = LADDER.find(lv => lv.lv === fl + 1); const og = nl ? nl.gates.find(([g]) => !(state.ladder[g] && state.ladder[g].v)) : null; const gl = og ? state.ladder[og[0]] : null;
+      if (gl && gl.due && gl.due < tk) out.push({ id: 'gate:' + og[0] + ':' + gl.due, label: `Gate overdue: ${og[1].split('—')[0].trim()}` });
+      let high = 0; try { high = learn(C).filter(x => x.sev === 'high').length; } catch (e) {}
+      if (high) out.push({ id: 'lab:' + high, label: `Lab: ${high} important finding${high > 1 ? 's' : ''}` });
+      return out;
+    });
+  }
+  function renderAlerts(C) {
+    const al = coachAlerts(C); const loud = al.filter(a => !a.quiet);
+    const b = $('coach-badge'); if (b) { b.hidden = !loud.length; b.textContent = loud.length; }
+    const ban = $('coach-alert'); if (ban) { ban.hidden = !al.length; ban.innerHTML = al.length ? `<span><b>Coach</b> · ${al.map(a => esc(a.label)).join(' · ')}</span><span class="chev">›</span>` : ''; }
+    let seen = []; try { seen = JSON.parse(localStorage.getItem('ascent.coachseen') || '[]'); } catch (e) {}
+    const fresh = al.filter(a => !seen.includes(a.id));
+    if (fresh.length && curView !== 'coach') { toast(`Coach: ${fresh[0].label}${fresh.length > 1 ? ` +${fresh.length - 1}` : ''}`, true); }
+    if (fresh.length) try { localStorage.setItem('ascent.coachseen', JSON.stringify(al.map(a => a.id).slice(-30))); } catch (e) {}
+  }
   function payInterest(C) { // level 4 perk: 5% of unspent Grit, once per completed week, only for weeks lived at level 4+
     if (state.peakLevel < 4) return false; const pw = weekKey(addDays(parse(C.tk), -7)); if (state.interest[pw]) return false;
     const l4 = state.levelups[4]; if (!l4 || !l4.k || l4.k > key(addDays(parse(pw), 6))) return false;
@@ -928,6 +957,7 @@
     $('hero-xpbar').style.width = `${Math.max(0, Math.min(100, Math.round(100 * L.into / L.need)))}%`;
     $('hero-next').textContent = `${Math.max(0, L.need - L.into)} XP to level ${L.level + 1}${W.mult > 1 ? ` · ×${W.mult.toFixed(1)} this week` : ''}`;
     $('stats4').innerHTML = Object.keys(STATS).map(s => { const sl = levelFrom(T.by[s], needStat); return `<div class="c-${s}"><span>${STATS[s]} ${sl.level}</span><i><b style="width:${Math.round(100 * sl.into / sl.need)}%"></b></i></div>`; }).join('');
+    renderAlerts(C);
     if (curView === 'today') renderToday(C);
     if (curView === 'week') renderWeek(C);
     if (curView === 'coach') renderCoach(C);
@@ -1402,6 +1432,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const wd = t.closest('[data-wd]'); if (wd) { weekSel = wd.dataset.wd; render(); return; }
     const tab = t.closest('.nav [data-view]'); if (tab) { goView(tab.dataset.view); return; }
     if (t.closest('#city-exit')) { goView('today'); return; }
+    if (t.closest('#coach-alert')) { goView('coach'); return; }
   });
   // ---- Progress tab ----
   $('quests').addEventListener('click', e => {
