@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gXgsBMmDNuniC6j/n87oqkgacSErqdi1sXx2kQfdVSg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-D9sP9mTgatkzNyAkUnkWe0SzBJJ8cpLGuNSimRbm924='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -452,8 +452,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-135317"></script>
-<script src="city.js?v=20260913-135317"></script>
+<script src="quotes.js?v=20260913-135504"></script>
+<script src="city.js?v=20260913-135504"></script>
 
 <script>
 (() => {
@@ -796,7 +796,7 @@
       if (!id) { for (let page = 1; page <= 5 && !id; page++) { const list = await gh(`/gists?per_page=100&page=${page}`); const found = list.find(g => g.description === GIST_DESC); if (found) id = found.id; if (list.length < 100) break; } }
       if (!id) { const made = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); id = made.id; }
       cfg.set({ ...cfg.get(), gistId: id });
-      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); render(); } } await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); } };
+      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); } try { sanitize(); } catch (e) {} render(); } await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); } };
       const remote = await gistRead(id); if (absorb(remote)) push(false);
       note('Synced via your GitHub Gist');
     } catch (e) { dbRef = null; note('Gist sync failed — check the token (needs Gists: read & write)'); }
