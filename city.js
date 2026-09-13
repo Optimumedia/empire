@@ -41,6 +41,7 @@ window.City = (() => {
   };
   const ROAD_GRIT = 5, FEST_BUCKS = 300, FEST_MS = DAY;
   const MILES = [[0, 'Outpost'], [50, 'Hamlet'], [200, 'Village'], [500, 'Town'], [1500, 'City'], [4000, 'Metropolis'], [10000, 'Empire City']];
+  const LAND_GATE = [50, 200, 500];         // peak pop needed to buy ring 1, 2, 3
   const GROW_H = [2, 24, 72];                 // hours to reach L1, L2, L3 when conditions hold
   const DECLINE_H = 48;
   const POP_MAX = { L2: 500, L3: 1500 };      // milestone gates for density
@@ -87,6 +88,7 @@ window.City = (() => {
   const owned = (c, x, y) => { const r = c.ring.v; return x >= Math.max(RIVER_X + 1, CORE[0] - r) && x < Math.min(W, CORE[1] + r) && y >= Math.max(0, CORE[0] - r) && y < Math.min(W, CORE[1] + r); };
   const tileAt = (c, x, y) => { const p = c.tiles[kkey(x, y)]; return p && !p.gone ? p : null; };
   const expandCost = c => Math.round(250 * Math.pow(1.5, c.ring.v));
+  const landSize = r => { const x0 = Math.max(RIVER_X + 1, CORE[0] - r), x1 = Math.min(W, CORE[1] + r), y0 = Math.max(0, CORE[0] - r), y1 = Math.min(W, CORE[1] + r); return { x0, x1, y0, y1, w: x1 - x0, h: y1 - y0 }; };
 
   // =====================================================================
   // Simulation
@@ -210,11 +212,14 @@ window.City = (() => {
     const toScreen = (x, y) => [OX + (x - y) * TWH, OY + (x + y) * THH];
     const toGrid = (sx, sy) => { const x = sx - OX, y = sy - OY; return [Math.floor((x / TWH + y / THH) / 2), Math.floor((y / THH - x / TWH) / 2)]; };
     function size() {
-      cssW = canvas.clientWidth || 360; cssH = Math.round(Math.min(440, cssW * 1.15)); dpr = Math.min(2, window.devicePixelRatio || 1);
+      cssW = canvas.clientWidth || 360; cssH = Math.round(Math.min(520, cssW * 1.2)); dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr); canvas.style.height = cssH + 'px';
       if (!ground) { ground = document.createElement('canvas'); blds = document.createElement('canvas'); ground.width = blds.width = WORLD_W * GS; ground.height = blds.height = WORLD_H * GS; fitCamera(); }
     }
-    function fitCamera() { cam.z = clamp(cssW / (7 * TW + 20), 0.45, 1.6); const [cx, cy] = toScreen(8, 8); cam.x = cssW / 2 / cam.z - cx; cam.y = cssH / 2 / cam.z - cy - 10; }
+    function fitCamera() { const L = landSize(get().city.ring.v); const n = Math.max(L.w, L.h); cam.z = clamp(cssW / ((n + 1) * TW + 16), 0.35, 1.6); const [cx, cy] = toScreen((L.x0 + L.x1) / 2, (L.y0 + L.y1) / 2); cam.x = cssW / 2 / cam.z - cx; cam.y = cssH / 2 / cam.z - cy + 6; }
+    function zoomAt(f) { const z = clamp(cam.z * f, 0.35, 2.2); const mx = cssW / 2, my = cssH / 2; cam.x = mx / z - (mx / cam.z - cam.x); cam.y = my / z - (my / cam.z - cam.y); cam.z = z; }
+    const zoomEl = canvas.parentElement && canvas.parentElement.querySelector('.czoom');
+    if (zoomEl) zoomEl.addEventListener('click', e => { const b = e.target.closest('[data-z]'); if (!b) return; if (b.dataset.z === 'fit') fitCamera(); else zoomAt(b.dataset.z === 'in' ? 1.3 : 0.77); });
     const toWorld = (px, py) => [px / cam.z - cam.x, py / cam.z - cam.y];
 
     // ---- drawing primitives (world space) ----
@@ -302,7 +307,7 @@ window.City = (() => {
       const r = rng(hash(x, y, [...p.k].reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7) + p.lv * 101)); const [sx, sy0] = toScreen(x, y); const cx = sx, cy = sy0 + THH; const lv = p.lv;
       const active = !i || i.active;
       if (ZONES[p.k]) {
-        if (lv === 0) return;
+        if (lv === 0) { if (p.g && active) { g.fillStyle = 'rgba(0,0,30,.22)'; g.fillRect(cx - 14, cy - 3, 14, 5); g.strokeStyle = hsl(35, 90, 55); g.lineWidth = 2; g.beginPath(); g.moveTo(cx + 8, cy + 2); g.lineTo(cx + 8, cy - 26); g.lineTo(cx - 12, cy - 26); g.stroke(); g.lineWidth = 1; g.beginPath(); g.moveTo(cx - 8, cy - 26); g.lineTo(cx - 8, cy - 12); g.stroke(); g.fillStyle = hsl(35, 90, 55); g.fillRect(cx - 10, cy - 12, 4, 3); g.fillStyle = hsl(35, 30, 45); g.fillRect(cx + 6, cy - 1, 5, 3); } return; }
         if (p.k === 'r') {
           if (lv === 1) { const w = 0.55 + r() * 0.15; const hue = 25 + r() * 20; const h = 12 + r() * 4; poly([corners(x, y, 1, 1).b, corners(x, y, 1, 1).r, corners(x, y, 1, 1).f, corners(x, y, 1, 1).l], hsl(120, 35, night ? 24 : 52)); const c = box(x, y, w, w, h, hue, 45 + r() * 10, 58 + r() * 8, { win: { rng: r, fp: 10, cols: 2 }, night }); roof(c, h, 8 + r() * 3, r() < 0.5 ? 8 : 200, 35, 42); g.fillStyle = hsl(28, 40, 28); g.fillRect(c.f[0] - 7, c.f[1] - 8, 4, 8); if (r() < 0.6) tree(cx - 18, cy + 4, 0.7, 120 + r() * 20); }
           else if (lv === 2) { const h = 26 + r() * 14; const c = box(x, y, 0.85, 0.85, h, 30 + r() * 15, 40, 60, { win: { rng: r, fp: 9, cols: 3 }, night }); g.fillStyle = 'rgba(0,0,0,.18)'; for (let f = 1; f < Math.floor(h / 9); f++) { const t = 0.5; g.fillRect(c.l[0] + (c.f[0] - c.l[0]) * 0.15, c.l[1] + (c.f[1] - c.l[1]) * 0.15 - f * 9 - 3, 8, 1.5); } g.fillStyle = hsl(30, 30, 40); g.fillRect(cx + 4, cy - h - 12, 5, 8); }
@@ -412,24 +417,27 @@ window.City = (() => {
       hud.querySelector('#city-collect').addEventListener('click', () => { const S2 = get(); const c2 = S2.city; const t2 = now(); const p = Math.floor(taxPending(c2, lastA || analyze(c2, S2.vitality), t2)); (c2.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += p; c2.lastTax.t = t2; commit(); if (p > 0) { toast(`+${fmt(p)} Bucks`); burst(Math.min(14, 3 + Math.floor(p / 50)), `+${fmt(p)}`); } renderHud(); });
     }
     // ---- Panel: tools + info ----
-    const TOOLS = [['select', '👆', 'Inspect'], ['road', '🛣️', `Road · ${ROAD_GRIT}`], ['r', '🏘️', `Homes · ${ZONES.r.grit}`], ['c', '🏬', `Shops · ${ZONES.c.grit}`], ['i', '🏭', `Industry · ${ZONES.i.grit}`], ['service', '🏛️', 'Services'], ['decor', '🌳', 'Decor (Bucks)'], ['bulldoze', '🧨', 'Bulldoze'], ['view', '📊', 'Views']];
+    const TOOLS = [['select', '👆', 'Inspect'], ['road', '🛣️', 'Road'], ['r', '🏘️', 'Homes'], ['c', '🏬', 'Shops'], ['i', '🏭', 'Industry'], ['service', '🏫', 'Services'], ['decor', '🌳', 'Decor'], ['land', '🗺️', 'Land & tax'], ['bulldoze', '🧨', 'Bulldoze'], ['view', '📊', 'Views']];
     function renderPanel() {
       const S = get(); const c = S.city; const A = lastA || (lastA = analyze(c, S.vitality)); const peak = A.peak;
       let html = `<div class="advisor">🧑‍💼 ${advisor(c, A)}</div><div class="tools">${TOOLS.map(([id, e, n]) => `<button class="tool${tool === id ? ' on' : ''}" data-tool="${id}"><span>${e}</span>${n}</button>`).join('')}</div>`;
       if (tool === 'service') html += `<div class="cgrid">${Object.entries(SERVICES).map(([id, s]) => { const locked = peak < s.mile; return `<button class="cbtn${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : s.e}</span><b>${s.name}</b><span class="s">${locked ? `${MILES.find(m => m[0] === s.mile)[1]} (${s.mile} pop)` : `${s.grit} Grit · reach ${s.r}${s.cap ? ` · ${s.cap} ${s.capKind}` : ''} · ${s.up}/day`}</span></button>`; }).join('')}</div>`;
       if (tool === 'decor') html += `<div class="cgrid">${Object.entries(DECOR).map(([id, d]) => { const rankLock = d.rank && (S.level || 1) < d.rank; const locked = peak < d.mile || rankLock; return `<button class="cbtn decor${sub === id ? ' on' : ''}" data-sub="${id}" ${locked ? 'disabled' : ''}><span class="e">${locked ? '🔒' : d.e}</span><b>${d.name}</b><span class="s">${rankLock ? `Level ${d.rank}` : locked ? `${MILES.find(m => m[0] === d.mile)[1]}` : `${d.bucks} Bucks · +${d.lv} land value${d.rank ? ` · reach ${d.r}` : ''}`}</span></button>`; }).join('')}<button class="cbtn decor" data-fest="1" ${bucks(c) < FEST_BUCKS || c.fest.until > now() ? 'disabled' : ''}><span class="e">🎉</span><b>Festival</b><span class="s">${c.fest.until > now() ? `on · ${Math.ceil((c.fest.until - now()) / HOUR)} h` : `${FEST_BUCKS} Bucks · +5 happiness 24 h`}</span></button></div>`;
+      if (tool === 'land') { const r = c.ring.v; const L = landSize(r), N = landSize(r + 1); const gate = LAND_GATE[r] || Infinity; const cost = expandCost(c); const gated = peak < gate; const can = r < 3 && !gated && S.grit >= cost;
+        html += `<div class="csel"><span class="e">🗺️</span><div><b>Your land: ${L.w}×${L.h} tiles</b><div class="s">${r >= 3 ? 'City limits at their maximum.' : `Next ring: ${N.w}×${N.h} tiles for ${fmt(cost)} Grit.${gated ? ` Unlocks at ${MILES.find(m => m[0] === gate)[1]} — ${fmt(gate)} people (you peaked at ${fmt(peak)}).` : S.grit < cost ? ` You have ${fmt(S.grit)} Grit.` : ''}`}</div></div></div>`;
+        html += `<div class="crow"><button class="btn sm${can ? ' primary' : ''}" id="expand" ${can ? '' : 'disabled'}>${r >= 3 ? 'Max size' : `Expand · ${fmt(cost)} Grit`}</button></div>`;
+        html += `<div class="crow" style="align-items:center"><label class="s" for="tax">Tax ${c.tax.v}%</label><input type="range" id="tax" min="0" max="20" value="${c.tax.v}" style="flex:1"></div><div class="chint">Tax pays Bucks for decor and festivals. Above 12% happiness slips${peak < 200 ? '; at Village (200) tax starts to matter' : ''}.</div>`; }
       if (tool === 'view') html += `<div class="crow">${[['none', 'Normal'], ['lv', 'Land value'], ['poll', 'Pollution'], ['power', 'Power'], ['water', 'Water'], ['school', 'School'], ['clinic', 'Clinic'], ['fire', 'Fire'], ['police', 'Police'], ['park', 'Parks']].map(([id, n]) => `<button class="btn sm${view === id ? ' primary' : ''}" data-view="${id}">${n}</button>`).join('')}</div>`;
       if (sel) {
         const [x, y] = sel; const p = tileAt(c, x, y); const i = A.info[kkey(x, y)];
-        if (!owned(c, x, y)) html += `<div class="chint">Outside your land. <b>Expand</b> for ${fmt(expandCost(c))} Grit${peak < 500 ? ' (unlocks at Town, 500 pop)' : ''}.</div>`;
+        if (!owned(c, x, y)) html += `<div class="chint">Outside your land. Open <b>Land &amp; tax</b> to expand${c.ring.v < 3 ? ` — ${fmt(expandCost(c))} Grit${peak < (LAND_GATE[c.ring.v] || 0) ? `, from ${fmt(LAND_GATE[c.ring.v])} people` : ''}` : ''}.</div>`;
         else if (!p) html += `<div class="chint">Empty land at ${x},${y}${i ? '' : ''}. Land value ${(A.info[kkey(x, y)] || { lvs: 30 }).lvs}.</div>`;
-        else if (ZONES[p.k]) { const z = ZONES[p.k]; const ok = growthOK(i, A, c); const tm = p.lv < 3 ? GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1) : 0; const left = p.g ? Math.max(0, tm - (now() - p.g)) : tm; html += `<div class="csel"><span class="e">${z.e}</span><div><b>${z.name}</b> · ${p.lv === 0 ? 'vacant lot' : `level ${p.lv}`}${p.k === 'r' ? ` · ${z.pop[p.lv]} people` : ` · ${z.jobs[p.lv]} jobs`}<div class="s">land value ${i.lvs} · pollution ${i.poll} · services: ${['power', 'water', 'school', 'clinic', 'fire', 'police', 'park'].filter(s => i.cov[s]).join(', ') || 'none'}</div><div class="s">${p.lv >= 3 ? 'Maxed out.' : ok.ok ? `Growing → L${p.lv + 1} in ${left > HOUR ? Math.ceil(left / HOUR) + ' h' : Math.ceil(left / 60000) + ' min'}` : `To grow, needs: ${ok.need.join(', ')}`}${p.d && p.lv > 0 ? ` · <span style="color:var(--body)">losing ${growthOK(i, A, c, true).need.join(', ')} — declines in ${Math.ceil((DECLINE_H * HOUR - (now() - p.d)) / HOUR)} h</span>` : ''}</div></div></div>`; }
+        else if (ZONES[p.k]) { const z = ZONES[p.k]; const ok = growthOK(i, A, c); const tm = p.lv < 3 ? GROW_H[p.lv] * HOUR / (p.k === 'r' ? A.M.family : p.k === 'c' ? A.M.business : 1) : 0; const left = p.g ? Math.max(0, tm - (now() - p.g)) : tm; html += `<div class="csel"><span class="e">${z.e}</span><div><b>${z.name}</b> · ${p.lv === 0 ? (p.g ? 'under construction' : 'vacant lot') : `level ${p.lv}`}${p.k === 'r' ? ` · ${z.pop[p.lv]} people` : ` · ${z.jobs[p.lv]} jobs`}<div class="s">land value ${i.lvs} · pollution ${i.poll} · services: ${['power', 'water', 'school', 'clinic', 'fire', 'police', 'park'].filter(s => i.cov[s]).join(', ') || 'none'}</div><div class="s">${p.lv >= 3 ? 'Maxed out.' : ok.ok ? `Growing → L${p.lv + 1} in ${left > HOUR ? Math.ceil(left / HOUR) + ' h' : Math.ceil(left / 60000) + ' min'}` : `To grow, needs: ${ok.need.join(', ')}`}${p.d && p.lv > 0 ? ` · <span style="color:var(--body)">losing ${growthOK(i, A, c, true).need.join(', ')} — declines in ${Math.ceil((DECLINE_H * HOUR - (now() - p.d)) / HOUR)} h</span>` : ''}</div></div></div>`; }
         else if (SERVICES[p.k]) { const s = A.svc.find(v => v.x === x && v.y === y); html += `<div class="csel"><span class="e">${SERVICES[p.k].e}</span><div><b>${SERVICES[p.k].name}</b>${i && !i.active ? ' · <span style="color:var(--body)">not next to a road</span>' : ''}<div class="s">${s ? `reach ${s.R} · load ${s.cap === Infinity ? '—' : `${s.load}/${s.cap} (${Math.round(s.eff * 100)}%)`} · upkeep ${SERVICES[p.k].up}/day` : ''}</div></div></div>`; }
         else if (p.k === 'hall') html += `<div class="csel"><span class="e">🏛️</span><div><b>City Hall</b><div class="s">${A.mile[1]} · ${fmt(A.pop)} people · happiness ${A.happiness} · avg land value ${Math.round(A.avgLV)} · pollution on homes ${Math.round(A.avgPoll)}</div></div></div>`;
         else if (p.k === 'road') html += `<div class="chint">Road${A.conn.has(kkey(x, y)) ? '' : ' — <b>not connected to City Hall</b>'}.</div>`;
         else if (DECOR[p.k]) html += `<div class="chint">${DECOR[p.k].name}.</div>`;
-      } else html += `<div class="chint">${tool === 'select' ? 'Tap a tile to inspect it. Drag to pan, pinch to zoom.' : tool === 'road' || ZONES[tool] ? 'Tap or drag across tiles to place. Two fingers to pan.' : tool === 'bulldoze' ? 'Tap a tile to clear it. No refund.' : tool === 'service' ? 'Pick a service, then tap a tile next to a road. The blue area is its reach.' : ''}</div>`;
-      if (peak >= 200) html += `<div class="crow" style="align-items:center"><label class="s" for="tax">Tax ${c.tax.v}%</label><input type="range" id="tax" min="0" max="20" value="${c.tax.v}" style="flex:1"><button class="btn sm" id="expand" ${peak < 500 || S.grit < expandCost(c) || c.ring.v >= 3 ? 'disabled' : ''}>Expand · ${c.ring.v >= 3 ? 'max' : fmt(expandCost(c)) + ' Grit'}</button></div>`;
+      } else if (tool !== 'land') html += `<div class="chint">${tool === 'select' ? 'Tap a tile to inspect it. Drag to pan, pinch or use the buttons to zoom.' : tool === 'road' ? `Road · ${ROAD_GRIT} Grit a tile. Tap or drag from City Hall. Two fingers to pan.` : ZONES[tool] ? `${ZONES[tool].name} · ${ZONES[tool].grit} Grit a tile, within 2 tiles of a road. It builds itself over hours once it has power.` : tool === 'bulldoze' ? 'Tap a tile to clear it. No refund.' : tool === 'service' ? 'Pick a service, then tap a tile next to a road. The blue area is its reach.' : tool === 'decor' ? 'Paid in Bucks from taxes. Landmarks unlock by your level.' : ''}</div>`;
       panel.innerHTML = html;
     }
     panel.addEventListener('click', e => {
@@ -439,7 +447,7 @@ window.City = (() => {
       if (sb) { sub = sb.dataset.sub; if (tool === 'service' && SERVICES[sub]) view = 'none'; renderPanel(); return; }
       if (vb) { view = vb.dataset.view; renderPanel(); return; }
       if (fest) { if (bucks(c) < FEST_BUCKS) return; (c.ledger[deviceId] ||= { earned: 0, spent: 0 }).spent += FEST_BUCKS; c.fest = { until: now() + FEST_MS, t: now() }; lastA = null; commit(); toast('🎉 Festival — +5 happiness for 24 h'); renderHud(); renderPanel(); return; }
-      if (ex) { const cost = expandCost(c); if (S.grit < cost) return; c.ring = { v: c.ring.v + 1, t: now() }; c.gspent[deviceId] = (c.gspent[deviceId] || 0) + cost; lastA = null; dirtyG = true; commit(); toast('City limits expanded', true); fitCamera(); renderHud(); renderPanel(); return; }
+      if (ex) { const cost = expandCost(c); if (S.grit < cost || c.ring.v >= 3 || (lastA || analyze(c, S.vitality)).peak < (LAND_GATE[c.ring.v] || Infinity)) return; c.ring = { v: c.ring.v + 1, t: now() }; c.gspent[deviceId] = (c.gspent[deviceId] || 0) + cost; lastA = null; dirtyG = true; commit(); toast('City limits expanded', true); fitCamera(); renderHud(); renderPanel(); return; }
     });
     panel.addEventListener('input', e => { if (e.target.id === 'tax') { const c = get().city; c.tax = { v: +e.target.value, t: now() }; lastA = null; commit(); renderHud(); const l = panel.querySelector('label[for=tax]'); if (l) l.textContent = `Tax ${c.tax.v}%`; } });
 
@@ -470,7 +478,7 @@ window.City = (() => {
     });
     canvas.addEventListener('pointermove', e => {
       if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-      if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); const z = clamp(pinch.z * d / pinch.d, 0.4, 2.2); const r = canvas.getBoundingClientRect(); const mx = pinch.mx - r.left, my = pinch.my - r.top; cam.x = mx / z - (mx / pinch.z - pinch.cx); cam.y = my / z - (my / pinch.z - pinch.cy); cam.z = z; return; }
+      if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); const z = clamp(pinch.z * d / pinch.d, 0.35, 2.2); const r = canvas.getBoundingClientRect(); const mx = pinch.mx - r.left, my = pinch.my - r.top; cam.x = mx / z - (mx / pinch.z - pinch.cx); cam.y = my / z - (my / pinch.z - pinch.cy); cam.z = z; return; }
       if (!drag) return;
       const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy; if (Math.hypot(dx, dy) > 6) drag.moved = true;
       const r = canvas.getBoundingClientRect(); const [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top); const [gx, gy] = toGrid(wx, wy); hover = [gx, gy];

@@ -240,7 +240,9 @@
   .woop { border-left: 3px solid var(--xp); padding: 8px 12px; background: var(--xp-soft); border-radius: 10px; font-size: 14px; }
 
   /* ---- city ---- */
-  .citywrap { border-radius: var(--r-card); overflow: hidden; border: 1px solid var(--line-2); }
+  .citywrap { border-radius: var(--r-card); overflow: hidden; border: 1px solid var(--line-2); position: relative; }
+  .czoom { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .czoom button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(0,0,0,.25); background: rgba(255,255,255,.88); color: #14202B; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
   .citywrap canvas { display: block; width: 100%; touch-action: none; background: #8ec5ff; }
   .chud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .ctile { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; padding: 10px 12px; min-width: 0; }
@@ -263,6 +265,7 @@
   .crow { display: flex; gap: 8px; flex-wrap: wrap; }
   .advisor { font-size: 14px; padding: 10px 12px; border-radius: 12px; background: var(--xp-soft); border-left: 3px solid var(--xp); }
   .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .tool { font-size: 11px !important; }
   .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 12px; padding: 6px 2px; font-size: 10px; font-weight: 600; color: var(--ink-3); cursor: pointer; min-height: 50px; text-align: center; line-height: 1.15; }
   .tool span { font-size: 18px; } .tool.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
@@ -367,9 +370,9 @@
   <!-- CITY -->
   <div class="view" id="view-city" role="tabpanel" hidden>
     <div class="chud" id="city-hud"></div>
-    <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas></div>
+    <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas><div class="czoom"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit city">⤢</button></div></div>
     <div class="cpanel" id="city-panel"></div>
-    <div class="card"><h3>How the City works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers — while they have a road within 2 tiles, power, demand, and the services each level asks for. Tap a tile to see what it's waiting on. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
+    <div class="card"><h3>How the City works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers — while they have a road within 2 tiles, power, demand, and the services each level asks for. Tap a tile to see what it's waiting on; a crane means it's building. <b>Land &amp; tax</b> buys more land (first ring at 50 people) and sets the tax rate; the corner buttons zoom. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
   </div>
 
   <!-- COACH -->
@@ -418,8 +421,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-131350"></script>
-<script src="city.js?v=20260913-131350"></script>
+<script src="quotes.js?v=20260913-132021"></script>
+<script src="city.js?v=20260913-132021"></script>
 
 <script>
 (() => {
