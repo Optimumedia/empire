@@ -431,7 +431,21 @@ window.City = (() => {
       if (night) { sky.addColorStop(0, '#0b1030'); sky.addColorStop(1, '#1b2350'); } else if (h < 8 || h >= 18) { sky.addColorStop(0, '#f2a86a'); sky.addColorStop(1, '#8fb0d8'); } else { sky.addColorStop(0, '#8ec5ff'); sky.addColorStop(1, '#e3f2ff'); }
       g.fillStyle = sky; g.fillRect(0, 0, cssW, cssH);
       g.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * cam.z * cam.x, dpr * cam.z * cam.y);
-      g.drawImage(ground, 0, 0, WORLD_W, WORLD_H); g.drawImage(blds, 0, 0, WORLD_W, WORLD_H);
+      g.drawImage(ground, 0, 0, WORLD_W, WORLD_H);
+      // traffic sits between the ground and the buildings: whatever stands in front of a car simply covers it
+      const drawCar = car => {
+        const alongX = car.dx !== 0 || car.dy === 0; const ox = car.dy > 0 ? -0.2 : car.dy < 0 ? 0.2 : 0, oy = car.dx > 0 ? 0.2 : car.dx < 0 ? -0.2 : 0; // drive on the right
+        const bx = car.x - 0.5 + ox, by = car.y - 0.5 + oy; const w = alongX ? 0.34 : 0.2, d = alongX ? 0.2 : 0.34;
+        const cc = corners(bx, by, w, d); ell(cc.c[0] + 2, cc.c[1] + 1, alongX ? 12 : 8, alongX ? 5 : 6, 'rgba(0,0,30,.28)');
+        const body = box(bx, by, w, d, 4, car.hue, car.sat, car.lit, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 14)) });
+        box(bx, by, alongX ? 0.17 : 0.15, alongX ? 0.15 : 0.17, 8, 205, 35, 62, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 10)) });
+        if (night) { const f = car.dx > 0 ? body.r : car.dx < 0 ? body.l : car.dy > 0 ? body.f : body.b; ell(f[0], f[1] - 3, 1.6, 1.2, '#fff3b0'); const gr = g.createRadialGradient(f[0], f[1], 1, f[0], f[1], 14); gr.addColorStop(0, 'rgba(255,243,176,.35)'); gr.addColorStop(1, 'rgba(255,243,176,0)'); g.fillStyle = gr; g.fillRect(f[0] - 14, f[1] - 14, 28, 28); }
+      };
+      const drawPed = pd => { const ox = pd.dy !== 0 ? 0.4 * pd.side : 0, oy = pd.dx !== 0 ? 0.4 * pd.side : 0; const [px, py] = toScreen(pd.x - 0.5 + ox, pd.y - 0.5 + oy); const bx = px, by = py + THH; ell(bx, by + 1, 2.2, 1, 'rgba(0,0,30,.25)'); g.fillStyle = hsl(pd.hue, 55, 48); g.fillRect(bx - 1.2, by - 5.5, 2.4, 4.5); ell(bx, by - 6.8, 1.4, 1.4, hsl(28, 45, 66)); };
+      // back to front
+      const agents = [...cars.map(a => ({ a, car: true })), ...peds.map(a => ({ a, car: false }))].sort((u, v) => (u.a.x + u.a.y) - (v.a.x + v.a.y));
+      for (const { a, car } of agents) { if (car) drawCar(a); else drawPed(a); }
+      g.drawImage(blds, 0, 0, WORLD_W, WORLD_H);
       // water shimmer
       for (let y = 0; y < W; y++) { const [sx, sy] = toScreen(RIVER_X, y); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1; g.beginPath(); for (let k = 0; k <= 4; k++) g.lineTo(sx - 14 + k * 7 + Math.sin(tsec * 2 + y + k) * 2, sy + THH + Math.sin(tsec * 1.5 + y * 0.7 + k) * 1.5); g.stroke(); }
       // pollution haze
@@ -443,22 +457,6 @@ window.City = (() => {
       // selection / hover
       const hl = sel || hover; if (hl) { const cc = corners(hl[0], hl[1], 1, 1); const pulse = 0.6 + Math.sin(tsec * 4) * 0.3; poly([cc.b, cc.r, cc.f, cc.l], `rgba(242,178,51,${0.18 * pulse})`, `rgba(242,178,51,${0.5 + pulse * 0.4})`, 2); }
       // cars, smoke, fx
-      const drawCar = car => {
-        const alongX = car.dx !== 0 || car.dy === 0; const ox = car.dy > 0 ? -0.2 : car.dy < 0 ? 0.2 : 0, oy = car.dx > 0 ? 0.2 : car.dx < 0 ? -0.2 : 0; // drive on the right
-        const bx = car.x - 0.5 + ox, by = car.y - 0.5 + oy; const w = alongX ? 0.34 : 0.2, d = alongX ? 0.2 : 0.34;
-        const cc = corners(bx, by, w, d); ell(cc.c[0] + 2, cc.c[1] + 1, alongX ? 12 : 8, alongX ? 5 : 6, 'rgba(0,0,30,.28)');
-        const body = box(bx, by, w, d, 4, car.hue, car.sat, car.lit, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 14)) });
-        box(bx, by, alongX ? 0.17 : 0.15, alongX ? 0.15 : 0.17, 8, 205, 35, 62, { roof: hsl(car.hue, car.sat, Math.min(92, car.lit + 10)) });
-        if (night) { const f = car.dx > 0 ? body.r : car.dx < 0 ? body.l : car.dy > 0 ? body.f : body.b; ell(f[0], f[1] - 3, 1.6, 1.2, '#fff3b0'); const gr = g.createRadialGradient(f[0], f[1], 1, f[0], f[1], 14); gr.addColorStop(0, 'rgba(255,243,176,.35)'); gr.addColorStop(1, 'rgba(255,243,176,0)'); g.fillStyle = gr; g.fillRect(f[0] - 14, f[1] - 14, 28, 28); }
-      };
-      const drawPed = pd => { const ox = pd.dy !== 0 ? 0.4 * pd.side : 0, oy = pd.dx !== 0 ? 0.4 * pd.side : 0; const [px, py] = toScreen(pd.x - 0.5 + ox, pd.y - 0.5 + oy); const bx = px, by = py + THH; ell(bx, by + 1, 2.2, 1, 'rgba(0,0,30,.25)'); g.fillStyle = hsl(pd.hue, 55, 48); g.fillRect(bx - 1.2, by - 5.5, 2.4, 4.5); ell(bx, by - 6.8, 1.4, 1.4, hsl(28, 45, 66)); };
-      // back to front; after each agent, every structure that stands in front of it is painted again so the agent passes behind it
-      const agents = [...cars.map(a => ({ a, car: true })), ...peds.map(a => ({ a, car: false }))].sort((u, v) => (u.a.x + u.a.y) - (v.a.x + v.a.y));
-      for (const { a, car } of agents) {
-        if (car) drawCar(a); else drawPed(a);
-        const gx = Math.floor(a.x), gy = Math.floor(a.y); const [asx, asy0] = toScreen(a.x - 0.5, a.y - 0.5); const asy = asy0 + THH;
-        for (let dd = 1; dd <= 3; dd++) for (let dx = 0; dx <= dd; dx++) { const dy = dd - dx; const x = gx + dx, y = gy + dy; const p = c.tiles[kkey(x, y)]; if (!p || p.gone || p.k === 'road' || p.k === 'park' || p.k === 'plaza' || (ZONES[p.k] && p.lv === 0)) continue; const [bx, by0] = toScreen(x, y); const by = by0 + THH; if (Math.abs(asx - bx) <= TWH + 4 && asy <= by + 2 && asy >= by - 150) drawStructure(x, y, p, night, A.info[kkey(x, y)]); }
-      }
       for (const s of smoke) { g.globalAlpha = 0.35 * (1 - s.age); ell(s.x, s.y, 2 + s.age * 5, 1.5 + s.age * 3.5, night ? '#8a8a9a' : '#c9c9c9'); g.globalAlpha = 1; }
       for (const f of fx) { g.globalAlpha = Math.max(0, 1 - f.age / f.life); if (f.kind === 'coin') ell(f.x, f.y, 3, 3, '#E9B53B', '#9a6d10', 1); else { g.font = 'bold 12px "Chakra Petch", sans-serif'; g.fillStyle = f.color || '#E9B53B'; g.textAlign = 'center'; g.fillText(f.text, f.x, f.y); } g.globalAlpha = 1; }
       // night streetlights on roads
