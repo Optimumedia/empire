@@ -12,6 +12,7 @@ const DEFAULTS = {
   lunch:  { t: '12:55', title: 'Protein + pulse', body: 'Lunch protein hit, then the two-tap midday pulse.' },
   stop:   { t: '19:55', title: 'Hard stop in 5', body: 'Laptop closed at 20:00. Tonight is booked.' },
   close:  { t: '22:25', title: 'Close the day', body: 'Two minutes: best move, one line, tomorrow’s first move.' },
+  coach:  { t: '07:05', title: 'Coach', body: '' },
   bday:   { t: '07:30', title: '🎂 Birthday today', body: '' },
 };
 
@@ -42,6 +43,7 @@ for (const [id, def] of Object.entries(DEFAULTS)) {
     continue;
   }
   const t = /^\d{2}:\d{2}$/.test(pref.t || '') ? pref.t : def.t;
+  if (id === 'coach') { if (!inWindow(t)) continue; const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now.getTime() - 864e5)); const y = (state.days || {})[ymd] || {}; const first = y.close && y.close.first; due.push({ tag: 'coach', title: 'Coach', body: first ? `First move: ${first}. Do it before Slack opens.` : 'No first move set last night. Pick one now, before Slack opens. Priority: Business.' }); continue; }
   if (inWindow(t)) due.push({ tag: id, title: def.title, body: def.body });
 }
 if (!due.length) { console.log('nothing due at', get('hour') + ':' + get('minute'), tz); process.exit(0); }
