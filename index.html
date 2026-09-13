@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-y+CT2/lexT4SsSjseRtU6q61W1eytSN1Y9/h+SFF+es='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-jdT0WdAOoa/bLBU/CWhHSU+f8ZNY/YhPUHVV//CRCas='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="No Limit">
@@ -172,6 +172,15 @@
   .card[data-fold].open > h3::after { transform: rotate(180deg); }
   .card[data-fold]:not(.open) > :not(h3) { display: none !important; }
   .coach:not(.open) p.more { display: none; }
+  .menu { display: flex; flex-direction: column; gap: 6px; }
+  .mitem { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px; text-align: left; cursor: pointer; min-height: 60px; width: 100%; color: inherit; }
+  .mitem .e { font-size: 22px; text-align: center; } .mitem b { display: block; font-size: 15px; } .mitem .s { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; } .mitem .chev { color: var(--ink-3); font-size: 18px; }
+  .mitem.hot { border-color: var(--brand); } .mitem.hot .s { color: var(--brand); font-weight: 600; }
+  .mitem .n { min-width: 24px; height: 24px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; padding: 0 7px; }
+  .page { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow: auto; }
+  .page-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--line-2); font-family: var(--font-display); font-size: 17px; }
+  .page-body { max-width: 480px; margin: 0 auto; padding: 16px 16px calc(40px + var(--sab)); display: flex; flex-direction: column; gap: 16px; }
+  .page-body .card[data-fold] > :not(h3) { display: flex !important; } .page-body .card > h3::after { content: none; }
   .linkbtn { background: none; border: 0; color: var(--brand); font-weight: 600; font-size: 14px; padding: 6px 0 0; cursor: pointer; }
   .bundles { display: flex; flex-wrap: wrap; gap: 6px; }
   .bundles span { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); }
@@ -245,6 +254,12 @@
   .czoom button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(0,0,0,.25); background: rgba(255,255,255,.88); color: #14202B; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
   .citywrap canvas { display: block; width: 100%; touch-action: none; background: #8ec5ff; }
   .chud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .ghead { display: none; align-items: center; gap: 8px; min-height: 44px; font-family: var(--font-display); font-size: 18px; font-weight: 700; } .ghead .tiny { margin-left: auto; }
+  body.game .top, body.game .nav { display: none; }
+  body.game .app { max-width: 640px; padding: 8px 12px calc(24px + var(--sab)); gap: 12px; }
+  body.game .ghead { display: flex; }
+  body.game #view-city { gap: 10px; }
+  body.game .citywrap { margin: 0 -12px; border-radius: 0; border-left: 0; border-right: 0; }
   .ctile { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; padding: 10px 12px; min-width: 0; }
   .ctile .k { font-size: 11px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ctile .v { font-family: var(--font-display); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 2px; letter-spacing: -.02em; }
@@ -293,6 +308,7 @@
   .fpick { display: flex; flex-wrap: wrap; gap: 8px; }
   .fpick button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 0 14px; min-height: 44px; font-size: 14px; font-weight: 600; cursor: pointer; }
   .fpick button small { color: var(--ink-3); font-weight: 500; margin-left: 4px; }
+  .fpick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); } .fpick button[aria-pressed="true"] small { color: inherit; opacity: .7; }
   .overlay { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow: auto; display: flex; flex-direction: column; }
   .overlay .in { max-width: 480px; margin: 0 auto; padding: 24px 20px calc(24px + var(--sab)); display: flex; flex-direction: column; gap: 18px; min-height: 100%; width: 100%; }
   .overlay h1 { font-size: 30px; font-weight: 800; letter-spacing: -.025em; line-height: 1.1; }
@@ -369,6 +385,7 @@
 
   <!-- CITY -->
   <div class="view" id="view-city" role="tabpanel" hidden>
+    <div class="ghead"><button class="btn ghost sm" id="city-exit">‹ Exit</button><b id="city-name">Your city</b><span class="tiny" id="city-cap"></span></div>
     <div class="chud" id="city-hud"></div>
     <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas><div class="czoom"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit city">⤢</button></div></div>
     <div class="cpanel" id="city-panel"></div>
@@ -379,33 +396,35 @@
   <div class="view" id="view-coach" role="tabpanel" hidden>
     <div class="coach"><div class="avatar">C</div><div><div class="cap">Coach · game plan</div><div id="coach-plan"></div><div class="row" style="margin-top:10px"><button class="btn sm dark" id="ask-coach" hidden>Ask coach about today</button></div></div></div>
     <div class="card" id="ask-out" hidden><h3>Coach says</h3><div id="ask-text" style="white-space:pre-wrap;font-size:15px;line-height:1.5"></div></div>
+    <div class="sec"><div class="sec-h"><h2>Needs you</h2><span class="cap" id="needs-cap"></span></div><div class="menu" id="coach-needs"></div></div>
+    <div class="sec"><div class="sec-h"><h2>More</h2></div><div class="menu" id="coach-menu"></div></div>
+    <div class="foot" id="sync-note">Saved on this device</div>
+    <div id="coach-store" hidden>
     <div class="card" id="council"><h3>Weekly Council <span class="tiny" id="council-for"></span></h3><p class="sub">Reads your last four weeks and proposes changes. It tunes the scoring on its own; anything that changes what you do is a proposal you accept or decline. Never more than one extra load.</p><div class="row"><button class="btn sm dark" id="council-run">Run the Council</button><button class="btn sm" id="council-stop" hidden>Stop</button><span class="tiny" id="council-note"></span></div><div id="council-out" class="list" style="gap:10px"></div></div>
-    <div class="card" id="review-card" data-fold="1"><h3><span id="review-h">Sunday review</span><span class="tiny" id="review-sub"></span></h3><p class="sub">Ten minutes. Earns 25 XP, one shield, and feeds the Council.</p>
+    <div class="card" id="review-card"><h3><span id="review-h">Sunday review</span><span class="tiny" id="review-sub"></span></h3><p class="sub">Ten minutes. Earns 25 XP, one shield, and feeds the Council.</p>
       <div class="qa"><label>Energy this week</label><div class="scale" id="rv-energy"><button data-e="1">1</button><button data-e="2">2</button><button data-e="3">3</button><button data-e="4">4</button><button data-e="5">5</button></div></div>
       <div class="qa"><label for="r1">Biggest win — what did I hand off, build, or show up for?</label><textarea class="note" id="r1"></textarea></div>
       <div class="qa"><label for="r2">Biggest obstacle — what got in the way?</label><textarea class="note" id="r2"></textarea></div>
       <div class="qa"><label for="r3">One thing I'll do differently next week</label><textarea class="note" id="r3"></textarea></div>
       <div class="qa"><label for="r4">Known disruptions next week</label><textarea class="note" id="r4" style="min-height:48px"></textarea></div>
       <div class="row"><button class="btn sm dark" id="review-btn">Save review</button><span class="tiny" id="review-note"></span></div></div>
-    <div class="card" id="freedom-card" data-fold="1"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
-    <div class="sec-h" style="margin-top:6px"><h2>Tools</h2><span class="cap">tap a card to open</span></div>
-    <div class="card" id="letter-card" data-fold="1"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
-    <div class="card" id="words-card" data-fold="1"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
-    <div class="card" id="custom-card" data-fold="1"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
+    <div class="card" id="freedom-card"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
+    <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
+    <div class="card" id="words-card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
+    <div class="card" id="custom-card"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
       <div id="custom-form" hidden><input class="note" id="custom-name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
-    <div class="card" id="rules-card" data-fold="1"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
-    <div class="sec-h" style="margin-top:6px"><h2>Settings</h2></div>
-    <div class="card" id="remind-card" data-fold="1" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
+    <div class="card" id="rules-card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
+    <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
       <div class="list" id="remind-list"></div>
       <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
-    <div class="card" id="syncai" data-fold="1" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
+    <div class="card" id="syncai" hidden><h3>Sync &amp; AI</h3><p class="sub">Optional. Both keys stay on this phone and go only to GitHub and Anthropic directly. A "secret" Gist is unlisted, not encrypted — anyone with its address could read it.</p>
       <div class="qa"><label for="gh-token">GitHub token — syncs progress across devices via a secret Gist</label><input class="note" id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></div>
       <p class="tiny" style="margin:0">github.com → Settings → Developer settings → Fine-grained tokens → permission <b>Gists: Read and write</b>, nothing else. Paste the same token on each device.</p>
       <div class="qa"><label for="an-key">Anthropic API key — turns on the AI Council and “Ask coach”</label><input class="note" id="an-key" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
       <div class="row"><button class="btn sm dark" id="cfg-save">Save</button><button class="btn sm" id="cfg-sync">Sync now</button></div><div class="tiny" id="cfg-note"></div></div>
-    <div class="card" id="lab" data-fold="1"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report for the developer</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
-    <div class="card" id="data-card" data-fold="1"><h3>Your data</h3><p class="sub">Progress lives on this device and, if sync is on, in your Gist. App updates never touch it. Restoring <b>merges</b>; it never overwrites.</p><div class="tiny" id="data-status"></div><div class="row"><button class="btn sm dark" id="backup-btn">Download backup</button><button class="btn sm" id="restore-btn">Restore from backup</button></div><textarea class="note" id="restore-text" placeholder="Paste a backup here, then tap Restore" hidden></textarea></div>
-    <div class="foot" id="sync-note">Saved on this device</div>
+    <div class="card" id="lab"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report for the developer</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
+    <div class="card" id="data-card"><h3>Your data</h3><p class="sub">Progress lives on this device and, if sync is on, in your Gist. App updates never touch it. Restoring <b>merges</b>; it never overwrites.</p><div class="tiny" id="data-status"></div><div class="row"><button class="btn sm dark" id="backup-btn">Download backup</button><button class="btn sm" id="restore-btn">Restore from backup</button></div><textarea class="note" id="restore-text" placeholder="Paste a backup here, then tap Restore" hidden></textarea></div>
+    </div>
   </div>
 </div>
 
@@ -418,11 +437,12 @@
 <div class="sheet-bg" id="sheet-bg" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
 <div class="overlay" id="overlay" hidden></div>
+<div class="page" id="page" hidden><div class="page-h"><button class="btn ghost sm" id="page-back">‹ Back</button><b id="page-title"></b></div><div class="page-body" id="page-body"></div></div>
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-132021"></script>
-<script src="city.js?v=20260913-132021"></script>
+<script src="quotes.js?v=20260913-132736"></script>
+<script src="city.js?v=20260913-132736"></script>
 
 <script>
 (() => {
@@ -857,7 +877,7 @@
     if (curView === 'today') renderToday(C);
     if (curView === 'week') renderWeek(C);
     if (curView === 'coach') renderCoach(C);
-    if (curView === 'city' && city) city.refresh();
+    if (curView === 'city' && city) { city.refresh(); $('city-name').textContent = City.cityTitle(state.city, vitality(tk)); $('city-cap').textContent = `${City.fmt(G.grit)} Grit · level ${state.peakLevel}`; }
     if ($('data-status')) dataStatus();
   }
 
@@ -1013,7 +1033,6 @@
     $('rv-energy').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', !!(r && r.energy === +b.dataset.e)));
     $('review-note').textContent = reviewValid(rwk) ? `Saved · +${REVIEW_XP} XP · +1 shield` : '';
     const dow = parse(tk).getDay(); $('review-sub').textContent = reviewValid(rwk) ? '· saved' : dow === 0 ? '· due today' : dow === 1 || dow === 2 ? '· still open' : '· Sunday';
-    fold('review-card', (dow === 0 || dow === 1 || dow === 2) && !reviewValid(rwk)); fold('freedom-card', true); fold('letter-card', false); fold('words-card', false); fold('custom-card', state.peakLevel >= 5 && !(state.custom.m1 && state.custom.m1.name)); fold('rules-card', false); fold('remind-card', false); fold('syncai', STANDALONE && !cfg.get().ghToken); fold('data-card', false);
     const fl = freedomLevel(); $('freedom-lv').textContent = `· Level ${fl} of 7`;
     $('gates').innerHTML = LADDER.map(lv => { const cleared = lv.gates.every(([g]) => state.ladder[g] && state.ladder[g].v); return `<div class="gate-lv${cleared ? ' cleared' : ''}"><div class="h"><span>L${lv.lv} · ${lv.name}</span><small>${lv.when}</small></div>${lv.gates.map(([g, text]) => `<button class="gate" data-gate="${g}" aria-pressed="${!!(state.ladder[g] && state.ladder[g].v)}"><i></i><span>${text}</span></button>`).join('')}</div>`; }).join('');
     const prevL = state.letters[String(fl - 1)], cur = state.letters[String(fl)];
@@ -1024,9 +1043,39 @@
     if (document.activeElement !== $('bundle-text')) $('bundle-text').value = state.words.bundles && state.words.bundles.v ? state.words.bundles.v : '';
     renderCustom(C);
     renderCouncil(C);
-    renderLab(C); fold('lab', labSug.some(x => x.sev === 'high'));
+    renderLab(C);
     renderRemind();
+    renderCoachMenu(C, rwk, dow);
   }
+  function renderCoachMenu(C, rwk, dow) {
+    const { tk } = C; const row = (id, e, name, sub, opts = {}) => `<button class="mitem${opts.hot ? ' hot' : ''}" data-page="${id}" data-title="${esc(name)}"><span class="e">${e}</span><span><b>${esc(name)}</b><span class="s">${esc(sub)}</span></span><span class="chev">${opts.n ? `<span class="n">${opts.n}</span>` : '›'}</span></button>`;
+    const fl = freedomLevel(); const nextLv = LADDER.find(lv => lv.lv === fl + 1); const nextGate = nextLv ? nextLv.gates.find(([g]) => !(state.ladder[g] && state.ladder[g].v)) : null;
+    const target = councilTarget(tk); const pl = state.plans[target]; const pend = pl ? pl.proposals.filter(x => x.status === 'pending').length + (pl.boss && pl.boss.status === 'pending' ? 1 : 0) : 0;
+    const rv = reviewValid(rwk); const reviewDue = !rv && (dow === 0 || dow === 1 || dow === 2);
+    const high = labSug.filter(x => x.sev === 'high').length;
+    const needs = [
+      row('freedom-card', '🏁', 'Agency Freedom', `Level ${fl} of 7${nextGate ? ` · next: ${nextGate[1].split('—')[0].trim().slice(0, 48)}` : ' · complete'}`),
+      row('council', '🏛️', 'Weekly Council', pend ? `${pend} proposal${pend > 1 ? 's' : ''} waiting for your decision` : pl ? `Plan set for week of ${fmt(parse(target))}` : dow === 0 ? 'Run it — the week ahead needs a plan' : `Runs Sunday for the week of ${fmt(parse(target))}`, { hot: pend > 0 || (!pl && dow === 0), n: pend || 0 }),
+      row('review-card', '📝', 'Sunday review', rv ? 'Saved · +25 XP · +1 shield' : dow === 0 ? 'Due today · ten minutes' : reviewDue ? 'Still open — last week is unreviewed' : 'Opens Sunday', { hot: reviewDue }),
+      row('lab', '🧪', 'Lab', labSug.length ? `${labSug.length} finding${labSug.length > 1 ? 's' : ''}${high ? ` · ${high} important` : ''}` : 'All checks passing', { hot: high > 0, n: high || 0 })];
+    $('coach-needs').innerHTML = needs.join('');
+    const hot = (pend > 0) + reviewDue + (high > 0); $('needs-cap').textContent = hot ? `${hot} to act on` : 'all quiet';
+    const cm = state.custom.m1, cmLive = cm && cm.name && (!cm.until || cm.until >= tk);
+    const more = [
+      row('letter-card', '✉️', 'Letter to future you', state.letters[String(fl)] && state.letters[String(fl)].v ? 'Sealed for the next level' : `Write to the man at level ${fl + 1}`),
+      row('words-card', '💬', 'Your words', 'Celebration lines and temptation bundles'),
+      row('custom-card', '🎯', 'Your own mission', state.peakLevel >= 5 ? (cmLive ? `Live: ${cm.name}` : 'Empty — define one') : 'Unlocks at level 5'),
+      row('rules-card', '📖', 'The rules', 'How XP, Grit, streaks and crates work')];
+    if (STANDALONE) { const mine = state.push[deviceId] && state.push[deviceId].sub; more.push(row('remind-card', '🔔', 'Reminders', mine ? 'On for this phone' : 'Off — push reminders through your GitHub')); more.push(row('syncai', '☁️', 'Sync & AI', `${cfg.get().ghToken ? 'Sync on' : 'Sync off'} · ${cfg.get().anKey ? 'AI on' : 'rules only'}`, { hot: !cfg.get().ghToken })); }
+    more.push(row('data-card', '💾', 'Your data', 'Backup, restore, reset'));
+    $('coach-menu').innerHTML = more.join('');
+  }
+  function goView(v) { curView = v; use('view:' + v); closePage(); document.querySelectorAll('.nav [data-view]').forEach(x => x.setAttribute('aria-selected', x.dataset.view === v ? 'true' : 'false')); for (const x of ['today', 'week', 'city', 'coach']) $('view-' + x).hidden = x !== v; document.body.classList.toggle('game', v === 'city'); if (city) city.show(v === 'city'); window.scrollTo({ top: 0 }); render(); }
+  let pageHome = null;
+  function openPage(id, title) { const c = $(id); if (!c) return; if (pageHome) closePage(); pageHome = { c, parent: c.parentElement, next: c.nextSibling }; $('page-body').appendChild(c); c.hidden = false; c.classList.add('open'); $('page-title').textContent = title; $('page').hidden = false; $('page').scrollTop = 0; use('page:' + id); }
+  function closePage() { if (!pageHome) return; const { c, parent, next } = pageHome; parent.insertBefore(c, next); pageHome = null; $('page').hidden = true; }
+  $('page-back').addEventListener('click', () => { closePage(); render(); });
+  document.addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (!b) return; openPage(b.dataset.page, b.dataset.title); });
   const foldOpen = {};
   function fold(id, auto) { const c = $(id); if (!c) return; if (!(id in foldOpen)) foldOpen[id] = !!auto; c.classList.toggle('open', foldOpen[id]); }
   document.addEventListener('click', e => { const h = e.target.closest('.card[data-fold] > h3'); if (!h) return; const c = h.parentElement; foldOpen[c.id] = !c.classList.contains('open'); c.classList.toggle('open', foldOpen[c.id]); if (foldOpen[c.id]) use('fold:' + c.id); });
@@ -1273,7 +1322,8 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const bl = t.closest('[data-block]'); if (bl) { openBlock = openBlock === bl.dataset.block ? '' : bl.dataset.block; render(); return; }
     if (t.closest('#menu-btn')) { menuSheet(); return; }
     const wd = t.closest('[data-wd]'); if (wd) { weekSel = wd.dataset.wd; render(); return; }
-    const tab = t.closest('.nav [data-view]'); if (tab) { curView = tab.dataset.view; use('view:' + curView); document.querySelectorAll('.nav [data-view]').forEach(x => x.setAttribute('aria-selected', x === tab ? 'true' : 'false')); for (const v of ['today', 'week', 'city', 'coach']) $('view-' + v).hidden = v !== curView; if (city) city.show(curView === 'city'); window.scrollTo({ top: 0 }); render(); return; }
+    const tab = t.closest('.nav [data-view]'); if (tab) { goView(tab.dataset.view); return; }
+    if (t.closest('#city-exit')) { goView('today'); return; }
   });
   // ---- Progress tab ----
   $('quests').addEventListener('click', e => {

@@ -212,7 +212,7 @@ window.City = (() => {
     const toScreen = (x, y) => [OX + (x - y) * TWH, OY + (x + y) * THH];
     const toGrid = (sx, sy) => { const x = sx - OX, y = sy - OY; return [Math.floor((x / TWH + y / THH) / 2), Math.floor((y / THH - x / TWH) / 2)]; };
     function size() {
-      cssW = canvas.clientWidth || 360; cssH = Math.round(Math.min(520, cssW * 1.2)); dpr = Math.min(2, window.devicePixelRatio || 1);
+      cssW = canvas.clientWidth || 360; cssH = Math.round(document.body.classList.contains('game') ? clamp(window.innerHeight * 0.52, 320, 700) : Math.min(520, cssW * 1.2)); dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr); canvas.style.height = cssH + 'px';
       if (!ground) { ground = document.createElement('canvas'); blds = document.createElement('canvas'); ground.width = blds.width = WORLD_W * GS; ground.height = blds.height = WORLD_H * GS; fitCamera(); }
     }
