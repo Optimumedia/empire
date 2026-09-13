@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MfOrS/v/niiNCflAUlsc82gf/smKT6SlNAOzrgJy2Tw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-cPmvVZQ8aGBnaK+IvR0UE/AFmYZfEg5zQOpGaYRJ+u4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Life">
@@ -74,6 +74,7 @@
   .top .date { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
   .top .date small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 12px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; }
   .top-r { display: flex; gap: 6px; align-items: center; }
+  .chip .x { margin-left: 4px; width: 26px; height: 26px; border-radius: 13px; border: 0; background: var(--surface-2); color: var(--ink-2); font-size: 12px; cursor: pointer; }
   .chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .chip b { color: var(--ink); font-variant-numeric: tabular-nums; }
   .chip.streak { border-color: transparent; background: var(--brand-soft); color: var(--brand); } .chip.streak b { color: var(--brand); }
@@ -397,7 +398,7 @@
     <div class="sec"><div class="sec-h"><h2>Quests</h2><span class="cap">reset Monday</span></div><div class="list" id="quests" style="gap:10px"></div></div>
     <div class="sec"><div class="sec-h"><h2>Body</h2><span class="cap">7-day average</span></div>
       <div class="card"><div class="row"><input class="note" id="weight-in" type="text" inputmode="decimal" placeholder="Weight, kg" style="flex:1"><button class="btn sm dark" id="weight-btn">Log</button><input class="note" id="waist-in" type="text" inputmode="decimal" placeholder="Waist, cm" style="flex:1"><button class="btn sm" id="waist-btn">Log</button></div>
-        <svg class="spark-svg" id="spark" viewBox="0 0 320 100" preserveAspectRatio="none" aria-label="Weight trend"></svg><div class="small muted" id="spark-note"></div><div class="tiny" id="waist-note"></div><svg class="spark-svg" id="waist-spark" viewBox="0 0 320 50" preserveAspectRatio="none" aria-label="Waist trend" style="height:50px"></svg></div></div>
+        <svg class="spark-svg" id="spark" viewBox="0 0 320 100" preserveAspectRatio="none" aria-label="Weight trend"></svg><div class="small muted" id="spark-note"></div><div class="row" id="weigh-list" style="flex-wrap:wrap;gap:6px"></div><div class="tiny" id="waist-note"></div><svg class="spark-svg" id="waist-spark" viewBox="0 0 320 50" preserveAspectRatio="none" aria-label="Waist trend" style="height:50px"></svg></div></div>
     <div class="sec"><div class="sec-h"><h2>Who you're becoming</h2><span class="cap">tap to rewrite</span></div><div class="tiles" id="statgrid"></div></div>
     <div class="sec"><div class="sec-h"><h2>Real rewards</h2><span class="cap"><b id="loot-bal">0</b> Grit</span></div><div class="list" id="loot"></div><div><button class="btn sm" id="loot-add">Add a reward</button></div></div>
     <div class="sec"><div class="sec-h"><h2>Friends &amp; birthdays</h2><span class="cap">3 a week</span></div><div class="list" id="friends"></div>
@@ -465,8 +466,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-225100"></script>
-<script src="city.js?v=20260913-225100"></script>
+<script src="quotes.js?v=20260913-230144"></script>
+<script src="city.js?v=20260913-230144"></script>
 
 <script>
 (() => {
@@ -665,6 +666,7 @@
   function cached(k, fn) { if (memo.v !== ver) { memo.v = ver; memo.m.clear(); } if (!memo.m.has(k)) memo.m.set(k, fn()); return memo.m.get(k); }
 
   const day = k => state.days[k] || { on: {}, off: {} };
+  const weighList = () => Object.keys(state.weighins).sort().filter(k => state.weighins[k].kg > 0).map(k => ({ date: k, kg: state.weighins[k].kg }));
   const declinedOn = k => { const d = day(k).dec || {}; return new Set(Object.keys(d).filter(id => d[id].why)); };
   const isOn = (r, id) => (r.on[id] || 0) > (r.off[id] || 0);
   const isSkip = k => { const r = day(k); return !!(r.skip && r.skip.v); };
@@ -1050,7 +1052,8 @@
     renderBody(); renderIdentity(T); renderLoot(G); renderFriends(tk); renderAllTime(T, S, G, levelFrom(T.xp, need));
   }
   function renderBody() {
-    const all = Object.keys(state.weighins).sort().map(k => ({ date: k, kg: state.weighins[k].kg })); const w = all.slice(-28); const svg = $('spark');
+    const all = weighList(); const w = all.slice(-28); const svg = $('spark'); svg.hidden = !w.length;
+    const wl = $('weigh-list'); if (wl) wl.innerHTML = all.slice(-3).reverse().map(p => `<span class="chip">${p.kg} kg · ${fmt(parse(p.date))} <button class="x" data-rmweigh="${p.date}" aria-label="Remove ${p.kg} kg on ${p.date}">✕</button></span>`).join('');
     if (w.length) {
       const avg = w.map(p => { const from = addDays(parse(p.date), -6); const win = w.filter(q => parse(q.date) >= from && q.date <= p.date); return win.reduce((s, q) => s + q.kg, 0) / win.length; });
       const vals = w.map(p => p.kg).concat(avg); const min = Math.min(...vals) - 0.4, max = Math.max(...vals) + 0.4;
@@ -1315,7 +1318,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     for (const ms0 of MILESTONES) if (won0 < ms0 && S.won >= ms0) milestone(`<div class="bignum">${ms0}</div><h1>${ms0} days won.</h1><p class="muted">${ms0 >= 30 ? 'You’re not trying this anymore. You’re doing it.' : 'Most people quit at three.'}</p>`, 3000);
   }
   // protein: 1.8 g/kg spread over three feedings (0.4 g/kg per meal is where muscle protein synthesis saturates)
-  function proteinTarget() { const ks = Object.keys(state.weighins).sort(); const kg = ks.length ? state.weighins[ks[ks.length - 1]].kg : 83; return { kg, total: Math.round(kg * 1.8), meal: Math.round(kg * 1.8 / 3.5) }; }
+  function proteinTarget() { const wl = weighList(); const kg = wl.length ? wl[wl.length - 1].kg : 83; return { kg, total: Math.round(kg * 1.8), meal: Math.round(kg * 1.8 / 3.5) }; }
   const MEALS = {
     b: [['3 eggs + 150 g Greek yogurt 0% + 30 g oats', 38], ['200 g skyr + 30 g whey shake + a banana', 44], ['2 eggs + 4 egg whites + 40 g cheese on rye', 37]],
     l: [['150 g chicken breast + rice + veg', 46], ['2 cans of tuna + big salad + olive oil', 40], ['200 g lean beef mince (5%) bolognese', 45]],
@@ -1360,7 +1363,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   function missionSheet(id) {
     const k = selKey(); const m = missionOn(k, id); if (!m) return; const r = rec(k); const on = doneOn(k).has(id);
     if (m.kind === 'rest' || m.kind === 'pulse') return stateSheet(m, k);
-    if (m.kind === 'weigh') return openSheet(`<h2>Weight this morning</h2><p>Before breakfast, same conditions. Comma or dot both work.</p><input class="note" id="sh-kg" type="text" inputmode="decimal" placeholder="kg" value="${state.weighins[k] ? state.weighins[k].kg : ''}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Log</button></div>`, sh => { const ok = () => { const v = parseNum(sh.querySelector('#sh-kg').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; const was = doneOn(k).has('weigh'); closeSheet(); if (!was) complete(k, 'weigh'); else { persist(); render(); toast('Updated'); } }; sh.querySelector('#sh-ok').addEventListener('click', ok); sh.querySelector('#sh-kg').addEventListener('keydown', e => { if (e.key === 'Enter') ok(); }); });
+    if (m.kind === 'weigh') return openSheet(`<h2>Weight this morning</h2><p>Before breakfast, same conditions. Comma or dot both work.</p><input class="note" id="sh-kg" type="text" inputmode="decimal" placeholder="kg" value="${state.weighins[k] ? state.weighins[k].kg : ''}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Log</button></div>`, sh => { const ok = () => { const v = parseNum(sh.querySelector('#sh-kg').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } closeSheet(); setTimeout(() => logWeight(v, k), 280); }; sh.querySelector('#sh-ok').addEventListener('click', ok); sh.querySelector('#sh-kg').addEventListener('keydown', e => { if (e.key === 'Enter') ok(); }); });
     if (m.kind === 'friend') { const fl = friendList(key(logicalToday())); if (!fl.length) return openSheet(`<h2>No friends yet</h2><p>Add the three people you most want to keep close. Progress tab → Friends.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`);
       return openSheet(`<h2>Who?</h2><p>Longest since contact first. A message counts; a call counts double in your head.</p><div class="fpick">${fl.map(f => `<button data-f="${esc(f.id)}">${esc(f.name)}<small>${f.days === null ? 'never' : f.days + 'd'}</small></button>`).join('')}</div>${on ? `<div class="acts"><button class="btn" id="sh-undo">Undo today’s</button></div>` : ''}`, sh => { sh.querySelector('.fpick').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; (rec(k).fr ||= {})[b.dataset.f] = now(); closeSheet(); if (!doneOn(k).has('friend')) complete(k, 'friend'); else { persist(); render(); toast(`Reached ${state.friends[b.dataset.f].name}`); } }); const u = sh.querySelector('#sh-undo'); if (u) u.addEventListener('click', () => { closeSheet(); complete(k, 'friend'); }); }); }
     if (m.kind === 'close') return closeDay();
@@ -1446,7 +1449,12 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     w.t = now(); persist(); render();
   });
   $('crate').addEventListener('click', e => { if (!e.target.closest('#crate-open')) return; const wk = weekKey(logicalToday()); if (state.crates[wk]) return; const rich = state.peakLevel >= 6; const b = Math.floor(Math.random() * (rich ? 301 : 151)); const rare = rich && Math.random() < 0.25; const line = (rare ? RARE_LINES : CRATE_LINES)[Math.floor(Math.random() * (rare ? RARE_LINES : CRATE_LINES).length)]; state.crates[wk] = { bucks: b, line, grit: rare ? RARE_GRIT : 0, t: now() }; (state.city.ledger[deviceId] ||= { earned: 0, spent: 0 }).earned += b; milestone(`<div class="bignum">${rare ? '💎' : '📦'}</div><h1>+${b} Bucks${rare ? ` · +${RARE_GRIT} Grit` : ''}</h1><p class="muted">${rare ? '<b>Rare crate.</b> ' : ''}“${esc(line)}”</p>`, 2600); persist(); render(); });
-  $('weight-btn').addEventListener('click', () => { const v = parseNum($('weight-in').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } const k = key(logicalToday()); state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; $('weight-in').value = ''; if (!doneOn(k).has('weigh')) complete(k, 'weigh'); else { persist(); render(); toast('Weigh-in updated'); } });
+  // a jump of more than 4% against the last entry within ten days is almost always a typo — confirm before it poisons the trend and the protein target
+  function logWeight(v, k, after) { const wl = weighList().filter(p => p.date !== k); const last = wl[wl.length - 1]; const save = () => { state.weighins[k] = { kg: Math.round(v * 10) / 10, t: now() }; if (!doneOn(k).has('weigh')) complete(k, 'weigh'); else { persist(); render(); toast('Weigh-in updated'); } if (after) after(); };
+    if (last && dayDiff(k, last.date) <= 10 && Math.abs(v - last.kg) / last.kg > 0.04) { const d = v - last.kg; openSheet(`<h2>${v} kg — sure?</h2><p>That is ${d > 0 ? '+' : ''}${d.toFixed(1)} kg against ${last.kg} kg on ${fmt(parse(last.date))}. Real weight does not move that fast; a typo does.</p><div class="acts"><button class="btn" data-x>Fix it</button><button class="btn primary" id="wg-ok">It’s right</button></div>`, sh => sh.querySelector('#wg-ok').addEventListener('click', () => { closeSheet(); save(); })); return; }
+    save(); }
+  $('weight-btn').addEventListener('click', () => { const v = parseNum($('weight-in').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } logWeight(v, key(logicalToday()), () => { $('weight-in').value = ''; }); });
+  $('weigh-list').addEventListener('click', e => { const b = e.target.closest('[data-rmweigh]'); if (!b) return; const d = b.dataset.rmweigh; const kg = state.weighins[d] && state.weighins[d].kg; openSheet(`<h2>Remove ${kg} kg on ${fmt(parse(d))}?</h2><p>The trend, the 7-day average and the protein target recalculate without it.</p><div class="acts"><button class="btn" data-x>Keep</button><button class="btn primary" id="rw-ok">Remove</button></div>`, sh => sh.querySelector('#rw-ok').addEventListener('click', () => { state.weighins[d] = { kg: 0, t: now() }; closeSheet(); persist(); render(); toast('Removed'); })); });
   $('waist-btn').addEventListener('click', () => { const v = parseNum($('waist-in').value); if (!v || v < 50 || v > 200) { toast('Enter waist in cm'); return; } state.waist[key(logicalToday())] = { cm: Math.round(v * 2) / 2, t: now() }; $('waist-in').value = ''; toast('Waist logged'); persist(); render(); });
   $('statgrid').addEventListener('click', e => { const b = e.target.closest('[data-identity]'); if (!b) return; const s = b.dataset.identity, cur = (state.identity[s] && state.identity[s].v) || IDENTITY[s]; openSheet(`<h2>${STATS[s]} — who are you becoming?</h2><p>One line, present tense. This is what a completed mission votes for.</p><input class="note" id="id-in" maxlength="160" value="${esc(cur)}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="id-ok">Save</button></div>`, sh => sh.querySelector('#id-ok').addEventListener('click', () => { state.identity[s] = { v: sh.querySelector('#id-in').value.trim() || IDENTITY[s], t: now() }; closeSheet(); persist(); render(); })); });
   $('loot').addEventListener('click', e => {
@@ -1536,7 +1544,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   let downloadsFn = null;
   if (STANDALONE) downloadsFn = { save: async ({ filename, data, type }) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); return { status: 'saved' }; } };
   else (async () => { try { downloadsFn = await window.claude.use('downloads'); } catch (e) { downloadsFn = null; } })();
-  function dataStatus() { const days = Object.keys(state.days).length, wi = Object.keys(state.weighins).length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== 'road').length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} structures · device ${deviceId} · ${dbRef ? 'sync on' : 'this device only'}`; }
+  function dataStatus() { const days = Object.keys(state.days).length, wi = weighList().length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== 'road').length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} structures · device ${deviceId} · ${dbRef ? 'sync on' : 'this device only'}`; }
   $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'no-limit', exported: new Date().toISOString(), state }, null, 1); const name = `nolimit-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
   $('restore-btn').addEventListener('click', () => { const ta = $('restore-text'); if (ta.hidden || !ta.value.trim()) { ta.hidden = false; ta.value = ''; ta.focus(); toast('Paste the backup, then tap Restore again'); return; } let parsed; try { parsed = JSON.parse(ta.value); } catch (e) { toast('That isn’t a valid backup'); return; } const incoming = parsed && parsed.state ? parsed.state : parsed; if (!isObj(incoming) || !isObj(incoming.days)) { toast('That isn’t a valid backup'); return; } state = merge(state, incoming); ta.hidden = true; ta.value = ''; toast('Restored — merged with what was here', true); persist(); render(); });
   $('syncai').hidden = !STANDALONE;
@@ -1588,7 +1596,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     // 4. council proposals always declined
     const props = Object.values(state.plans).flatMap(p => p.proposals); const dec = props.filter(p => p.status === 'declined').length, acc = props.filter(p => p.status === 'accepted').length; if (dec >= 4 && acc === 0) add('council-ignored', 'low', 'You decline everything the Council proposes', 'Either the proposals miss, or the rules are too aggressive. Tell me which and I’ll retune it.', null);
     // 5. weigh-ins sparse
-    const wi7 = Array.from({ length: 7 }, (_, i) => key(addDays(t0, -i))).filter(k => state.weighins[k]).length; if (dayDiff(tk, seasonStart()) >= 7 && wi7 < 3) add('weigh-sparse', 'low', `Only ${wi7} weigh-in${wi7 === 1 ? '' : 's'} this week`, 'The 7-day average needs three. Put the scale where you can’t miss it.', null);
+    const wi7 = Array.from({ length: 7 }, (_, i) => key(addDays(t0, -i))).filter(k => state.weighins[k] && state.weighins[k].kg > 0).length; if (dayDiff(tk, seasonStart()) >= 7 && wi7 < 3) add('weigh-sparse', 'low', `Only ${wi7} weigh-in${wi7 === 1 ? '' : 's'} this week`, 'The 7-day average needs three. Put the scale where you can’t miss it.', null);
     // 6. city untouched while Grit piles up
     const cityT = Object.values(state.city.tiles || {}).reduce((a, p) => Math.max(a, p.t || 0), 0); if (C.G.grit >= 300 && cityT && now() - cityT > 7 * 864e5) add('city-idle', 'low', `${City.fmt(C.G.grit)} Grit unspent, city untouched for a week`, 'If the city isn’t pulling you back, it isn’t doing its job. Spend it, or tell me what would make it worth opening.', null);
     // 7. close-the-day never used
