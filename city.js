@@ -78,7 +78,7 @@ window.City = (() => {
   const KINDS = new Set(['road', 'r', 'c', 'i', 'hall', ...Object.keys(SERVICES), ...Object.keys(DECOR)]);
   function norm(c) {
     const out = emptyCity(); if (!c || typeof c !== 'object' || c.v !== 3) return out; // v1/v2 towns are retired; the founder's stipend rebuilds
-    for (const k in c.tiles || {}) { const p = c.tiles[k]; if (p && KINDS.has(p.k)) out.tiles[k] = { k: p.k, lv: clamp(+p.lv || 0, 0, 3), t: +p.t || 0, g: +p.g || 0, d: +p.d || 0, gone: !!p.gone }; }
+    for (const k in c.tiles || {}) { const p = c.tiles[k]; if (p && KINDS.has(p.k) && +p.t >= 1e12) out.tiles[k] = { k: p.k, lv: clamp(+p.lv || 0, 0, 3), t: +p.t || 0, g: +p.g || 0, d: +p.d || 0, gone: !!p.gone }; }
     out.ring = { v: clamp(+(c.ring && c.ring.v) || 0, 0, 3), t: +(c.ring && c.ring.t) || 0 };
     out.tax = { v: clamp(+(c.tax && c.tax.v) || 7, 0, 20), t: +(c.tax && c.tax.t) || 0 };
     for (const k in c.ledger || {}) { const l = c.ledger[k]; if (l) out.ledger[k] = { earned: +l.earned || 0, spent: +l.spent || 0 }; }
