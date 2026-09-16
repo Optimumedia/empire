@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-bDtuSsiSODhHHRbA7W13bsY1oxARWgUPeRczTy0YSBI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XQ/kpBmxJNfQyCFVlyFSdj9U2CpoLxwO7pCm118h+Gs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Life">
@@ -467,8 +467,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260916-213631"></script>
-<script src="city.js?v=20260916-213631"></script>
+<script src="quotes.js?v=20260916-221018"></script>
+<script src="city.js?v=20260916-221018"></script>
 
 <script>
 (() => {
@@ -1524,22 +1524,25 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   const VAPID_PUBLIC = 'BKrxCvD7xGGohz0eLesvba3aT-YxvbK416d4V8RV0dq82yQrPjkJSEULljg3TaVihZttQB-DivJNwXJQNk9ChLY';
   const REMINDERS = [['first', '07:00', 'First move', 'the first move you set last night'], ['gym', '08:25', 'Gym window', '5 minutes before 08:30'], ['lunch', '12:55', 'Protein + pulse', 'lunch feeding and the midday check-in'], ['stop', '19:55', 'Hard stop', '5 minutes before 20:00'], ['close', '22:25', 'Close the day', 'the two-minute ritual'], ['coach', '07:30', 'Coach digest', 'the day’s order from the coach'], ['bday', '07:30', 'Birthdays', 'on the day, for anyone in your list']];
   const b64ToU8 = b => { const p = '='.repeat((4 - b.length % 4) % 4); const r = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const raw = atob(r); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
-  async function pushSubscribe() {
-    if (!STANDALONE || !('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push isn’t available in this browser'); return; }
-    if (!cfg.get().ghToken) { toast('Turn on Gist sync first — reminders travel through it'); return; }
-    const perm = await Notification.requestPermission(); if (perm !== 'granted') { toast('Notifications blocked in the browser settings'); return; }
-    try { const reg = await navigator.serviceWorker.ready; let sub = await reg.pushManager.getSubscription(); if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
-      state.push[deviceId] = { sub: sub.toJSON(), tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '', t: now() }; persist(); render(); toast('Reminders on. First one arrives at the next slot.'); }
-    catch (e) { toast('Could not subscribe: ' + (e && e.message ? e.message.slice(0, 60) : 'unknown')); }
+  // Always a FRESH subscription: a stored one can be dead on the push server while the browser still hands it back.
+  async function pushSubscribe(silent) {
+    if (!STANDALONE || !('serviceWorker' in navigator) || !('PushManager' in window)) { if (!silent) toast('Push isn’t available in this browser'); return; }
+    if (!cfg.get().ghToken) { if (!silent) toast('Turn on Gist sync first — reminders travel through it'); return; }
+    const perm = silent ? Notification.permission : await Notification.requestPermission(); if (perm !== 'granted') { if (!silent) toast('Notifications blocked — allow them in the phone’s app settings for Life'); return; }
+    try { const reg = await navigator.serviceWorker.ready; const old = await reg.pushManager.getSubscription(); if (old) { try { await old.unsubscribe(); } catch (e) {} }
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+      state.push[deviceId] = { sub: sub.toJSON(), tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '', t: now() }; persist(); push(true); render(); if (!silent) toast('Reminders renewed. The next one arrives at its slot.'); }
+    catch (e) { if (!silent) toast('Could not subscribe: ' + (e && e.message ? e.message.slice(0, 60) : 'unknown')); }
   }
   function renderRemind() {
     if (!STANDALONE) return; const card = $('remind-card'); card.hidden = false;
     const mine = state.push[deviceId] && state.push[deviceId].sub; const anyDev = Object.values(state.push).filter(p => p.sub).length;
-    $('remind-status').textContent = mine ? `· on this phone${anyDev > 1 ? ` + ${anyDev - 1} more` : ''}` : anyDev ? `· on ${anyDev} other device${anyDev > 1 ? 's' : ''}` : '· off';
-    $('remind-enable').textContent = mine ? 'Re-enable on this phone' : 'Enable on this phone';
+    const age = mine ? Math.floor((now() - (state.push[deviceId].t || 0)) / 864e5) : 0; const perm = 'Notification' in window ? Notification.permission : 'default';
+    $('remind-status').textContent = perm === 'denied' ? '· blocked in phone settings' : mine ? `· on this phone, renewed ${age === 0 ? 'today' : age === 1 ? 'yesterday' : age + ' days ago'}${anyDev > 1 ? ` + ${anyDev - 1} more` : ''}` : anyDev ? `· on ${anyDev} other device${anyDev > 1 ? 's' : ''}` : '· off';
+    $('remind-enable').textContent = mine ? 'Renew on this phone' : 'Enable on this phone';
     $('remind-list').innerHTML = REMINDERS.map(([id, t0, name, why]) => { const pr = state.remind[id] || {}; const on = pr.on !== false; const t = pr.t || t0; return `<div class="r"><span><b>${name}</b><div class="sub2">${why}</div></span><span class="row" style="gap:6px"><input class="note" type="time" value="${t}" data-rtime="${id}" style="width:104px;min-height:40px;padding:6px 8px" ${id === 'bday' ? 'disabled' : ''}><button class="btn sm ${on ? 'dark' : ''}" data-rtoggle="${id}">${on ? 'On' : 'Off'}</button></span></div>`; }).join('');
   }
-  $('remind-enable').addEventListener('click', pushSubscribe);
+  $('remind-enable').addEventListener('click', () => pushSubscribe(false));
   $('remind-test').addEventListener('click', async () => { if (!('Notification' in window)) { toast('No notifications here'); return; } if (Notification.permission !== 'granted') { toast('Enable reminders first'); return; } const reg = await navigator.serviceWorker.ready; reg.showNotification('Life', { body: 'Reminders work on this phone. The scheduled ones come via GitHub.', tag: 'test', icon: 'icon-192.png', badge: 'icon-192.png' }); });
   $('remind-list').addEventListener('click', e => { const b = e.target.closest('[data-rtoggle]'); if (!b) return; const id = b.dataset.rtoggle; const pr = state.remind[id] || { on: true, t: '' }; state.remind[id] = { on: pr.on === false, t: pr.t || '', at: now() }; persist(); render(); });
   $('remind-list').addEventListener('change', e => { const i = e.target.closest('[data-rtime]'); if (!i) return; const id = i.dataset.rtime; const pr = state.remind[id] || { on: true }; state.remind[id] = { on: pr.on !== false, t: /^\d{2}:\d{2}$/.test(i.value) ? i.value : '', at: now() }; persist(); toast('Reminder time saved'); });
@@ -1556,7 +1559,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   if (STANDALONE) renderCfg();
   $('cfg-save').addEventListener('click', async () => { const c = cfg.get(); const tok = $('gh-token').value.trim(), k2 = $('an-key').value.trim(); cfg.set({ ...c, ghToken: tok, anthropicKey: k2, gistId: tok === c.ghToken ? c.gistId : '' }); renderCfg(); toast('Saved on this device'); dbRef = null; await connect(); await setupSample(); renderCfg(); dataStatus(); });
   $('cfg-sync').addEventListener('click', async () => { dbRef = null; await connect(); dataStatus(); toast(dbRef ? 'Synced' : 'Sync not connected'); });
-  if (STANDALONE && 'serviceWorker' in navigator && 'PushManager' in window) navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => { const cur = state.push[deviceId]; if (!cur || !cur.sub) return; const nowS = sub ? JSON.stringify(sub.toJSON()) : null; if (nowS !== JSON.stringify(cur.sub)) { state.push[deviceId] = { sub: sub ? sub.toJSON() : null, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '', t: now() }; persist(); } }).catch(() => {});
+  if (STANDALONE && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && Notification.permission === 'granted') { const cur = state.push[deviceId]; if (cur && (!cur.sub || now() - (cur.t || 0) > 3 * 864e5)) setTimeout(() => pushSubscribe(true), 4000); else if (cur) navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => { if (!sub || JSON.stringify(sub.toJSON()) !== JSON.stringify(cur.sub)) pushSubscribe(true); }).catch(() => {}); }
   if (STANDALONE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) { toast('Update ready — tap to reload', false, () => location.reload()); } }); }); }).catch(() => {});
 
   // =====================================================================

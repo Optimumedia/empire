@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send a test notification now'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -27,3 +32,4 @@ jobs:
           VAPID_PUBLIC: ${{ vars.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           WINDOW_MIN: '15'
+          TEST: ${{ inputs.test && '1' || '0' }}

@@ -35,6 +35,7 @@ const slot = Math.floor(nowMin / win) * win; // the cron slot this run belongs t
 const inWindow = hhmm => { const [h, m] = hhmm.split(':').map(Number); const t = h * 60 + m; return t >= slot && t < slot + win; };
 
 const due = [];
+if (process.env.TEST === '1') due.push({ tag: 'test', title: 'Life', body: 'Server test: reminders reach this phone.' });
 for (const [id, def] of Object.entries(DEFAULTS)) {
   const pref = prefs[id] || {};
   if (pref.on === false) continue;
@@ -47,7 +48,7 @@ for (const [id, def] of Object.entries(DEFAULTS)) {
   if (id === 'coach') { if (!inWindow(t)) continue; const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now.getTime() - 864e5)); const y = (state.days || {})[ymd] || {}; const first = y.close && y.close.first; due.push({ tag: 'coach', title: 'Coach', body: first ? `First move: ${first}. Do it before Slack opens.` : 'No first move set last night. Pick one now, before Slack opens. Priority: Business.' }); continue; }
   if (inWindow(t)) due.push({ tag: id, title: def.title, body: def.body });
 }
-if (!due.length) { console.log('nothing due at', get('hour') + ':' + get('minute'), tz); process.exit(0); }
+if (!due.length) { console.log(`subscriptions: ${subs.length}`); console.log('nothing due at', get('hour') + ':' + get('minute'), tz); process.exit(0); }
 
 let sent = 0, gone = 0;
 for (const p of subs) for (const n of due) {

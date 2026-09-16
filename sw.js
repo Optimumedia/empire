@@ -1,5 +1,5 @@
-/* Life — service worker. Build 20260916-213631 */
-const BUILD = '20260916-213631';
+/* Life — service worker. Build 20260916-221018 */
+const BUILD = '20260916-221018';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
