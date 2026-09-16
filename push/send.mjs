@@ -12,12 +12,12 @@ const DEFAULTS = {
   lunch:  { t: '12:55', title: 'Protein + pulse', body: 'Lunch protein hit, then the two-tap midday pulse.' },
   stop:   { t: '19:55', title: 'Hard stop in 5', body: 'Laptop closed at 20:00. Tonight is booked.' },
   close:  { t: '22:25', title: 'Close the day', body: 'Two minutes: best move, one line, tomorrow’s first move.' },
-  coach:  { t: '07:05', title: 'Coach', body: '' },
+  coach:  { t: '07:30', title: 'Coach', body: '' },
   bday:   { t: '07:30', title: '🎂 Birthday today', body: '' },
 };
 
 const res = await fetch(GIST_RAW + (GIST_RAW.includes('?') ? '&' : '?') + 't=' + Date.now(), { headers: { 'Cache-Control': 'no-cache' } });
-if (!res.ok) { console.log('gist fetch failed', res.status); process.exit(0); }
+if (!res.ok) { console.log('gist fetch failed', res.status); process.exit(1); }
 const state = await res.json();
 const subs = Object.values(state.push || {}).filter(p => p && p.sub && p.sub.endpoint);
 if (!subs.length) { console.log('no subscriptions'); process.exit(0); }
@@ -26,19 +26,20 @@ const prefs = state.remind || {};
 
 // local time in the user's zone
 const now = new Date();
-const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', month: '2-digit', day: '2-digit', hour12: false }).formatToParts(now);
+const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', hour: '2-digit', minute: '2-digit', month: '2-digit', day: '2-digit', hour12: false }).formatToParts(now);
 const get = t => parts.find(p => p.type === t).value;
 const nowMin = (+get('hour') % 24) * 60 + +get('minute');
 const md = `${get('month')}-${get('day')}`;
 const win = +WINDOW_MIN;
-const inWindow = hhmm => { const [h, m] = hhmm.split(':').map(Number); const d = h * 60 + m - nowMin; return d >= -Math.floor(win / 2) && d < Math.ceil(win / 2); };
+const slot = Math.floor(nowMin / win) * win; // the cron slot this run belongs to, so a late start still sends and a run never sends twice
+const inWindow = hhmm => { const [h, m] = hhmm.split(':').map(Number); const t = h * 60 + m; return t >= slot && t < slot + win; };
 
 const due = [];
 for (const [id, def] of Object.entries(DEFAULTS)) {
   const pref = prefs[id] || {};
   if (pref.on === false) continue;
   if (id === 'bday') {
-    const names = Object.values(state.friends || {}).filter(f => f && !f.gone && f.bday && f.bday.slice(5) === md).map(f => f.name);
+    const names = Object.values(state.friends || {}).filter(f => f && !f.gone && f.bday && (f.bday.slice(5) === md || (f.bday.slice(5) === '02-29' && md === '02-28' && !((y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0)(+get('year')))))).map(f => f.name);
     if (names.length && inWindow(def.t)) due.push({ tag: 'bday', title: def.title, body: `${names.join(' & ')} — call, don’t text.` });
     continue;
   }

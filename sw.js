@@ -1,10 +1,10 @@
-/* Life — service worker. Build 20260913-230144 */
-const BUILD = '20260913-230144';
+/* Life — service worker. Build 20260916-213631 */
+const BUILD = '20260916-213631';
 const CACHE = 'empire-' + BUILD;
 const SHELL = ['./', './index.html', './quotes.js?v=' + BUILD, './city.js?v=' + BUILD, './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => /\.html$|\/$/.test(u) ? new Request(u, { cache: 'reload' }) : u))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

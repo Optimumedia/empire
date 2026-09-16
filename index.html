@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-cPmvVZQ8aGBnaK+IvR0UE/AFmYZfEg5zQOpGaYRJ+u4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-bDtuSsiSODhHHRbA7W13bsY1oxARWgUPeRczTy0YSBI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Life">
@@ -26,6 +26,7 @@
     --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
     --r-chip: 12px; --r-card: 20px; --r-sheet: 28px;
     --sab: env(safe-area-inset-bottom, 0px);
+    --sat: env(safe-area-inset-top, 0px);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -57,7 +58,7 @@
   input, textarea { font: inherit; color: var(--ink); }
   h1, h2, h3 { text-wrap: balance; margin: 0; font-family: var(--font-display); }
 
-  .app { max-width: 480px; margin: 0 auto; padding: 12px 16px calc(96px + var(--sab)); display: flex; flex-direction: column; gap: 20px; }
+  .app { max-width: 480px; margin: 0 auto; padding: calc(12px + var(--sat)) 16px calc(96px + var(--sab)); display: flex; flex-direction: column; gap: 20px; }
   .view { display: flex; flex-direction: column; gap: 20px; }
   .cap { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
   .num { font-variant-numeric: tabular-nums; }
@@ -102,7 +103,7 @@
   .hero-t .verdict { font-size: 15px; line-height: 1.35; font-weight: 500; }
   .hero-t .verdict::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: currentColor; vertical-align: 1px; }
   .stats4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .stats4 div { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .stats4 div { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; min-width: 0; } .stats4 span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stats4 i { display: block; height: 4px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
   .stats4 i b { display: block; height: 100%; background: currentColor; border-radius: inherit; }
 
@@ -163,8 +164,8 @@
   .bday + .bday { margin-top: 6px; }
   .mrow .body b .pill { display: inline-block; margin-top: 0; white-space: nowrap; }
   .qod { background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--brand); border-radius: 12px; padding: 10px 12px; font-size: 14px; display: flex; gap: 10px; align-items: center; }
-  .qod .q { flex: 1; min-width: 0; font-style: italic; color: var(--ink-2); line-height: 1.35; } .qod .q b { font-style: normal; color: var(--ink-3); font-weight: 600; white-space: nowrap; }
-  .qod .qr { display: flex; gap: 4px; } .qod .qr button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: 16px; cursor: pointer; } .qod .qr button[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); }
+  .qod .q { flex: 1; min-width: 0; font-style: italic; color: var(--ink-2); line-height: 1.35; } .qod .q b { font-style: normal; color: var(--ink-3); font-weight: 600; }
+  .qod .qr { display: flex; gap: 4px; } .qod .qr button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: 16px; cursor: pointer; } .qod .qr button[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); }
   .qmark { font-family: var(--font-display); font-size: 72px; line-height: .5; color: var(--brand); font-weight: 800; }
   .qtext { font-family: var(--font-display); font-size: 27px; line-height: 1.22; font-weight: 700; letter-spacing: -.015em; }
   .qrate { display: flex; gap: 8px; } .qrate .btn { flex: 1; min-height: 52px; }
@@ -180,10 +181,10 @@
   .mitem.hot { border-color: var(--brand); } .mitem.hot .s { color: var(--brand); font-weight: 600; }
   .mitem .n { min-width: 24px; height: 24px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; padding: 0 7px; }
   .page { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow: auto; }
-  .page-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--line-2); font-family: var(--font-display); font-size: 17px; }
+  .page-h { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: calc(10px + var(--sat)) 12px 10px; background: var(--bg); border-bottom: 1px solid var(--line-2); font-family: var(--font-display); font-size: 17px; }
   .page-body { max-width: 480px; margin: 0 auto; padding: 16px 16px calc(40px + var(--sab)); display: flex; flex-direction: column; gap: 16px; }
   .page-body .card[data-fold] > :not(h3) { display: flex !important; } .page-body .card > h3::after { content: none; }
-  .linkbtn { background: none; border: 0; color: var(--brand); font-weight: 600; font-size: 14px; padding: 6px 0 0; cursor: pointer; }
+  .linkbtn { background: none; border: 0; color: var(--brand); font-weight: 600; font-size: 14px; padding: 8px 0; min-height: 40px; cursor: pointer; }
   .bundles { display: flex; flex-wrap: wrap; gap: 6px; }
   .bundles span { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); }
   .bundles span.open { border-color: var(--go); color: var(--go); font-weight: 600; }
@@ -243,7 +244,7 @@
   .gate[aria-pressed="true"] i { background: var(--business); border-color: var(--business); } .gate[aria-pressed="true"] i::after { content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
   .gate[aria-pressed="true"] { color: var(--ink-3); }
   .gate-ed { margin: 4px 0 10px 8px; padding: 10px 12px; border-left: 3px solid var(--business); background: var(--surface); border-radius: 0 12px 12px 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-  .gate.step { padding: 6px 8px; background: transparent; } .gate.step i { width: 16px; height: 16px; border-radius: 5px; } .gate.step[aria-pressed="true"] i::after { left: 3px; top: 0; width: 4px; height: 8px; }
+  .gate.step { padding: 10px 8px; background: transparent; min-height: 40px; } .gate.step i { width: 16px; height: 16px; border-radius: 5px; } .gate.step[aria-pressed="true"] i::after { left: 3px; top: 0; width: 4px; height: 8px; }
   .lab-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
   .lab-h .ok { color: var(--go); font-weight: 600; } .lab-h .bad { color: var(--rest); font-weight: 600; }
   .prop.sev-high { border-left: 3px solid var(--rest); } .prop.sev-med { border-left: 3px solid var(--hold); } .prop.sev-low { border-left: 3px solid var(--business); }
@@ -255,7 +256,7 @@
   /* ---- city ---- */
   .citywrap { border-radius: var(--r-card); overflow: hidden; border: 1px solid var(--line-2); position: relative; }
   .czoom { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
-  .czoom button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(0,0,0,.25); background: rgba(255,255,255,.88); color: #14202B; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .czoom button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(0,0,0,.25); background: rgba(255,255,255,.88); color: #14202B; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
   .citywrap canvas { display: block; width: 100%; touch-action: none; background: #8ec5ff; }
   .chud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .ghead { display: none; align-items: center; gap: 8px; min-height: 44px; font-family: var(--font-display); font-size: 18px; font-weight: 700; } .ghead .tiny { margin-left: auto; }
@@ -334,7 +335,7 @@
   .fpick button small { color: var(--ink-3); font-weight: 500; margin-left: 4px; }
   .fpick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); } .fpick button[aria-pressed="true"] small { color: inherit; opacity: .7; }
   .overlay { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow: auto; display: flex; flex-direction: column; }
-  .overlay .in { max-width: 480px; margin: 0 auto; padding: 24px 20px calc(24px + var(--sab)); display: flex; flex-direction: column; gap: 18px; min-height: 100%; width: 100%; }
+  .overlay .in { max-width: 480px; margin: 0 auto; padding: calc(24px + var(--sat)) 20px calc(24px + var(--sab)); display: flex; flex-direction: column; gap: 18px; min-height: 100%; width: 100%; }
   .overlay h1 { font-size: 30px; font-weight: 800; letter-spacing: -.025em; line-height: 1.1; }
   .overlay .lead { font-size: 17px; color: var(--ink-2); line-height: 1.45; }
   .overlay .grow { flex: 1; }
@@ -357,7 +358,7 @@
     <div class="date"><small id="top-cap">Day 1</small><span id="top-date">Today</span></div>
     <div class="top-r">
       <span class="chip streak">🔥 <b id="chip-streak">0</b></span>
-      <span class="chip shield" title="Shields cover a lost day. 2 a month, +1 per Sunday review.">🛡 <b id="chip-shield">2</b></span>
+      <span class="chip shield" title="Shields cover a lost day. Tap for the rules." data-shield-info="1">🛡 <b id="chip-shield">2</b></span>
       <button class="iconbtn" id="menu-btn" aria-label="More">⋯</button>
     </div>
   </div>
@@ -397,12 +398,12 @@
     <div class="crate" id="crate" hidden></div>
     <div class="sec"><div class="sec-h"><h2>Quests</h2><span class="cap">reset Monday</span></div><div class="list" id="quests" style="gap:10px"></div></div>
     <div class="sec"><div class="sec-h"><h2>Body</h2><span class="cap">7-day average</span></div>
-      <div class="card"><div class="row"><input class="note" id="weight-in" type="text" inputmode="decimal" placeholder="Weight, kg" style="flex:1"><button class="btn sm dark" id="weight-btn">Log</button><input class="note" id="waist-in" type="text" inputmode="decimal" placeholder="Waist, cm" style="flex:1"><button class="btn sm" id="waist-btn">Log</button></div>
+      <div class="card"><div class="row"><input class="note" id="weight-in" aria-label="Weight in kg" type="text" inputmode="decimal" placeholder="Weight, kg" style="flex:1"><button class="btn sm dark" id="weight-btn">Log</button><input class="note" id="waist-in" aria-label="Waist in cm" type="text" inputmode="decimal" placeholder="Waist, cm" style="flex:1"><button class="btn sm" id="waist-btn">Log</button></div>
         <svg class="spark-svg" id="spark" viewBox="0 0 320 100" preserveAspectRatio="none" aria-label="Weight trend"></svg><div class="small muted" id="spark-note"></div><div class="row" id="weigh-list" style="flex-wrap:wrap;gap:6px"></div><div class="tiny" id="waist-note"></div><svg class="spark-svg" id="waist-spark" viewBox="0 0 320 50" preserveAspectRatio="none" aria-label="Waist trend" style="height:50px"></svg></div></div>
     <div class="sec"><div class="sec-h"><h2>Who you're becoming</h2><span class="cap">tap to rewrite</span></div><div class="tiles" id="statgrid"></div></div>
     <div class="sec"><div class="sec-h"><h2>Real rewards</h2><span class="cap"><b id="loot-bal">0</b> Grit</span></div><div class="list" id="loot"></div><div><button class="btn sm" id="loot-add">Add a reward</button></div></div>
     <div class="sec"><div class="sec-h"><h2>Friends &amp; birthdays</h2><span class="cap">3 a week</span></div><div class="list" id="friends"></div>
-      <div class="row"><input class="note" id="fr-name" placeholder="Name" style="flex:1"><input class="note" id="fr-bday" type="date" aria-label="Birthday" style="flex:0 0 150px"></div>
+      <div class="row"><input class="note" id="fr-name" aria-label="Friend name" placeholder="Name" style="flex:1"><input class="note" id="fr-bday" type="date" aria-label="Birthday" style="flex:0 0 150px"></div>
       <div class="row"><button class="btn sm dark" id="fr-add">Add friend</button><button class="btn sm" id="fr-add-fam">Add as family</button><button class="btn sm" id="fr-ics">Export to calendar</button></div>
       <p class="tiny" style="margin:0">Open the exported file on your phone and Google Calendar adds every birthday with reminders 5 days before, the day before and the morning of.</p></div>
     <div class="sec"><div class="sec-h"><h2>All-time</h2></div><div class="tiles" id="alltime"></div><div class="row tiny" id="milestones"></div><div class="ladder" id="ladder"></div></div>
@@ -414,7 +415,7 @@
     <div class="chud" id="city-hud"></div>
     <div class="citywrap"><canvas id="city-canvas" aria-label="Your city"></canvas><div class="czoom"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit city">⤢</button></div></div>
     <div class="cpanel" id="city-panel"></div>
-    <div class="card"><h3>How the City works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers. Homes rise on <b>condition</b> and become comfortable or affluent with land value, education and leisure — affluent residents pay 2.2× the tax. Shops rise on <b>customers</b> within 4 tiles and staff, and close when starved. Factories rise on <b>workers</b>, and turn into clean tech at city education 60. Schools, libraries and a university build education; a hospital covers a district; bus depots fight traffic. Tap a tile to see what it's waiting on; a crane means it's building. <b>Land &amp; tax</b> buys more land (first ring at 50 people) and sets the tax rate; the corner buttons zoom. <b>Report</b> (or tap any number up top) breaks down budget, people, happiness and services with 24-hour trends; <b>Guide</b> lists every building, what it does, what it costs and what it yields. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
+    <div class="card"><h3>How your city works</h3><p class="sub">Draw <b>roads</b> from City Hall, <b>zone</b> land for homes, shops and industry, and place <b>services</b> with a reach. Zoned tiles fill in on their own — 2 hours to the first house, a day to mid-rise, three days to towers. Homes rise on <b>condition</b> and become comfortable or affluent with land value, education and leisure — affluent residents pay 2.2× the tax. Shops rise on <b>customers</b> within 4 tiles and staff, and close when starved. Factories rise on <b>workers</b>, and turn into clean tech at city education 60. Schools, libraries and a university build education; a hospital covers a district; bus depots fight traffic. Tap a tile to see what it's waiting on; a crane means it's building. <b>Land &amp; tax</b> buys more land (first ring at 50 people) and sets the tax rate; the corner buttons zoom. <b>Report</b> (or tap any number up top) breaks down budget, people, happiness and services with 24-hour trends; <b>Guide</b> lists every building, what it does, what it costs and what it yields. Everything structural costs <b>Grit</b>, which only missions mint. Taxes pay <b>Bucks</b> for trees, lights, plazas and festivals. Your stats are the weather: Family speeds homes and lifts happiness, Business drives shops and taxes, Body stretches parks, Health thins pollution. A lazy week stalls the city; it never wrecks it.</p></div>
   </div>
 
   <!-- COACH -->
@@ -435,10 +436,10 @@
       <div class="row"><button class="btn sm dark" id="review-btn">Save review</button><span class="tiny" id="review-note"></span></div></div>
     <div class="card" id="freedom-card"><h3>Agency Freedom <span class="tiny" id="freedom-lv"></span></h3><p class="sub">Twelve months to a business that runs without you. Each gate +100 Business XP. Don't skip rungs.</p><div class="gates" id="gates"></div></div>
     <div class="card" id="letter-card"><h3>Letter to future you</h3><p class="sub" id="letter-sub"></p><div id="letter-prev"></div><textarea class="note" id="letter-text" placeholder="150 words to the man at the next rung."></textarea><div><button class="btn sm" id="letter-save">Seal it</button></div></div>
-    <div class="card" id="words-card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows when you complete a mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
+    <div class="card" id="words-card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows on roughly every other completed mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
     <div class="card" id="custom-card"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
-      <div id="custom-form" hidden><input class="note" id="custom-name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
-    <div class="card" id="rules-card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time.</p></div>
+      <div id="custom-form" hidden><input class="note" id="custom-name" aria-label="Mission name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" aria-label="Stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" aria-label="Time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
+    <div class="card" id="rules-card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time. Easy days: a low morning check-in drops the bar to 60% with tiny missions, twice a week at most. Can’t today: decline up to two missions a day with a reason; each lowers the bar and the pattern reaches the coach and the Council. The season opens with 400 Grit; from level 3 the Iron Week stake can be 500. The weekly city goal pays 150 Grit when the population target is reached by Sunday.</p></div>
     <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
       <div class="list" id="remind-list"></div>
       <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
@@ -447,7 +448,7 @@
       <p class="tiny" style="margin:0">github.com → Settings → Developer settings → Fine-grained tokens → permission <b>Gists: Read and write</b>, nothing else. Paste the same token on each device.</p>
       <div class="qa"><label for="an-key">Anthropic API key — turns on the AI Council and “Ask coach”</label><input class="note" id="an-key" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
       <div class="row"><button class="btn sm dark" id="cfg-save">Save</button><button class="btn sm" id="cfg-sync">Sync now</button></div><div class="tiny" id="cfg-note"></div></div>
-    <div class="card" id="lab"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report for the developer</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
+    <div class="card" id="lab"><h3>Lab — the app checks itself <span class="tiny" id="lab-sub"></span></h3><p class="sub">Every error is caught, a set of sanity checks runs on every screen, and your own logs are mined for patterns. Each finding is a suggestion you apply or dismiss; nothing changes on its own.</p><div class="lab-h" id="lab-health"></div><div class="list" id="lab-out" style="gap:10px"></div><div class="row"><button class="btn sm dark" id="lab-report">Copy report</button><button class="btn sm" id="lab-ai" hidden>Ask AI to review the app</button><button class="btn sm ghost" id="lab-clear">Clear log</button></div><div id="lab-ai-out" style="white-space:pre-wrap;font-size:14px;line-height:1.5"></div></div>
     <div class="card" id="data-card"><h3>Your data</h3><p class="sub">Progress lives on this device and, if sync is on, in your Gist. App updates never touch it. Restoring <b>merges</b>; it never overwrites.</p><div class="tiny" id="data-status"></div><div class="row"><button class="btn sm dark" id="backup-btn">Download backup</button><button class="btn sm" id="restore-btn">Restore from backup</button></div><textarea class="note" id="restore-text" placeholder="Paste a backup here, then tap Restore" hidden></textarea></div>
     </div>
   </div>
@@ -466,8 +467,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260913-230144"></script>
-<script src="city.js?v=20260913-230144"></script>
+<script src="quotes.js?v=20260916-213631"></script>
+<script src="city.js?v=20260916-213631"></script>
 
 <script>
 (() => {
@@ -488,7 +489,7 @@
     { id: 'prot_b',   t: '07:30', grp: 'am',   name: 'Protein hit 1 of 3 — breakfast', tiny: 'Any protein at breakfast', desc: 'About a third of the day’s target. Tap for three easy plates.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'b', min: 0, from: '2026-09-12' },
     { id: 'prot_l',   t: '13:00', grp: 'work', name: 'Protein hit 2 of 3 — lunch', tiny: 'Any protein at lunch', desc: 'Second third. Nothing from a bag.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'l', min: 0, from: '2026-09-12' },
     { id: 'prot_d',   t: '19:30', grp: 'pm',   name: 'Protein hit 3 of 3 — dinner', tiny: 'Any protein at dinner', desc: 'Last third. A shake or skyr later covers the gap.', stat: 'body', xp: 5, days: 'all', kind: 'meal', meal: 'd', min: 0, from: '2026-09-12' },
-    { id: 'water',    t: '13:00', grp: 'work', name: 'No caffeine after 13:00, 2 litres of water', tiny: 'No caffeine after 15:00', desc: 'Caffeine at 15:00 is still in you at 23:00.', stat: 'health', xp: 10, days: 'all', min: 0 },
+    { id: 'water',    t: '13:00', grp: 'work', name: 'No caffeine after 13:00, 2 litres of water', tiny: 'No caffeine after 15:00', desc: 'Caffeine at 13:00 is still in you at 21:00; at 15:00, at 23:00.', stat: 'health', xp: 10, days: 'all', min: 0 },
     { id: 'train_we', t: '14:00', grp: 'work', name: 'Weekend workout', desc: 'Counts toward Iron Week (4 workouts). Not needed to win the day, so a rest weekend costs nothing.', stat: 'body', xp: 30, days: 'we', bonus: true, min: 45 },
     { id: 'noclient', t: '16:00', grp: 'work', name: 'Zero client messages handled by you', tiny: 'Route one client message to ops', desc: 'The agency learns to answer without you.', stat: 'business', xp: 15, days: 'wk', min: 0 },
     { id: 'prep',     t: '17:00', grp: 'work', name: 'Meal prep for the week', tiny: 'Cook protein for two days', desc: 'Protein cooked, lunches boxed.', stat: 'body', xp: 20, days: 'sun', min: 60 },
@@ -545,7 +546,7 @@
   const DECLINE_CAP = 2;
   const LOSS_WHY = ['client fire', 'no energy', 'kids evening', 'forgot to log', 'travel', 'sick', 'lost focus'];
   const LOSS_ADVICE = { 'client fire': 'Client fires end the day only because the phone is yours. L3 gate: client channels to an ops inbox.', 'no energy': 'Energy is decided the night before. Lights out 23:00 and a dry night are the lever, not willpower.', 'kids evening': '16:30–21:00 is theirs. Move every mission out of it except bedtime and the kiss; the rest goes before 16:00 or after 21:00.', 'forgot to log': 'Did the work, missed the ticks. Log at the 12:55 and 22:25 pings — two taps, done.', travel: 'Travel days: skip the day in the ⋯ menu before it starts. No score, no streak damage.', sick: 'Sick is sick. Skip the day; the streak waits.', 'lost focus': 'Focus dies without a first move. Set tomorrow’s first move tonight; do it before Slack opens.' };
-  const PERKS = { 2: ['Third shield', '3 streak shields a month instead of 2, and you can hold 4'], 3: ['Big stake', 'Iron Week can be staked for 500 Grit — 750 back when cleared'], 4: ['Grit interest', '5% of your unspent Grit paid every Monday for the week before'], 5: ['Your own mission', 'One mission you define, every day, +15 XP'], 6: ['Rare crates', 'Weekly crate pays 0–300 Bucks; one in four is rare and adds 200 Grit'], 7: ['Monument', 'A city landmark only rank can buy — raises land value around it'], 8: ['Sky Tower', 'Second landmark, wider reach'], 9: ['Grand Arch', 'Third landmark'], 10: ['Crown Palace', 'The skyline shows the rank'] };
+  const PERKS = { 2: ['Third shield', '3 streak shields a month instead of 2, and you can hold 4'], 3: ['Big stake', 'Iron Week can be staked for 500 Grit — 750 back when cleared'], 4: ['Grit interest', '5% of the Grit you were holding when the week turned, paid on your first open of the new week'], 5: ['Your own mission', 'One mission you define, every day, +15 XP'], 6: ['Rare crates', 'Weekly crate pays 0–300 Bucks; one in four is rare and adds 200 Grit'], 7: ['Monument', 'A city landmark only rank can buy — raises land value around it'], 8: ['Sky Tower', 'Second landmark, wider reach'], 9: ['Grand Arch', 'Third landmark'], 10: ['Crown Palace', 'The skyline shows the rank'] };
   const RARE_LINES = ['The ghost asked for a rematch. Denied.', 'Rare drop. The council is speechless.', 'Your media buyers framed this week.', 'Legend has it he never checked Slack.', 'The boys will tell this one to their boys.'];
   const CITY_GOAL_GRIT = 150;
   const STAKE_BIG = 500, RARE_GRIT = 200, INTEREST_RATE = 0.05, INTEREST_CAP = 500, CUSTOM_XP = 15;
@@ -579,6 +580,7 @@
   function clockHours() { const n = new Date(); const h = n.getHours() + n.getMinutes() / 60; return h < DAY_BOUNDARY_H ? h + 24 : h; }
   const prevWeek = wk => key(addDays(parse(wk), -7)), nextWeek = wk => key(addDays(parse(wk), 7));
   const dayDiff = (a, b) => Math.round((parse(a) - parse(b)) / MS_DAY);
+  const logicalKeyOf = ts => { const d = new Date(ts); d.setHours(d.getHours() - DAY_BOUNDARY_H); return key(d); };
   const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
   // =====================================================================
@@ -601,7 +603,7 @@
     if (isObj(r.skip)) out.skip = { v: r.skip.v ? String(r.skip.v).slice(0, 80) : '', t: num(r.skip.t) };
     if (isObj(r.fr)) { out.fr = {}; for (const id in r.fr) out.fr[id] = num(r.fr[id], 1) || 1; }
     if (isObj(r.dec)) { out.dec = {}; for (const id in r.dec) { const d = r.dec[id]; if (isObj(d)) out.dec[id] = { why: String(d.why || '').slice(0, 30), note: String(d.note || '').slice(0, 140), t: num(d.t) }; } }
-    for (const f of ['am', 'md']) if (isObj(r[f])) out[f] = { e: Math.min(5, Math.max(0, num(r[f].e))), s: Math.min(5, Math.max(0, num(r[f].s))), tags: Array.isArray(r[f].tags) ? r[f].tags.filter(x => typeof x === 'string').slice(0, 6) : [], why: Array.isArray(r[f].why) ? r[f].why.filter(x => typeof x === 'string').slice(0, 6) : [], loss: Array.isArray(r[f].loss) ? r[f].loss.filter(x => typeof x === 'string').slice(0, 6) : [], note: String(r[f].note || '').slice(0, 140), t: num(r[f].t) };
+    for (const f of ['am', 'md']) if (isObj(r[f])) out[f] = { e: Math.min(5, Math.max(0, num(r[f].e))), s: Math.min(5, Math.max(0, num(r[f].s))), tags: Array.isArray(r[f].tags) ? r[f].tags.filter(x => typeof x === 'string').slice(0, 6) : [], why: Array.isArray(r[f].why) ? r[f].why.filter(x => typeof x === 'string').slice(0, 8) : [], loss: Array.isArray(r[f].loss) ? r[f].loss.filter(x => typeof x === 'string').slice(0, 8) : [], note: String(r[f].note || '').slice(0, 140), t: num(r[f].t) };
     if (isObj(r.close)) out.close = { mood: num(r.close.mood), best: String(r.close.best || '').slice(0, 40), note: String(r.close.note || '').slice(0, 300), first: String(r.close.first || '').slice(0, 200), t: num(r.close.t) };
     return out;
   }
@@ -611,7 +613,8 @@
     for (const src of [a, b]) for (const id in src.off) out.off[id] = Math.max(out.off[id] || 0, src.off[id]);
     for (const f of ['rest', 'skip', 'close', 'am', 'md']) { const m = maxT(a[f], b[f]); if (m) out[f] = m; }
     if (a.fr || b.fr) { out.fr = {}; for (const src of [a, b]) for (const id in (src.fr || {})) out.fr[id] = Math.max(out.fr[id] || 0, src.fr[id]); }
-    if (a.dec || b.dec) { out.dec = {}; for (const id of new Set([...Object.keys(a.dec || {}), ...Object.keys(b.dec || {})])) { const m = maxT(a.dec && a.dec[id], b.dec && b.dec[id]); if (m && m.why) out.dec[id] = m; } }
+    if (a.dec || b.dec) { out.dec = {}; for (const id of new Set([...Object.keys(a.dec || {}), ...Object.keys(b.dec || {})])) { const m = maxT(a.dec && a.dec[id], b.dec && b.dec[id]); if (m) out.dec[id] = m; } }
+    const sortObj = o => Object.fromEntries(Object.keys(o).sort().map(k => [k, o[k]])); out.on = sortObj(out.on); out.off = sortObj(out.off); if (out.fr) out.fr = sortObj(out.fr); if (out.dec) out.dec = sortObj(out.dec);
     return out;
   }
   const fixPlan = m => ({ gen: m.gen === 'llm' ? 'llm' : 'rules', from: /^\d{4}-\d{2}-\d{2}$/.test(m.from || '') ? m.from : '', summary: String(m.summary || '').slice(0, 400), celebration: String(m.celebration || '').slice(0, 160),
@@ -626,12 +629,12 @@
     const byT = (field, fix) => { for (const k of union(a[field], b[field])) { const m = maxT(a[field] && a[field][k], b[field] && b[field][k]); if (isObj(m)) out[field][k] = fix ? fix(m) : m; } };
     for (const k of union(a.days, b.days)) out.days[k] = mergeDay(normDay(a.days && a.days[k]), normDay(b.days && b.days[k]));
     // weeks: manual flags LWW; counters are per-device grow-only
-    for (const k of union(a.weeks, b.weeks)) { const wa = (a.weeks && a.weeks[k]) || {}, wb = (b.weeks && b.weeks[k]) || {}; const m = maxT(wa, wb) || {}; const o = { t: num(m.t) }; for (const q of QUESTS) { if (q.manual) o[q.id] = !!m[q.id]; if (q.counter) { o[q.id] = {}; for (const src of [wa[q.id], wb[q.id]]) { if (isObj(src)) for (const d in src) o[q.id][d] = Math.max(o[q.id][d] || 0, num(src[d])); else if (Number.isFinite(+src) && +src > 0) o[q.id].legacy = Math.max(o[q.id].legacy || 0, +src); } } } out.weeks[k] = o; }
+    for (const k of union(a.weeks, b.weeks)) { const wa = (a.weeks && a.weeks[k]) || {}, wb = (b.weeks && b.weeks[k]) || {}; const m = maxT(wa, wb) || {}; const o = { t: num(m.t), ft: {} }; for (const q of QUESTS) { if (q.manual) { const ta = num(wa.ft && wa.ft[q.id]), tb = num(wb.ft && wb.ft[q.id]); const src = (ta || tb) ? (ta >= tb ? wa : wb) : m; o[q.id] = !!src[q.id]; if (ta || tb) o.ft[q.id] = Math.max(ta, tb); } if (q.counter) { for (const f of [q.id, q.id + '_dec']) { o[f] = {}; for (const src of [wa[f], wb[f]]) { if (isObj(src)) for (const d in src) o[f][d] = Math.max(o[f][d] || 0, num(src[d])); else if (Number.isFinite(+src) && +src > 0) o[f].legacy = Math.max(o[f].legacy || 0, +src); } } } } out.weeks[k] = o; }
     const wiA = Array.isArray(a.weighins) ? Object.fromEntries(a.weighins.map(x => [x.date, { kg: +x.kg, t: 1 }])) : a.weighins;
     const wiB = Array.isArray(b.weighins) ? Object.fromEntries(b.weighins.map(x => [x.date, { kg: +x.kg, t: 1 }])) : b.weighins;
     for (const k of union(wiA, wiB)) { const m = maxT(wiA && wiA[k], wiB && wiB[k]); if (isObj(m) && isFinite(+m.kg)) out.weighins[k] = { kg: +m.kg, t: num(m.t) }; }
     byT('waist', m => ({ cm: num(m.cm), t: num(m.t) }));
-    for (const k of union(a.reviews, b.reviews)) { const ra = a.reviews && a.reviews[k], rb = b.reviews && b.reviews[k]; const m = (!ra ? rb : !rb ? ra : num(ra.at) >= num(rb.at) ? ra : rb); if (isObj(m)) out.reviews[k] = { a1: String(m.a1 || '').slice(0, 600), a2: String(m.a2 || '').slice(0, 600), a3: String(m.a3 || '').slice(0, 600), a4: String(m.a4 || '').slice(0, 300), energy: num(m.energy), at: num(m.at) }; }
+    for (const k of union(a.reviews, b.reviews)) { const ra = a.reviews && a.reviews[k], rb = b.reviews && b.reviews[k]; const m = (!ra ? rb : !rb ? ra : num(ra.t || ra.at) >= num(rb.t || rb.at) ? ra : rb); if (isObj(m)) out.reviews[k] = { a1: String(m.a1 || '').slice(0, 600), a2: String(m.a2 || '').slice(0, 600), a3: String(m.a3 || '').slice(0, 600), a4: String(m.a4 || '').slice(0, 300), energy: num(m.energy), at: num(m.at), t: num(m.t || m.at) }; }
     byT('ladder', m => ({ v: !!m.v, due: /^\d{4}-\d{2}-\d{2}$/.test(m.due || '') ? m.due : '', steps: (Array.isArray(m.steps) ? m.steps : []).filter(isObj).slice(0, 6).map(x => ({ txt: String(x.txt || '').slice(0, 80), done: !!x.done })), t: num(m.t) }));
     byT('rewards', m => ({ name: String(m.name || '').slice(0, 80), cost: Math.max(0, num(m.cost)), claimed: num(m.claimed), gone: !!m.gone, t: num(m.t) }));
     byT('identity', m => ({ v: String(m.v || '').slice(0, 160), t: num(m.t) }));
@@ -714,7 +717,7 @@
   const dayMax = k => cached('dm:' + k, () => { const dc = declinedOn(k); return missionsFor(parse(k)).filter(m => !m.bonus && !dc.has(m.id)).reduce((s, m) => s + m.baseXp, 0); }); // focus bonus never raises the bar; declined missions leave it
   function weekDays(wk) { const m = parse(wk); return Array.from({ length: 7 }, (_, i) => key(addDays(m, i))); }
   function questsFor(wk) { const p = planFor(wk); const extra = p && p.boss && p.boss.status === 'accepted' ? [{ id: 'council', name: p.boss.title, stat: BYID[p.boss.mission].stat, xp: p.boss.xp, target: p.boss.count, ids: [p.boss.mission], council: true }] : []; return QUESTS.concat(extra); }
-  const counterOf = (wk, qid) => { const w = state.weeks[wk]; const c = w && w[qid]; return isObj(c) ? Object.values(c).reduce((s, v) => s + v, 0) : num(c); };
+  const counterOf = (wk, qid) => { const w = state.weeks[wk]; const c = w && w[qid], dc = w && w[qid + '_dec']; const sum = o => isObj(o) ? Object.values(o).reduce((s, v) => s + v, 0) : num(o); return Math.max(0, sum(c) - sum(dc)); };
   function questState(wk, q) {
     const w = state.weeks[wk] || {}; let n = 0;
     if (q.manual) n = w[q.id] ? 1 : 0; else if (q.counter) n = counterOf(wk, q.id);
@@ -747,23 +750,23 @@
       return { xp, by, best, bestWk, gates };
     });
   }
-  function seasonStart() { const ks = Object.keys(state.days).sort(); return ks.length && ks[0] < SEASON_START ? ks[0] : SEASON_START; }
+  function seasonStart() { const ks = Object.keys(state.days).sort(); return ks.length ? ks[0] : key(logicalToday()); } // the season starts the first day you logged, never before
   function season(tk) {
     return cached('se:' + tk, () => {
       let stock = 0, month = null, streak = 0, lostYesterday = false, best = 0; const shielded = {}, lost = {}; let won = 0; const wonByWeek = {};
       const start = parse(seasonStart()), end = parse(tk); const lv2Day = state.levelups[2] && state.levelups[2].k || '';
-      const revDays = new Set(Object.values(state.reviews).filter(r => r.at > 0).map(r => key(new Date(r.at)))); // review shield lands the day the review was saved
-      const planDays = new Set(Object.values(state.plans).filter(p => p.proposals.some(x => x.type === 'shield' && x.status === 'accepted')).map(p => p.from || key(parse(Object.keys(state.plans).find(w => state.plans[w] === p)))));
+      const revN = {}; for (const r of Object.values(state.reviews)) if (r.at > 0) { const dk = logicalKeyOf(r.at); revN[dk] = (revN[dk] || 0) + 1; } // review shield lands the logical day the review was first saved
+      const planDays = new Set(Object.values(state.plans).filter(p => p.proposals.some(x => x.type === 'shield' && x.status === 'accepted')).map(p => { const sp = p.proposals.find(x => x.type === 'shield' && x.status === 'accepted'); return (sp && sp.acceptedFrom) || p.from || key(parse(Object.keys(state.plans).find(w => state.plans[w] === p))); }));
       for (let d = start; d <= end; d = addDays(d, 1)) {
         const k = key(d), wk = weekKey(d), mo = k.slice(0, 7);
         if (mo !== month) { stock = Math.min(shieldCap(k), stock + shieldMonthly(k)); month = mo; }
         if (lv2Day === k) stock = Math.min(shieldCap(k), stock + 1); // level 2 perk: the third slot fills the day it is earned
-        if (revDays.has(k)) stock = Math.min(shieldCap(k), stock + 1);
+        if (revN[k]) stock = Math.min(shieldCap(k), stock + revN[k]);
         if (planDays.has(k)) stock = Math.min(shieldCap(k), stock + 1);
         const prevLost = lostYesterday; lostYesterday = false;
         const th = Math.ceil(dayMax(k) * (prevLost ? WIN_AFTER_LOSS : winRatio(wk, k)));
         const w = dayXP(k).xp >= th;
-        if (k === tk) { if (w) { streak++; won++; wonByWeek[wk] = (wonByWeek[wk] || 0) + 1; } break; }
+        if (k === tk) { if (w && !isSkip(k)) { streak++; won++; wonByWeek[wk] = (wonByWeek[wk] || 0) + 1; } break; }
         if (isSkip(k)) continue;
         if (w) { streak++; won++; wonByWeek[wk] = (wonByWeek[wk] || 0) + 1; }
         else if (stock > 0) { stock--; shielded[k] = true; }
@@ -807,7 +810,7 @@
   function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
   function push(immediate) {
     if (!dbRef) return;
-    const run = async () => { if (pushing) { dirty = true; return; } const s = JSON.stringify(state); if (s === lastPushed) return; pushing = true; try { await dbRef.set(state); lastPushed = JSON.stringify(state); dirty = false; } catch (e) { lastPushed = ''; dirty = true; note('Could not sync — saved on this device. Tap Sync now to retry.'); } pushing = false; if (dirty && JSON.stringify(state) !== lastPushed) push(false); };
+    const run = async () => { if (pushing) { dirty = true; return; } const s = JSON.stringify(state); if (s === lastPushed) return; pushing = true; try { const sent = await dbRef.set(state); lastPushed = sent || JSON.stringify(state); dirty = JSON.stringify(state) !== lastPushed; } catch (e) { lastPushed = ''; dirty = true; note('Could not sync — saved on this device. Tap Sync now to retry.'); } pushing = false; if (dirty && JSON.stringify(state) !== lastPushed) push(false); };
     clearTimeout(saveTimer); if (immediate) run(); else saveTimer = setTimeout(run, STANDALONE ? 1500 : 300);
   }
   function persist() { bump(); dirty = true; saveLocal(); push(false); }
@@ -823,10 +826,11 @@
     const c = cfg.get(); if (!c.ghToken) { note('Sync off — add a GitHub token in Sync & AI'); return; }
     try {
       let id = c.gistId;
+      if (id) { try { await gh('/gists/' + id); } catch (e) { if (/404/.test(String(e.message))) { id = null; cfg.set({ ...cfg.get(), gistId: '' }); } else throw e; } }
       if (!id) { for (let page = 1; page <= 5 && !id; page++) { const list = await gh(`/gists?per_page=100&page=${page}`); const found = list.find(g => g.description === GIST_DESC); if (found) id = found.id; if (list.length < 100) break; } }
       if (!id) { const made = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); id = made.id; }
       cfg.set({ ...cfg.get(), gistId: id });
-      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); } try { sanitize(); } catch (e) {} render(); } await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state) } } }) }); } };
+      dbRef = { set: async s => { const remote = await gistRead(id); if (remote) { const merged = merge(s, merge(base(), remote)); if (JSON.stringify(merged) !== JSON.stringify(state)) { state = merged; bump(); saveLocal(); } try { sanitize(); } catch (e) {} render(); } const body = JSON.stringify(state); await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: body } } }) }); return body; } };
       const remote = await gistRead(id); if (absorb(remote)) push(false);
       note('Synced via your GitHub Gist');
     } catch (e) { dbRef = null; note('Gist sync failed — check the token (needs Gists: read & write)'); }
@@ -850,14 +854,14 @@
   // =====================================================================
   let selOffset = 0, curView = 'today', city = null, quoteOffset = 0, openBlock = null, renderedWk = null, weekSel = null, lastRender = '';
   const toastQ = []; let toastBusy = false;
-  function toast(t, gold) { toastQ.push([t, !!gold]); if (!toastBusy) nextToast(); }
-  function nextToast() { const it = toastQ.shift(); if (!it) { toastBusy = false; return; } toastBusy = true; const el = $('toast'); el.textContent = it[0]; el.classList.toggle('gold', it[1]); el.classList.add('show'); setTimeout(() => { el.classList.remove('show'); setTimeout(nextToast, 220); }, it[1] ? 2400 : 1400); }
+  function toast(t, gold, onClick) { toastQ.push([t, !!gold, onClick || null]); if (!toastBusy) nextToast(); }
+  function nextToast() { const it = toastQ.shift(); if (!it) { toastBusy = false; return; } toastBusy = true; const el = $('toast'); el.textContent = it[0]; el.onclick = it[2]; el.style.pointerEvents = it[2] ? 'auto' : 'none'; el.classList.toggle('gold', it[1]); el.classList.add('show'); setTimeout(() => { el.classList.remove('show'); setTimeout(nextToast, 220); }, it[1] ? 2400 : 1400); }
   const vibrate = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
   // bottom sheet: one at a time; returns the sheet element
-  function openSheet(html, mount) { const bg = $('sheet-bg'), sh = $('sheet'); sh.innerHTML = `<div class="handle"></div>${html}`; bg.hidden = false; sh.hidden = false; requestAnimationFrame(() => { bg.classList.add('show'); sh.classList.add('show'); }); if (mount) mount(sh); const f = sh.querySelector('input,textarea,button.primary'); if (f && f.tagName !== 'BUTTON') setTimeout(() => f.focus(), 300); return sh; }
+  function openSheet(html, mount) { const bg = $('sheet-bg'), sh = $('sheet'); if (sh.hidden) { try { history.pushState({ l: 'sheet' }, ''); } catch (e) {} } sh.innerHTML = `<div class="handle"></div>${html}`; bg.hidden = false; sh.hidden = false; requestAnimationFrame(() => { bg.classList.add('show'); sh.classList.add('show'); }); if (mount) mount(sh); const f = sh.querySelector('input,textarea,button.primary'); if (f && f.tagName !== 'BUTTON' && !sh.querySelector('.fpick,.scale')) setTimeout(() => f.focus(), 300); return sh; }
   function closeSheet() { const bg = $('sheet-bg'), sh = $('sheet'); bg.classList.remove('show'); sh.classList.remove('show'); setTimeout(() => { bg.hidden = true; sh.hidden = true; sh.innerHTML = ''; }, 260); }
   $('sheet-bg').addEventListener('click', closeSheet);
-  function overlay(html, mount) { const o = $('overlay'); o.innerHTML = `<div class="in">${html}</div>`; o.hidden = false; window.scrollTo({ top: 0 }); if (mount) mount(o); }
+  function overlay(html, mount) { const o = $('overlay'); if (o.hidden) { try { history.pushState({ l: 'overlay' }, ''); } catch (e) {} } o.innerHTML = `<div class="in">${html}</div>`; o.hidden = false; window.scrollTo({ top: 0 }); if (mount) mount(o); }
   function closeOverlay() { $('overlay').hidden = true; $('overlay').innerHTML = ''; }
   function milestone(html, ms) { const m = $('milestone'); m.innerHTML = html; m.classList.add('show'); const off = () => { m.classList.remove('show'); m.onclick = null; }; m.onclick = off; setTimeout(off, ms || 2600); }
   function sparks(el) { const r = el.getBoundingClientRect(); for (let i = 0; i < 8; i++) { const s = document.createElement('span'); s.className = 'spark'; const a = i / 8 * Math.PI * 2; s.style.left = (r.left + r.width / 2) + 'px'; s.style.top = (r.top + r.height / 2) + 'px'; s.style.position = 'fixed'; s.style.setProperty('--dx', Math.cos(a) * 26 + 'px'); s.style.setProperty('--dy', Math.sin(a) * 26 + 'px'); document.body.appendChild(s); setTimeout(() => s.remove(), 450); } }
@@ -875,8 +879,6 @@
     if (state.peakLevel > real + 1) { state.peakLevel = real; touched = true; }
     for (const l in state.levelups) if (+l > state.peakLevel) { delete state.levelups[l]; touched = true; }
     const s0 = seasonStart(); for (const k in state.quotes) if (k < s0) { delete state.quotes[k]; touched = true; }
-    if (state.peakLevel < 5 && state.custom.m1) { delete state.custom.m1; touched = true; }
-    for (const w in state.interest) if (state.peakLevel < 4) { delete state.interest[w]; touched = true; }
     if (touched) { bump(); saveLocal(); }
     return touched;
   }
@@ -896,10 +898,8 @@
       const rwk = reviewWeek(tk); if (!reviewValid(rwk) && (dow === 0 || dow === 1 || dow === 2)) out.push({ id: 'review:' + rwk, label: dow === 0 ? 'Sunday review due today' : 'Sunday review still open' });
       const fl = freedomLevel(); const nl = LADDER.find(lv => lv.lv === fl + 1); const og = nl ? nl.gates.find(([g]) => !(state.ladder[g] && state.ladder[g].v)) : null; const gl = og ? state.ladder[og[0]] : null;
       if (gl && gl.due && gl.due < tk) out.push({ id: 'gate:' + og[0] + ':' + gl.due, label: `Gate overdue: ${og[1].split('—')[0].trim()}` });
-      let high = 0; try { high = learn(C).filter(x => x.sev === 'high').length; } catch (e) {}
-      if (high) out.push({ id: 'lab:' + high, label: `Lab: ${high} important finding${high > 1 ? 's' : ''}` });
       return out;
-    });
+    }).slice().concat((() => { let high = 0; try { high = learn(C).filter(x => x.sev === 'high').length; } catch (e) {} return high ? [{ id: 'lab:' + high, label: `Lab: ${high} important finding${high > 1 ? 's' : ''}` }] : []; })());
   }
   function renderAlerts(C) {
     const al = coachAlerts(C); const loud = al.filter(a => !a.quiet);
@@ -913,7 +913,8 @@
   function payInterest(C) { // level 4 perk: 5% of unspent Grit, once per completed week, only for weeks lived at level 4+
     if (state.peakLevel < 4) return false; const pw = weekKey(addDays(parse(C.tk), -7)); if (state.interest[pw]) return false;
     const l4 = state.levelups[4]; if (!l4 || !l4.k || l4.k > key(addDays(parse(pw), 6))) return false;
-    const amt = Math.max(0, Math.min(INTEREST_CAP, Math.round(C.G.grit * INTEREST_RATE)));
+    const held = Math.max(0, C.G.grit - C.W.xp - DAYWON_GRIT * (C.S.wonByWeek[C.wk] || 0)); // what was in hand when the week turned, before this week's earnings
+    const amt = Math.max(0, Math.min(INTEREST_CAP, Math.round(held * INTEREST_RATE)));
     state.interest[pw] = { amt, t: now() }; persist(); render();
     if (amt > 0) milestone(`<div class="bignum">💰</div><h1>+${amt} Grit interest</h1><p class="muted">5% on what you didn’t spend last week. Patience pays.</p>`, 2600);
     return true;
@@ -995,7 +996,7 @@
     v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Bonus from here.' : '.'}` : th.reduced ? `Never miss twice. Bar at 50%: ${th.need - x.xp} XP. Move.` : easyDay(selKey) ? `Easy day. Bar 60%. Win it small: ${th.need - x.xp} XP.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short. Evening is thin. Two missions. Go.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : 'No excuses.'}`) : `${th.need - x.xp} XP short that day.`;
     $('today-label').textContent = isToday ? 'Today' : `Yesterday · ${fmt(d)}`;
     const dcl = declinedOn(selKey); const nonBonus = ms.filter(m => !m.bonus && !dcl.has(m.id)); $('today-count').textContent = `${nonBonus.filter(m => done.has(m.id)).length} of ${nonBonus.length}${dcl.size ? ` · ${dcl.size} declined` : ''}`;
-    $('skip-note').hidden = !skip; $('skip-note').innerHTML = skip ? `<b>Skipped:</b> ${esc(rec.skip.v)} — doesn't count for or against the streak.` : '';
+    $('skip-note').hidden = true;
     // birthdays
     const up = upcomingBirthdays(parse(tk)).filter(b => b.days <= 5);
     $('bdays').hidden = !up.length;
@@ -1004,7 +1005,7 @@
     const nx = nextMission(C, ms, done); const first = (() => { const y = day(key(addDays(parse(tk), -1))); return y.close && y.close.first; })();
     const N = $('next');
     if (!isToday) { N.className = 'next done'; N.innerHTML = `<div class="cap">Yesterday</div><h2>Log what you did.</h2><p>Tap the circles below. Back to today from the ⋯ menu.</p>`; }
-    else if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Rest is a decision, not a lapse.</h2><p>Come back tomorrow. The streak is waiting.</p>`;
+    else if (skip) N.innerHTML = `<div class="cap">Skipped day</div><h2>Skipped. Tomorrow you’re back on the board.</h2><p>No score today. The streak holds.</p>`;
     else if (!nx) { N.className = 'next done'; N.innerHTML = `<div class="cap">${won ? 'Day won' : 'Board clear'}</div><h2>${won ? 'Nothing left to prove today.' : 'All missions logged.'}</h2><p>${rec.close ? 'Day closed. Sleep is a mission.' : 'Close the day when the boys are down.'}</p>${!rec.close && isToday ? `<div class="acts"><button class="btn primary" id="close-btn">Close the day</button></div>` : ''}`; }
     else { N.className = 'next'; const [hh] = nx.t.split(':'); N.innerHTML = `<div class="cap">Next${nx.focus ? ' · focus ×2' : ''}${easyDay(selKey) ? ' · easy day' : ''}</div><h2>${esc(nx.name)}</h2><p>${esc(first && h < 12 && nx.grp === 'am' ? `Your first move: ${first}` : nx.desc)}</p><div class="meta"><span>${nx.t}</span>${nx.min ? `<span>${nx.min} min</span>` : ''}<span class="c-${nx.stat}">+${nx.xp} ${STATS[nx.stat]}</span></div><div class="acts"><button class="btn primary" data-donext="${esc(nx.id)}" style="flex:1">${nx.kind === 'rest' ? 'Check in' : nx.kind === 'pulse' ? 'Pulse' : nx.kind === 'weigh' ? 'Log weight' : nx.kind === 'friend' ? 'Pick a friend' : nx.kind === 'close' ? 'Close the day' : nx.kind === 'meal' ? 'See meals' : 'Done'}</button><button class="btn" data-open="${esc(nx.id)}">Details</button></div>`; }
     const p = planApplies(weekKey(d), selKey); $('woop-today').innerHTML = p && p.woop ? `<div class="woop"><b>This week’s plan:</b> ${esc(p.woop.plan)}</div>` : '';
@@ -1036,7 +1037,7 @@
     $('week-label').textContent = `${fmt(parse(wk))} – ${fmt(addDays(parse(wk), 6))} · ${C.W.xp} XP`;
     $('weekrings').innerHTML = days.map(k => { const fut = k > tk; const x = fut ? 0 : dayXP(k).xp; const th = winThreshold(k, S).need; const won = !fut && x >= th; return `<button class="wd${k === tk ? ' today' : ''}${won ? ' won' : ''}${S.shielded[k] ? ' shield' : ''}${k === weekSel ? ' sel' : ''}" data-wd="${k}"><span class="n">${DOW[parse(k).getDay()]}</span><svg viewBox="0 0 40 40"><circle class="t" cx="20" cy="20" r="16"/><circle class="f" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="${ringOffset(fut ? 0 : x / th, 100.5)}"/></svg><span class="x">${fut ? '–' : isSkip(k) ? 'skip' : S.shielded[k] ? 'shield' : x}</span></button>`; }).join('');
     const idx = days.indexOf(tk); const you = days.slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0);
-    let ghost = 0, label = 'Ghost, same point'; if (T.bestWk) ghost = weekDays(T.bestWk).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); else { ghost = weekDays(prevWeek(wk)).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); label = 'Last week, same point'; }
+    let ghost = 0, label = 'Ghost, same point'; const bb = bestBefore(wk); if (bb.bestWk) ghost = weekDays(bb.bestWk).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); else { ghost = weekDays(prevWeek(wk)).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); label = 'Last week, same point'; }
     const dsel = weekSel; const dd = dayXP(dsel), dth = winThreshold(dsel, S);
     const cg = state.cityGoals[wk]; const cgPop = cg ? City.population(state.city, vitality(tk)) : 0;
     $('week-tiles').innerHTML = (cg ? `<div class="tile${cg.done ? ' won' : ''}"><div class="k">City goal</div><div class="v">${City.fmt(cgPop)} <small>/ ${City.fmt(cg.target)}</small></div><div class="tiny">${cg.done ? `reached · +${CITY_GOAL_GRIT} Grit` : `people by Sunday · +${CITY_GOAL_GRIT} Grit`}</div></div>` : '') + `<div class="tile${you > ghost && ghost > 0 ? ' won' : ''}"><div class="k">You vs ghost</div><div class="v">${you} <small>/ ${ghost}</small></div><div class="tiny">${label}${T.bestWk ? ` · best week ${T.best}` : ' · set the record'}</div></div><div class="tile${dd.xp >= dth.need ? ' won' : ''}"><div class="k">${fmt(parse(dsel))}</div><div class="v">${dd.xp} <small>/ ${dth.need}</small></div><div class="tiny">${dsel === tk ? 'today' : missionsFor(parse(dsel)).filter(m => doneOn(dsel).has(m.id)).map(m => m.name.split('—')[0].trim()).slice(0, 3).join(', ') || 'nothing logged'}</div></div>`;
@@ -1047,7 +1048,7 @@
     $('quests').innerHTML = questsFor(wk).map(q => { const s = questState(wk, q); let ctl = `<span class="c-${q.stat}">${STATS[q.stat]}</span>`;
       if (q.manual) ctl = `<button class="btn sm" data-quest="${q.id}">${s.cleared ? 'Undo' : 'Mark done'}</button>`;
       if (q.counter) ctl = `<span><button class="btn sm" data-qdec="${q.id}" aria-label="minus one">−</button> <button class="btn sm" data-qinc="${q.id}" aria-label="plus one">+1</button></span>`;
-      if (q.boss) ctl = stake && stake.amt ? `<span class="tiny">Staked ${stake.amt} · back ${Math.round(stake.amt * 1.5)} if cleared</span>` : `<button class="btn sm" id="stake-btn">Stake ${STAKE}${state.peakLevel >= 3 ? ` / ${STAKE_BIG}` : ''} Grit</button>`;
+      if (q.boss) ctl = stake && stake.amt ? `<span class="tiny">Staked ${stake.amt} · back ${Math.round(stake.amt * 1.5)} if cleared</span>` : questState(wk, IRON).cleared ? '<span class="tiny">Cleared — nothing left to stake</span>' : `<button class="btn sm" id="stake-btn">Stake ${STAKE}${state.peakLevel >= 3 ? ` / ${STAKE_BIG}` : ''} Grit</button>`;
       return `<div class="quest${q.boss || q.council ? ' boss' : ''}${s.cleared ? ' cleared' : ''}">${q.boss ? '<div class="tag">Boss quest</div>' : q.council ? '<div class="tag">Council quest</div>' : ''}<div class="rowq"><span class="name">${esc(q.name)}</span><span class="reward c-${q.stat}">+${q.xp}</span></div><div class="bar" role="progressbar" aria-valuenow="${s.n}" aria-valuemax="${q.target}"><i style="width:${Math.round(100 * s.n / q.target)}%"></i></div><div class="prog"><span>${s.cleared ? 'Cleared' : `${s.raw} / ${q.target}`}</span>${ctl}</div></div>`; }).join('');
     renderBody(); renderIdentity(T); renderLoot(G); renderFriends(tk); renderAllTime(T, S, G, levelFrom(T.xp, need));
   }
@@ -1070,7 +1071,7 @@
   }
   function renderIdentity(T) {
     const votes = { business: 0, body: 0, health: 0, family: 0 };
-    for (const k in state.days) for (const id of doneOn(k)) { const m = BYID[id]; votes[m ? m.stat : 'family']++; }
+    for (const k in state.days) for (const id of doneOn(k)) { const m = BYID[id] || missionOn(k, id); if (m && votes[m.stat] !== undefined) votes[m.stat]++; }
     $('statgrid').innerHTML = Object.keys(STATS).map(s => { const sl = levelFrom(T.by[s], needStat); const idn = (state.identity[s] && state.identity[s].v) || IDENTITY[s]; return `<button class="tile c-${s}" data-identity="${s}" style="text-align:left;cursor:pointer"><div class="k" style="color:inherit">${STATS[s]} · Lv ${sl.level}</div><div class="v">${votes[s]} <small>votes</small></div><div class="tiny" style="font-style:italic;margin-top:4px">“${esc(idn)}”</div></button>`; }).join('');
   }
   function renderLoot(G) {
@@ -1109,7 +1110,7 @@
     const decTop = Object.entries(decC).sort((a, b) => b[1].n - a[1].n)[0]; if (decTop && decTop[1].n >= 2 && BYID[decTop[0]]) { const w = Object.entries(decTop[1].why).sort((a, b) => b[1] - a[1])[0][0]; lines0.push(`“${BYID[decTop[0]].name.split('—')[0].trim()}” declined ${decTop[1].n}× in two weeks (“${w}”). ${DECLINE_ADVICE[w] || ''}`); }
     if (lossTop && lossTop[1] >= 2) lines0.push(`Lost days, last two weeks: “${lossTop[0]}” ×${lossTop[1]}. ${LOSS_ADVICE[lossTop[0]] || ''}`);
     const lines = [...lines0, `Week so far: ${W.xp} XP${lw ? ` versus ${lw} last week` : ''}${W.mult > 1 ? ` (×${W.mult.toFixed(1)} for beating the ghost)` : ''}. Iron Week ${iron.raw}/4. Streak ${S.streak}, best ${S.best}, shields ${S.stock}.`,
-      'Four walls: 08:30 drop-off, 10:00 work, 20:00 hard stop, 23:00 lights out. Every mission sits inside one of them.',
+      'Five walls: train at 08:30, one hand-off a day, hard stop 20:00, bedtime captain, lights out 23:00. Every mission sits inside one of them.',
       'Business XP comes from handing things off, not doing more. The agency runs without you because you delegated once a day and stopped answering clients yourself.'];
     const sp = stressPattern(tk, Array.from({ length: 14 }, (_, i) => key(addDays(parse(tk), -i))).filter(k => k >= seasonStart()));
     if (sp.top.length) { const [w, c] = sp.top[0]; if (c >= 3) lines.push(`Stress pattern: “${w}” ${c} times in two weeks${sp.top[1] && sp.top[1][1] >= 2 ? `, “${sp.top[1][0]}” ${sp.top[1][1]}` : ''}. ${STRESS_ADVICE[w] || 'Name it in the Sunday review and the Council will plan around it.'}`); else if (sp.hi >= 3) lines.push(`Stress ran high on ${sp.hi} check-ins this fortnight. Reasons so far: ${sp.top.map(([w, c]) => `${w} ×${c}`).join(', ')}. Three of the same and the coach names the fix.`); }
@@ -1167,13 +1168,14 @@
       row('words-card', '💬', 'Your words', 'Celebration lines and temptation bundles'),
       row('custom-card', '🎯', 'Your own mission', state.peakLevel >= 5 ? (cmLive ? `Live: ${cm.name}` : 'Empty — define one') : 'Unlocks at level 5'),
       row('rules-card', '📖', 'The rules', 'How XP, Grit, streaks and crates work')];
-    if (STANDALONE) { const mine = state.push[deviceId] && state.push[deviceId].sub; more.push(row('remind-card', '🔔', 'Reminders', mine ? 'On for this phone' : 'Off — push reminders through your GitHub')); more.push(row('syncai', '☁️', 'Sync & AI', `${cfg.get().ghToken ? 'Sync on' : 'Sync off'} · ${cfg.get().anKey ? 'AI on' : 'rules only'}`, { hot: !cfg.get().ghToken })); }
-    more.push(row('data-card', '💾', 'Your data', 'Backup, restore, reset'));
+    if (STANDALONE) { const mine = state.push[deviceId] && state.push[deviceId].sub; more.push(row('remind-card', '🔔', 'Reminders', mine ? 'On for this phone' : 'Off — push reminders through your GitHub')); more.push(row('syncai', '☁️', 'Sync & AI', `${cfg.get().ghToken ? 'Sync on' : 'Sync off'} · ${cfg.get().anthropicKey ? 'AI on' : 'rules only'}`, { hot: !cfg.get().ghToken })); }
+    more.push(row('data-card', '💾', 'Your data', 'Backup and restore'));
     $('coach-menu').innerHTML = more.join('');
   }
-  function goView(v) { curView = v; use('view:' + v); closePage(); document.querySelectorAll('.nav [data-view]').forEach(x => x.setAttribute('aria-selected', x.dataset.view === v ? 'true' : 'false')); for (const x of ['today', 'week', 'city', 'coach']) $('view-' + x).hidden = x !== v; document.body.classList.toggle('game', v === 'city'); if (city) city.show(v === 'city'); window.scrollTo({ top: 0 }); render(); }
+  function goView(v) { if (v === 'city' && curView !== 'city') { try { history.pushState({ l: 'city' }, ''); } catch (e) {} } curView = v; use('view:' + v); closePage(); document.querySelectorAll('.nav [data-view]').forEach(x => x.setAttribute('aria-selected', x.dataset.view === v ? 'true' : 'false')); for (const x of ['today', 'week', 'city', 'coach']) $('view-' + x).hidden = x !== v; document.body.classList.toggle('game', v === 'city'); if (city) city.show(v === 'city'); window.scrollTo({ top: 0 }); render(); }
+  window.addEventListener('popstate', () => { if (!$('sheet').hidden) { closeSheet(); return; } if (!$('page').hidden) { closePage(); render(); return; } if (!$('overlay').hidden) { closeOverlay(); render(); return; } if (curView === 'city') goView('today'); });
   let pageHome = null;
-  function openPage(id, title) { const c = $(id); if (!c) return; if (pageHome) closePage(); pageHome = { c, parent: c.parentElement, next: c.nextSibling }; $('page-body').appendChild(c); c.hidden = false; c.classList.add('open'); $('page-title').textContent = title; $('page').hidden = false; $('page').scrollTop = 0; use('page:' + id); }
+  function openPage(id, title) { const c = $(id); if (!c) return; if (!pageHome) { try { history.pushState({ l: 'page' }, ''); } catch (e) {} } if (pageHome) closePage(); pageHome = { c, parent: c.parentElement, next: c.nextSibling }; $('page-body').appendChild(c); c.hidden = false; c.classList.add('open'); $('page-title').textContent = title; $('page').hidden = false; $('page').scrollTop = 0; use('page:' + id); }
   function closePage() { if (!pageHome) return; const { c, parent, next } = pageHome; parent.insertBefore(c, next); pageHome = null; $('page').hidden = true; }
   $('page-back').addEventListener('click', () => { closePage(); render(); });
   document.addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (!b) return; openPage(b.dataset.page, b.dataset.title); });
@@ -1186,7 +1188,7 @@
     const cm = state.custom.m1, live = cm && cm.name && (!cm.until || cm.until >= C.tk), unlocked = state.peakLevel >= 5;
     $('custom-sub').textContent = !unlocked ? '· level 5' : live ? '· live' : '· empty';
     $('custom-why').textContent = unlocked ? `One mission you define, every day, +${CUSTOM_XP} XP. It joins today's list the moment you save.` : `Unlocks at level 5 (${titleFor(5)}): one mission you choose yourself, every day, worth ${CUSTOM_XP} XP.`;
-    $('custom-form').hidden = !unlocked;
+    $('custom-form').hidden = !unlocked; $('custom-off').hidden = !live;
     if (unlocked && !['custom-name', 'custom-stat', 'custom-time'].includes(document.activeElement.id)) { $('custom-name').value = live ? cm.name : ''; $('custom-stat').value = cm ? cm.stat : 'business'; $('custom-time').value = cm && cm.tm ? cm.tm : '18:00'; }
   }
   $('custom-save').addEventListener('click', () => { const name = $('custom-name').value.trim(); if (!name) { toast('Name the mission'); return; } if (state.peakLevel < 5) return; const tm = /^\d{2}:\d{2}$/.test($('custom-time').value) ? $('custom-time').value : '18:00'; const prev = state.custom.m1; const from = prev && prev.from && (!prev.until || prev.until >= key(logicalToday())) ? prev.from : key(logicalToday()); state.custom.m1 = { name, stat: STATS[$('custom-stat').value] ? $('custom-stat').value : 'business', tm, from, until: '', t: now() }; toast('Your mission is live'); persist(); render(); });
@@ -1344,7 +1346,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     return { counts, top, hi, n, notes: notes.slice(-3) };
   }
   function stateSheet(m, k) {
-    const r = rec(k); const am = m.kind === 'rest'; const cur = (am ? r.am : r.md) || { e: 0, s: 0, tags: [] }; const st = { rest: r.rest ? r.rest.v : 0, e: cur.e, s: cur.s, tags: new Set(cur.tags || []), why: new Set(cur.why || []), loss: new Set(cur.loss || []), note: cur.note || '' }; const yk = key(addDays(parse(k), -1)); const lostY = am && !!season(k).lost[yk];
+    const r = day(k); const am = m.kind === 'rest'; const cur = (am ? r.am : r.md) || { e: 0, s: 0, tags: [] }; const st = { rest: r.rest ? r.rest.v : 0, e: cur.e, s: cur.s, tags: new Set(cur.tags || []), why: new Set(cur.why || []), loss: new Set(cur.loss || []), note: cur.note || '' }; const yk = key(addDays(parse(k), -1)); const lostY = am && !!season(k).lost[yk];
     const TAGS = am ? ['bad night', 'twins up', 'sick', 'travel', 'client fire'] : ['client fire', 'twins up', 'sick', 'skipped lunch', 'good flow'];
     const scale = (id, v) => `<div class="scale" data-scale="${id}">${[1, 2, 3, 4, 5].map(n => `<button data-v="${n}" aria-pressed="${v === n}">${n}</button>`).join('')}</div>`;
     openSheet(`<h2>${am ? 'Morning check-in' : 'Midday pulse'}</h2><p>${am ? 'Ten seconds. Low energy or high stress and the board goes easy — bar at 60%, tiny missions, Train untouched.' : 'Two taps. If the day went sideways, the evening adapts.'}</p>
@@ -1361,27 +1363,28 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     return openSheet(`<div class="cap c-body">Body · ${m.t} · +${m.xp} XP</div><h2>${slot} — aim for ~${P.meal} g protein</h2><p>Day target ≈ <b>${P.total} g</b> (1.8 g × ${P.kg} kg), split into three feedings of ~${P.meal} g. A 30 g whey shake or 200 g skyr any time covers the rest. Three plates that hit it:</p><div class="list">${MEALS[m.meal].map(([txt, g]) => `<div class="r"><span>${esc(txt)}</span><b class="num">${g} g</b></div>`).join('')}</div><p class="tiny">Grams are for the protein, not the plate. Weigh the meat once; after that you’ll eyeball it.</p><div class="acts"><button class="btn" data-x>Close</button><button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, m.id); }));
   }
   function missionSheet(id) {
-    const k = selKey(); const m = missionOn(k, id); if (!m) return; const r = rec(k); const on = doneOn(k).has(id);
+    const k = selKey(); const m = missionOn(k, id); if (!m) return; const r = day(k); const on = doneOn(k).has(id);
     if (m.kind === 'rest' || m.kind === 'pulse') return stateSheet(m, k);
     if (m.kind === 'weigh') return openSheet(`<h2>Weight this morning</h2><p>Before breakfast, same conditions. Comma or dot both work.</p><input class="note" id="sh-kg" type="text" inputmode="decimal" placeholder="kg" value="${state.weighins[k] ? state.weighins[k].kg : ''}"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sh-ok">Log</button></div>`, sh => { const ok = () => { const v = parseNum(sh.querySelector('#sh-kg').value); if (!v || v < 30 || v > 300) { toast('Enter a weight in kg'); return; } closeSheet(); setTimeout(() => logWeight(v, k), 280); }; sh.querySelector('#sh-ok').addEventListener('click', ok); sh.querySelector('#sh-kg').addEventListener('keydown', e => { if (e.key === 'Enter') ok(); }); });
     if (m.kind === 'friend') { const fl = friendList(key(logicalToday())); if (!fl.length) return openSheet(`<h2>No friends yet</h2><p>Add the three people you most want to keep close. Progress tab → Friends.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`);
       return openSheet(`<h2>Who?</h2><p>Longest since contact first. A message counts; a call counts double in your head.</p><div class="fpick">${fl.map(f => `<button data-f="${esc(f.id)}">${esc(f.name)}<small>${f.days === null ? 'never' : f.days + 'd'}</small></button>`).join('')}</div>${on ? `<div class="acts"><button class="btn" id="sh-undo">Undo today’s</button></div>` : ''}`, sh => { sh.querySelector('.fpick').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; (rec(k).fr ||= {})[b.dataset.f] = now(); closeSheet(); if (!doneOn(k).has('friend')) complete(k, 'friend'); else { persist(); render(); toast(`Reached ${state.friends[b.dataset.f].name}`); } }); const u = sh.querySelector('#sh-undo'); if (u) u.addEventListener('click', () => { closeSheet(); complete(k, 'friend'); }); }); }
-    if (m.kind === 'close') return closeDay();
+    if (m.kind === 'close') return closeDay(k);
     if (m.kind === 'meal') return mealSheet(m, k, on);
     const dcd = declinedOn(k).has(id);
     openSheet(`<div class="cap c-${m.stat}">${STATS[m.stat]} · ${m.t}${m.min ? ` · ${m.min} min` : ''} · +${m.xp} XP</div><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>${m.tiny && !m.isTiny ? `<p class="tiny">Tiny version if today is on fire: ${esc(m.tiny)} — full XP for showing up.</p>` : ''}${dcd ? `<p class="tiny">Declined today: ${esc(r.dec[id].why)}${r.dec[id].note ? ` — ${esc(r.dec[id].note)}` : ''}. Doing it anyway counts in full.</p>` : ''}<div class="acts"><button class="btn" data-x>Close</button>${on || dcd ? '' : `<button class="btn" id="sh-decline">Can’t today</button>`}<button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => { sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, id); }); const dbtn = sh.querySelector('#sh-decline'); if (dbtn) dbtn.addEventListener('click', () => { declineSheet(k, id, m); }); });
   }
   function declineSheet(k, id, m) {
     const used = declinedOn(k).size; if (used >= DECLINE_CAP) { toast(`${DECLINE_CAP} declines a day. The rest stands.`); return; }
-    let why = ''; openSheet(`<h2>Can’t do “${esc(m.name.split('—')[0].trim())}” today</h2><p>Say why. The bar lowers by ${m.baseXp} XP, and the pattern goes to the coach and the Council.</p><div class="fpick" id="dc-why">${DECLINE_WHY.map(w => `<button data-w="${w}">${w}</button>`).join('')}</div><input class="note" id="dc-note" maxlength="140" placeholder="One line, optional"><div class="acts"><button class="btn" data-x>Back</button><button class="btn primary" id="dc-ok">Decline · ${DECLINE_CAP - used - 1} left today</button></div>`, sh => {
+    let why = ''; openSheet(`<h2>Can’t do “${esc(m.name.split('—')[0].trim())}” today</h2><p>Say why. The bar lowers by about ${Math.ceil(m.baseXp * winRatio(weekKey(parse(k)), k))} XP, and the pattern goes to the coach and the Council.</p><div class="fpick" id="dc-why">${DECLINE_WHY.map(w => `<button data-w="${w}">${w}</button>`).join('')}</div><input class="note" id="dc-note" maxlength="140" placeholder="One line, optional"><div class="acts"><button class="btn" id="dc-back">Back</button><button class="btn primary" id="dc-ok">Decline · ${DECLINE_CAP - used - 1} left today</button></div>`, sh => {
+      sh.querySelector('#dc-back').addEventListener('click', () => missionSheet(id));
       sh.querySelector('#dc-why').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; why = b.dataset.w; sh.querySelectorAll('#dc-why button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
       sh.querySelector('#dc-ok').addEventListener('click', () => { if (!why) { toast('Pick a reason'); return; } const r = rec(k); (r.dec ||= {})[id] = { why, note: (sh.querySelector('#dc-note').value || '').trim().slice(0, 140), t: now() }; if (doneOn(k).has(id)) setMission(k, id, false); use('decline'); closeSheet(); persist(); render(); toast(DECLINE_ADVICE[why] ? 'Noted. ' + DECLINE_ADVICE[why].split('.')[0] + '.' : 'Noted.'); });
     });
   }
   // ---- close the day (peak-end ritual) ----
-  function closeDay() {
-    const k = key(logicalToday()); const r = rec(k); const C = ctx(); const x = dayXP(k), th = winThreshold(k, C.S); const done = missionsFor(parse(k)).filter(m => doneOn(k).has(m.id) && m.id !== 'close');
-    const best = done.slice().sort((a, b) => b.xp - a.xp)[0]; const p = planApplies(C.wk, k); const q = quoteFor(k);
+  function closeDay(kk) {
+    const k = kk || key(logicalToday()); const r = rec(k); const C = ctx(); const x = dayXP(k), th = winThreshold(k, C.S); const done = missionsFor(parse(k)).filter(m => doneOn(k).has(m.id) && m.id !== 'close');
+    const best = done.slice().sort((a, b) => b.xp - a.xp)[0]; const p = planApplies(weekKey(parse(k)), k); const q = quoteFor(k);
     const step = { mood: r.close ? r.close.mood : 0, best: r.close ? r.close.best : (best ? best.name.split('—')[0].trim() : ''), note: r.close ? r.close.note : '', first: r.close ? r.close.first : (p && p.woop ? p.woop.plan : '') };
     overlay(`<div class="row" style="justify-content:space-between"><span class="cap">Close the day</span><button class="btn ghost sm" id="ov-x">Later</button></div>
       <div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill${x.xp >= th.need ? ' won' : ''}" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ov-ring"/></svg><div class="in"><b class="num" style="font-size:52px">${x.xp}</b><span>${x.xp >= th.need ? 'won' : `of ${th.need}`}</span></div></div>
@@ -1406,19 +1409,19 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const draw = () => {
       const dots = `<div class="dots">${[0, 1, 2, 3].map(i => `<i class="${i === screen ? 'on' : ''}"></i>`).join('')}</div>`;
       if (screen === 0) overlay(`${dots}<h1>Which one is you this year?</h1><p class="lead">Pick what matters. Missions, not lectures — ten minutes a day runs it.</p><div class="list">${Object.keys(STATS).map(s => `<button class="opt" data-p="${s}" aria-pressed="${picks.has(s)}"><i></i><span>${esc(IDENTITY[s])}</span></button>`).join('')}</div><div class="grow"></div><button class="btn primary wide" id="ob-next">Continue</button>`, o => { o.querySelector('.list').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; picks.has(b.dataset.p) ? picks.delete(b.dataset.p) : picks.add(b.dataset.p); b.setAttribute('aria-pressed', picks.has(b.dataset.p)); }); o.querySelector('#ob-next').addEventListener('click', () => { screen = 1; draw(); }); });
-      if (screen === 1) overlay(`${dots}<h1>Your four walls.</h1><p class="lead">The day is built around moments that already exist. Nothing to schedule.</p><div class="list"><div class="r"><span><b>08:30</b> — boys dropped off. Train until 10:00.</span></div><div class="r"><span><b>10:00</b> — the agency, then Dineline at 12:00.</span></div><div class="r"><span><b>20:00</b> — hard stop. Laptop closed, boys, wife.</span></div><div class="r"><span><b>23:00</b> — lights out, phone outside the room.</span></div></div><p class="tiny">Wrong? Tell the coach and we move the walls.</p><div class="grow"></div><button class="btn primary wide" id="ob-next">That’s my day</button>`, o => o.querySelector('#ob-next').addEventListener('click', () => { screen = 2; draw(); }));
+      if (screen === 1) overlay(`${dots}<h1>Your walls.</h1><p class="lead">The day is built around moments that already exist. Nothing to schedule.</p><div class="list"><div class="r"><span><b>08:30</b> — boys dropped off. Train until 10:00.</span></div><div class="r"><span><b>10:00</b> — the agency, then Dineline at 12:00.</span></div><div class="r"><span><b>20:00</b> — hard stop. Laptop closed, boys, wife.</span></div><div class="r"><span><b>23:00</b> — lights out, phone outside the room.</span></div></div><p class="tiny">Times off? Move any mission from the Lab, or let the Council do it.</p><div class="grow"></div><button class="btn primary wide" id="ob-next">That’s my day</button>`, o => o.querySelector('#ob-next').addEventListener('click', () => { screen = 2; draw(); }));
       if (screen === 2) overlay(`${dots}<h1>Commit to three.</h1><p class="lead">These go first every day this week. Everything else is bonus until they hold.</p><div class="list">${core.map(id => `<button class="opt" data-s="${id}" aria-pressed="${starters.has(id)}"><i></i><span>${esc(BYID[id].name)}</span></button>`).join('')}</div><div class="grow"></div><button class="btn primary wide" id="ob-next">Lock them in</button>`, o => { o.querySelector('.list').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; if (starters.has(b.dataset.s)) starters.delete(b.dataset.s); else if (starters.size < 3) starters.add(b.dataset.s); else toast('Three. That’s the point.'); b.setAttribute('aria-pressed', starters.has(b.dataset.s)); }); o.querySelector('#ob-next').addEventListener('click', () => { screen = 3; draw(); }); });
-      if (screen === 3) overlay(`${dots}<div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ob-ring"/></svg><div class="in"><b class="num" style="font-size:52px">1</b><span>level</span></div></div><h1>Day 1. Two shields pre-loaded.</h1><p class="lead">Fill the ring to 72% and the day is won. A lost day gets covered by a shield. Miss twice and tomorrow’s bar drops to 50% — one miss is a day, two is a habit.</p><p class="lead">400 Grit in the treasury. Your city is waiting for roads.</p><div class="grow"></div><button class="btn primary wide" id="ob-go">Show me the first mission</button>`, o => { requestAnimationFrame(() => { o.querySelector('#ob-ring').style.strokeDashoffset = ringOffset(0.72); }); o.querySelector('#ob-go').addEventListener('click', () => { for (const s of picks) state.identity[s] = { v: IDENTITY[s], t: now() }; state.seen.intro = true; state.seen.starter = { ids: [...starters], t: now() }; persist(); closeOverlay(); render(); setTimeout(maybeQuote, 400); toast('Level 1. The board is yours.', true); }); });
+      if (screen === 3) overlay(`${dots}<div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ob-ring"/></svg><div class="in"><b class="num" style="font-size:52px">1</b><span>level</span></div></div><h1>Day 1. Two shields pre-loaded.</h1><p class="lead">Fill the ring to 72% and the day is won. A lost day gets covered by a shield. Lose a day and tomorrow’s bar drops to 50%. Never miss twice.</p><p class="lead">400 Grit in the treasury. Your city is waiting for roads.</p><div class="grow"></div><button class="btn primary wide" id="ob-go">Show me the first mission</button>`, o => { requestAnimationFrame(() => { o.querySelector('#ob-ring').style.strokeDashoffset = ringOffset(0.72); }); o.querySelector('#ob-go').addEventListener('click', () => { for (const s of picks) state.identity[s] = { v: IDENTITY[s], t: now() }; state.seen.intro = true; state.seen.starter = { ids: [...starters], t: now() }; persist(); closeOverlay(); render(); setTimeout(maybeQuote, 400); toast('Level 1. The board is yours.', true); }); });
     };
     draw();
   }
   // ---- menu ----
   function menuSheet() {
     const k = selKey(); const skip = isSkip(k);
-    openSheet(`<h2>More</h2><div class="list"><button class="btn wide" id="mn-y">${selOffset === 0 ? 'Log yesterday' : 'Back to today'}</button><button class="btn wide" id="mn-skip">${skip ? 'Unskip this day' : 'Skip this day (sick kid, travel, rest)'}</button><button class="btn wide" id="mn-close">Close the day</button><button class="btn wide ghost" id="mn-help">How to play</button></div>`, sh => {
+    openSheet(`<h2>More</h2><div class="list"><button class="btn wide" id="mn-y">${selOffset === 0 ? 'Log yesterday' : 'Back to today'}</button><button class="btn wide" id="mn-skip">${skip ? 'Unskip this day' : 'Skip this day (sick kid, travel, rest)'}</button><button class="btn wide" id="mn-close">Close the day</button><button class="btn wide ghost" id="mn-help">How to play</button><button class="btn wide" data-x>Close</button></div>`, sh => {
       sh.querySelector('#mn-y').addEventListener('click', () => { selOffset = selOffset === 0 ? -1 : 0; openBlock = null; closeSheet(); render(); });
-      sh.querySelector('#mn-close').addEventListener('click', () => { closeSheet(); closeDay(); });
-      sh.querySelector('#mn-help').addEventListener('click', () => { closeSheet(); onboarding(); });
+      sh.querySelector('#mn-close').addEventListener('click', () => { closeSheet(); closeDay(selKey()); });
+      sh.querySelector('#mn-help').addEventListener('click', () => { closeSheet(); openPage('rules-card', 'How to play'); });
       sh.querySelector('#mn-skip').addEventListener('click', () => { if (skip) { rec(k).skip = { v: '', t: now() }; persist(); closeSheet(); render(); toast('Day back in play'); return; } openSheet(`<h2>Skip this day</h2><p>Doesn’t count for or against the streak. Why?</p><div class="fpick" id="sk">${['Sick kid', 'Travel', 'Rest day', 'Client fire'].map(w => `<button data-w="${w}">${w}</button>`).join('')}</div><input class="note" id="sk-in" placeholder="or type a reason"><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="sk-ok">Skip</button></div>`, s2 => { const go = why => { rec(k).skip = { v: (why || 'skipped').slice(0, 80), t: now() }; persist(); closeSheet(); render(); toast('Day skipped — no streak damage'); }; s2.querySelector('#sk').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) go(b.dataset.w); }); s2.querySelector('#sk-ok').addEventListener('click', () => go(s2.querySelector('#sk-in').value.trim())); }); });
     });
   }
@@ -1436,15 +1439,16 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const tab = t.closest('.nav [data-view]'); if (tab) { goView(tab.dataset.view); return; }
     if (t.closest('#city-exit')) { goView('today'); return; }
     if (t.closest('#coach-alert')) { goView('coach'); return; }
+    if (t.closest('[data-shield-info]')) { const C = ctx(); openSheet(`<h2>Shields · ${C.S.stock} in stock</h2><p>A shield covers a lost day so the streak survives. You get ${shieldMonthly(C.tk)} a month and can hold ${shieldCap(C.tk)}${state.peakLevel >= 2 ? ' (level 2 perk)' : ' (3 a month and 4 in stock from level 2)'}. +1 for every Sunday review, +1 when you accept a Council shield. Skipped days never need one.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`); return; }
   });
   // ---- Progress tab ----
   $('quests').addEventListener('click', e => {
     const wk = weekKey(logicalToday()); const w = (state.weeks[wk] ||= { t: 0 });
     const q = e.target.closest('[data-quest]'), inc = e.target.closest('[data-qinc]'), dec = e.target.closest('[data-qdec]');
     if (e.target.closest('#stake-btn')) { const C = ctx(); const big = state.peakLevel >= 3; if (C.G.grit < STAKE) { toast(`Need ${STAKE} Grit to stake`); return; } openSheet(`<h2>Stake Grit on Iron Week?</h2><p>Four workouts by Sunday and you get 1.5× back. Fewer, and it burns. Optional — a commitment device, not a tax.</p><div class="acts"><button class="btn" data-x>Not this week</button><button class="btn primary" data-stake="${STAKE}">Stake ${STAKE}</button>${big ? `<button class="btn primary" data-stake="${STAKE_BIG}">Stake ${STAKE_BIG}</button>` : ''}</div>${big ? '' : `<p class="tiny" style="margin-top:8px">Level 3 unlocks the ${STAKE_BIG} stake.</p>`}`, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-stake]'); if (!b) return; const amt = +b.dataset.stake; if (amt > STAKE && state.peakLevel < 3) return; if (ctx().G.grit < amt) { toast(`Need ${amt} Grit`); return; } state.stakes[wk] = { amt, t: now() }; closeSheet(); toast('Staked. Now the iron owes you.'); persist(); render(); })); return; }
-    if (q) { w[q.dataset.quest] = !w[q.dataset.quest]; const Q = QUESTS.find(x => x.id === q.dataset.quest); toast(w[q.dataset.quest] ? `+${Q.xp} ${STATS[Q.stat]} XP` : 'Undone'); }
+    if (q) { w[q.dataset.quest] = !w[q.dataset.quest]; (w.ft ||= {})[q.dataset.quest] = now(); const Q = QUESTS.find(x => x.id === q.dataset.quest); toast(w[q.dataset.quest] ? `+${Q.xp} ${STATS[Q.stat]} XP` : 'Undone'); }
     else if (inc) { const c = (isObj(w[inc.dataset.qinc]) ? w[inc.dataset.qinc] : (w[inc.dataset.qinc] = {})); c[deviceId] = (c[deviceId] || 0) + 1; toast('SOP recorded'); }
-    else if (dec) { const c = w[dec.dataset.qdec]; if (isObj(c) && c[deviceId] > 0) c[deviceId]--; else return; }
+    else if (dec) { if (counterOf(weekKey(logicalToday()), dec.dataset.qdec) <= 0) return; const dk = dec.dataset.qdec + '_dec'; const c = (isObj(w[dk]) ? w[dk] : (w[dk] = {})); c[deviceId] = (c[deviceId] || 0) + 1; }
     else return;
     w.t = now(); persist(); render();
   });
@@ -1484,12 +1488,12 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
       'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday tomorrow`, 'END:VALARM',
       'BEGIN:VALARM', 'TRIGGER:PT9H', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(f.name)} birthday today — call`, 'END:VALARM', 'END:VEVENT']; return lines.map(icsFold).join('\r\n') + '\r\n'; };
     const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Life//EN\r\nCALSCALE:GREGORIAN\r\n${fl.map(ev).join('')}END:VCALENDAR\r\n`;
-    if (downloadsFn) { try { await downloadsFn.save({ filename: 'empire-birthdays.ics', data: ics, type: 'text/calendar' }); toast('Calendar file saved — open it to import'); return; } catch (e) { if (e && e.code === 'declined') return; } }
+    if (downloadsFn) { try { await downloadsFn.save({ filename: 'life-birthdays.ics', data: ics, type: 'text/calendar' }); toast('Calendar file saved — open it to import'); return; } catch (e) { if (e && e.code === 'declined') return; } }
     try { await navigator.clipboard.writeText(ics); toast('Copied .ics text — paste into a file'); } catch (e) { toast('Could not export here'); }
   });
   // ---- coach tab ----
-  $('rv-energy').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if (!b) return; const rwk = reviewWeek(key(logicalToday())); const r = state.reviews[rwk] || { a1: '', a2: '', a3: '', a4: '', energy: 0, at: 0 }; r.energy = +b.dataset.e; state.reviews[rwk] = r; $('rv-energy').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); saveLocal(); });
-  $('review-btn').addEventListener('click', () => { const rwk = reviewWeek(key(logicalToday())); const a1 = $('r1').value.trim(), a2 = $('r2').value.trim(), a3 = $('r3').value.trim(), a4 = $('r4').value.trim(); if (!a1 && !a2 && !a3) { toast('Answer at least one'); return; } const energy = (state.reviews[rwk] && state.reviews[rwk].energy) || 0; state.reviews[rwk] = { a1, a2, a3, a4, energy, at: now() }; renderedWk = null; milestone(`<div class="bignum">🛡</div><h1>Review saved.</h1><p class="muted">+${REVIEW_XP} XP, +1 shield. New week, clean ledger.</p>`, 2400); persist(); render(); });
+  $('rv-energy').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if (!b) return; const rwk = reviewWeek(key(logicalToday())); const r = state.reviews[rwk] || { a1: '', a2: '', a3: '', a4: '', energy: 0, at: 0 }; r.energy = +b.dataset.e; state.reviews[rwk] = r; $('rv-energy').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); (() => { const rv = state.reviews[reviewWeek(key(logicalToday()))]; if (rv) rv.t = now(); persist(); })(); });
+  $('review-btn').addEventListener('click', () => { const rwk = reviewWeek(key(logicalToday())); const a1 = $('r1').value.trim(), a2 = $('r2').value.trim(), a3 = $('r3').value.trim(), a4 = $('r4').value.trim(); if (!a1 && !a2 && !a3) { toast('Answer at least one'); return; } const energy = (state.reviews[rwk] && state.reviews[rwk].energy) || 0; state.reviews[rwk] = { a1, a2, a3, a4, energy, at: (state.reviews[rwk] && state.reviews[rwk].at) || now(), t: now() }; renderedWk = null; milestone(`<div class="bignum">🛡</div><h1>Review saved.</h1><p class="muted">+${REVIEW_XP} XP, +1 shield. New week, clean ledger.</p>`, 2400); persist(); render(); });
   $('gates').addEventListener('change', e => { const d = e.target.closest('[data-gate-due]'); if (!d) return; const g = d.dataset.gateDue; state.ladder[g] = { ...(state.ladder[g] || { v: false, steps: [] }), due: /^\d{4}-\d{2}-\d{2}$/.test(d.value) ? d.value : '', t: now() }; persist(); render(); toast('Gate date set'); });
   $('gates').addEventListener('click', e => {
     const ed = e.target.closest('.gate-ed'); if (ed) { const g = ed.dataset.g; const L = state.ladder[g] || { v: false, steps: [] }; const steps = (L.steps || []).slice();
@@ -1518,7 +1522,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   // Reminders — Web Push. The subscription is saved into synced state; a GitHub Action (push/send.mjs) sends the due ones.
   // =====================================================================
   const VAPID_PUBLIC = 'BKrxCvD7xGGohz0eLesvba3aT-YxvbK416d4V8RV0dq82yQrPjkJSEULljg3TaVihZttQB-DivJNwXJQNk9ChLY';
-  const REMINDERS = [['first', '07:00', 'First move', 'the if-then you set last night'], ['gym', '08:25', 'Gym window', '5 minutes before 08:30'], ['lunch', '12:55', 'Protein + pulse', 'lunch feeding and the midday check-in'], ['stop', '19:55', 'Hard stop', '5 minutes before 20:00'], ['close', '22:25', 'Close the day', 'the two-minute ritual'], ['coach', '07:05', 'Coach digest', 'your first move and the order of the day'], ['bday', '07:30', 'Birthdays', 'on the day, for anyone in your list']];
+  const REMINDERS = [['first', '07:00', 'First move', 'the first move you set last night'], ['gym', '08:25', 'Gym window', '5 minutes before 08:30'], ['lunch', '12:55', 'Protein + pulse', 'lunch feeding and the midday check-in'], ['stop', '19:55', 'Hard stop', '5 minutes before 20:00'], ['close', '22:25', 'Close the day', 'the two-minute ritual'], ['coach', '07:30', 'Coach digest', 'the day’s order from the coach'], ['bday', '07:30', 'Birthdays', 'on the day, for anyone in your list']];
   const b64ToU8 = b => { const p = '='.repeat((4 - b.length % 4) % 4); const r = (b + p).replace(/-/g, '+').replace(/_/g, '/'); const raw = atob(r); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
   async function pushSubscribe() {
     if (!STANDALONE || !('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push isn’t available in this browser'); return; }
@@ -1545,15 +1549,15 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   if (STANDALONE) downloadsFn = { save: async ({ filename, data, type }) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: type || 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); return { status: 'saved' }; } };
   else (async () => { try { downloadsFn = await window.claude.use('downloads'); } catch (e) { downloadsFn = null; } })();
   function dataStatus() { const days = Object.keys(state.days).length, wi = weighList().length, b = Object.values(state.city.tiles || {}).filter(p => !p.gone && p.k !== 'road').length; $('data-status').textContent = `${days} days logged · ${wi} weigh-ins · ${b} structures · device ${deviceId} · ${dbRef ? 'sync on' : 'this device only'}`; }
-  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'no-limit', exported: new Date().toISOString(), state }, null, 1); const name = `nolimit-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
+  $('backup-btn').addEventListener('click', async () => { const json = JSON.stringify({ app: 'life', exported: new Date().toISOString(), state }, null, 1); const name = `life-backup-${key(logicalToday())}.json`; if (downloadsFn) { try { await downloadsFn.save({ filename: name, data: json }); toast('Backup saved'); return; } catch (e) { if (e && e.code === 'declined') return; } } try { await navigator.clipboard.writeText(json); toast('Backup copied — paste it somewhere safe'); } catch (e) { $('restore-text').hidden = false; $('restore-text').value = json; toast('Backup shown below — copy it'); } });
   $('restore-btn').addEventListener('click', () => { const ta = $('restore-text'); if (ta.hidden || !ta.value.trim()) { ta.hidden = false; ta.value = ''; ta.focus(); toast('Paste the backup, then tap Restore again'); return; } let parsed; try { parsed = JSON.parse(ta.value); } catch (e) { toast('That isn’t a valid backup'); return; } const incoming = parsed && parsed.state ? parsed.state : parsed; if (!isObj(incoming) || !isObj(incoming.days)) { toast('That isn’t a valid backup'); return; } state = merge(state, incoming); ta.hidden = true; ta.value = ''; toast('Restored — merged with what was here', true); persist(); render(); });
   $('syncai').hidden = !STANDALONE;
   function renderCfg() { const c = cfg.get(); $('gh-token').value = c.ghToken || ''; $('an-key').value = c.anthropicKey || ''; $('cfg-note').textContent = `${c.ghToken ? 'GitHub token set' + (c.gistId ? ' · gist ' + c.gistId.slice(0, 7) : '') : 'No GitHub token — this device only'} · ${c.anthropicKey ? 'Anthropic key set — Council + Ask coach use AI' : 'No Anthropic key — Council uses rules'}`; }
   if (STANDALONE) renderCfg();
   $('cfg-save').addEventListener('click', async () => { const c = cfg.get(); const tok = $('gh-token').value.trim(), k2 = $('an-key').value.trim(); cfg.set({ ...c, ghToken: tok, anthropicKey: k2, gistId: tok === c.ghToken ? c.gistId : '' }); renderCfg(); toast('Saved on this device'); dbRef = null; await connect(); await setupSample(); renderCfg(); dataStatus(); });
   $('cfg-sync').addEventListener('click', async () => { dbRef = null; await connect(); dataStatus(); toast(dbRef ? 'Synced' : 'Sync not connected'); });
-  if (STANDALONE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) { const t = $('toast'); toast('Update ready — tap to reload'); t.style.pointerEvents = 'auto'; t.onclick = () => location.reload(); } }); }); }).catch(() => {});
-  $('quote') && $('quote').addEventListener('click', () => { quoteOffset++; render(); });
+  if (STANDALONE && 'serviceWorker' in navigator && 'PushManager' in window) navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => { const cur = state.push[deviceId]; if (!cur || !cur.sub) return; const nowS = sub ? JSON.stringify(sub.toJSON()) : null; if (nowS !== JSON.stringify(cur.sub)) { state.push[deviceId] = { sub: sub ? sub.toJSON() : null, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '', t: now() }; persist(); } }).catch(() => {});
+  if (STANDALONE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) { toast('Update ready — tap to reload', false, () => location.reload()); } }); }); }).catch(() => {});
 
   // =====================================================================
   // =====================================================================
@@ -1594,11 +1598,11 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     // 3. undo rate → mis-taps
     const dn = diag.use.done || 0, un = diag.use.undo || 0; if (dn >= 20 && un / (dn + un) > 0.25) add('undo-rate', 'med', 'One in four ticks gets undone', `${un} undos for ${dn} completions. Tap targets may be too close, or the NEXT “Done” button catches accidental taps.`, null);
     // 4. council proposals always declined
-    const props = Object.values(state.plans).flatMap(p => p.proposals); const dec = props.filter(p => p.status === 'declined').length, acc = props.filter(p => p.status === 'accepted').length; if (dec >= 4 && acc === 0) add('council-ignored', 'low', 'You decline everything the Council proposes', 'Either the proposals miss, or the rules are too aggressive. Tell me which and I’ll retune it.', null);
+    const props = Object.values(state.plans).flatMap(p => p.proposals); const dec = props.filter(p => p.status === 'declined').length, acc = props.filter(p => p.status === 'accepted').length; if (dec >= 4 && acc === 0) add('council-ignored', 'low', 'You decline everything the Council proposes', 'Either the proposals miss, or the rules are too aggressive. Paste the report to Claude to retune it.', null);
     // 5. weigh-ins sparse
     const wi7 = Array.from({ length: 7 }, (_, i) => key(addDays(t0, -i))).filter(k => state.weighins[k] && state.weighins[k].kg > 0).length; if (dayDiff(tk, seasonStart()) >= 7 && wi7 < 3) add('weigh-sparse', 'low', `Only ${wi7} weigh-in${wi7 === 1 ? '' : 's'} this week`, 'The 7-day average needs three. Put the scale where you can’t miss it.', null);
     // 6. city untouched while Grit piles up
-    const cityT = Object.values(state.city.tiles || {}).reduce((a, p) => Math.max(a, p.t || 0), 0); if (C.G.grit >= 300 && cityT && now() - cityT > 7 * 864e5) add('city-idle', 'low', `${City.fmt(C.G.grit)} Grit unspent, city untouched for a week`, 'If the city isn’t pulling you back, it isn’t doing its job. Spend it, or tell me what would make it worth opening.', null);
+    const cityT = Object.values(state.city.tiles || {}).reduce((a, p) => Math.max(a, p.t || 0), 0); if (C.G.grit >= 300 && cityT && now() - cityT > 7 * 864e5) add('city-idle', 'low', `${City.fmt(C.G.grit)} Grit unspent, city untouched for a week`, 'If the city isn’t pulling you back, it isn’t doing its job. Spend it, or say what would make it worth opening.', null);
     // 7. close-the-day never used
     const closes = days14.slice(0, 7).filter(k => day(k).close).length; if (dayDiff(tk, seasonStart()) >= 5 && closes === 0) add('no-close', 'med', '“Close the day” never used', 'It’s the peak-end of the loop: mood, best move, tomorrow’s first move. A 22:30 phone alarm is the cheapest fix.', null);
     // 8. win rate low over 14 days
@@ -1607,15 +1611,15 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const st = (state.seen.starter && state.seen.starter.ids) || []; for (const id of st) { let sched = 0, d2 = 0; for (const k of days14.slice(0, 7)) { if (!missionOn(k, id)) continue; sched++; if (doneOn(k).has(id)) d2++; } if (sched >= 4 && d2 / sched < 0.5) add('starter:' + id, 'med', `Starter “${short(BYID[id] || { name: id })}” under 50% this week`, 'You committed to three. Either this one gets the Council’s focus ×2, or swap it for one you’ll actually do.', null); }
     // 9a. a mission declined again and again → the mission is wrong, not the man
     const decCount = {}; for (const k of days14.concat([tk])) { const d = day(k).dec || {}; for (const id in d) if (d[id].why) { const o = decCount[id] || (decCount[id] = { n: 0, why: {} }); o.n++; o.why[d[id].why] = (o.why[d[id].why] || 0) + 1; } }
-    for (const id in decCount) { const o = decCount[id]; if (o.n < 3) continue; const top = Object.entries(o.why).sort((a, b) => b[1] - a[1])[0][0]; const m = BYID[id]; if (!m) continue; add('decline:' + id, o.n >= 5 ? 'high' : 'med', `“${short(m)}” declined ${o.n}× — mostly “${top}”`, DECLINE_ADVICE[top] || 'Recurring. Bring it to the Council.', top === 'wrong time slot' || top === 'kids' ? null : null); }
+    for (const id in decCount) { const o = decCount[id]; if (o.n < 3) continue; const top = Object.entries(o.why).sort((a, b) => b[1] - a[1])[0][0]; const m = BYID[id]; if (!m) continue; add('decline:' + id, o.n >= 5 ? 'high' : 'med', `“${short(m)}” declined ${o.n}× — mostly “${top}”`, DECLINE_ADVICE[top] || 'Recurring. Bring it to the Council.', null); }
     // 9b. easy days maxed two weeks running → the bar itself is wrong for this season
-    const ezWeeks = [weekKey(parse(tk)), prevWeek(weekKey(parse(tk)))].map(w => weekDays(w).filter(k => k <= tk && easyDay(k)).length); if (ezWeeks.every(n => n >= EASY_CAP)) add('easy-maxed', 'high', 'Two weeks of easy days, both capped', 'The bar is set for a season you’re not in. Run the Council (it lowers 5 points at a time), or tell me and I’ll rebalance the missions.', null);
+    const ezWeeks = [weekKey(parse(tk)), prevWeek(weekKey(parse(tk)))].map(w => weekDays(w).filter(k => k <= tk && easyDay(k)).length); if (ezWeeks.every(n => n >= EASY_CAP)) add('easy-maxed', 'high', 'Two weeks of easy days, both capped', 'The bar is set for a season you’re not in. Run the Council (it lowers 5 points at a time), or paste the report to Claude to rebalance the missions.', null);
     // 9c. stress consistently high midday → the work block is the problem, not the evening
-    const mds = days14.map(k => day(k).md).filter(Boolean); if (mds.length >= 5 && mds.reduce((a, m) => a + m.s, 0) / mds.length >= 4) add('stress-high', 'med', 'Midday stress averages 4+', 'The Work block needs a release valve: move the walk/daylight mission to 12:00, or make “zero client messages” the focus for a week.', null);
+    const mds = days14.map(k => day(k).md).filter(Boolean); if (mds.length >= 5 && mds.reduce((a, m) => a + m.s, 0) / mds.length >= 4) add('stress-high', 'med', 'Midday stress averages 4+', 'The Work block needs a release valve: move “Hand off or document one thing” to 12:00 as a break, or make “zero client messages” the focus for a week.', null);
     // 9d. one stress reason keeps coming back
     const spL = stressPattern(tk, days14); for (const [w, c] of spL.top) if (c >= 3) add('stress:' + w, c >= 6 ? 'high' : 'med', `Stress from “${w}” ${c} times in two weeks`, STRESS_ADVICE[w] || 'Recurring. Bring it to the Sunday review.', null);
     // 10. caught errors / failed checks
-    const recentErr = diag.errors.filter(e => e.t > now() - 3 * 864e5).length; if (recentErr) add('errors', 'high', `${recentErr} error${recentErr === 1 ? '' : 's'} caught in 3 days`, 'Copy the report below and paste it to me — the stack traces are in it.', null);
+    const recentErr = diag.errors.filter(e => e.t > now() - 3 * 864e5).length; if (recentErr) add('errors', 'high', `${recentErr} error${recentErr === 1 ? '' : 's'} caught in 3 days`, 'Copy the report and paste it to Claude — the stack traces are in it.', null);
     const recentChk = diag.checks.filter(c => c.t > now() - 3 * 864e5); if (recentChk.length) add('checks', 'high', `${recentChk.length} sanity check${recentChk.length === 1 ? '' : 's'} failed`, recentChk.map(c => c.code + (c.ctx ? ` (${c.ctx})` : '')).slice(0, 4).join(' · '), null);
     const order = { high: 0, med: 1, low: 2 }; return sug.sort((a, b) => order[a.sev] - order[b.sev]);
   }
@@ -1648,7 +1652,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   let cityCache = { v: -1, val: null };
   city = City.mount({
     canvas: $('city-canvas'), panel: $('city-panel'), hud: $('city-hud'), toast, deviceId,
-    get: () => { if (cityCache.v === ver) return cityCache.val; const C = ctx(); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(C.T.by[s], needStat).level; cityCache = { v: ver, val: { city: state.city, grit: C.G.grit, vitality: vitality(C.tk), statLevels, level: state.peakLevel, todayKey: C.tk } }; return cityCache.val; },
+    get: () => { const tkNow = key(logicalToday()); if (cityCache.v === ver && cityCache.tk === tkNow) return cityCache.val; const C = ctx(); const statLevels = {}; for (const s in STATS) statLevels[s] = levelFrom(C.T.by[s], needStat).level; cityCache = { v: ver, tk: C.tk, val: { city: state.city, grit: C.G.grit, vitality: vitality(C.tk), statLevels, level: state.peakLevel, todayKey: C.tk } }; return cityCache.val; },
     commit: () => { persist(); const C = ctx(); if ($('loot-bal')) $('loot-bal').textContent = City.fmt(C.G.grit); },
   });
   if (sanitizeAtBoot) { sanitizeAtBoot = false; try { if (sanitize()) push(false); } catch (e) {} }
