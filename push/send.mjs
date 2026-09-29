@@ -34,6 +34,17 @@ const win = +WINDOW_MIN;
 const slot = Math.floor(nowMin / win) * win; // the cron slot this run belongs to, so a late start still sends and a run never sends twice
 const inWindow = hhmm => { const [h, m] = hhmm.split(':').map(Number); const t = h * 60 + m; return t >= slot && t < slot + win; };
 
+// the Core the player chose, read from the synced state
+const CORE_NAMES = { checkin: 'Morning check-in', wake: 'Up by 07:00', weigh: 'Weigh in', boys_am: 'Drop-off', train: 'Train', train_we: 'Weekend workout', delegate: 'Hand off one thing', focus: '90 min deep work', prot_b: 'Protein 1 of 3', prot_l: 'Protein 2 of 3', prot_d: 'Protein 3 of 3', water: 'Water, no late caffeine', noclient: 'Zero client messages', friend: 'Reach out to a friend', prep: 'Meal prep', stop: 'Hard stop 20:00', pnp: '10 min with each twin', boys_pm: 'Bedtime captain', debrief: 'Debrief with your wife', kiss: 'Appreciation + kiss', dry: 'Dry night', close: 'Close the day', lights: 'Lights out 23:00', adventure: 'Family adventure' };
+const CORE_IDS = ((state.core || {}).ids || []).filter(id => CORE_NAMES[id]);
+const dayKey = off => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now.getTime() + off));
+const todayKey = dayKey(0);
+const weekend = [0, 6].includes(new Date(todayKey + 'T12:00:00Z').getUTCDay());
+const rec = (state.days || {})[todayKey] || { on: {}, off: {}, dec: {} };
+const isDone = id => (rec.on || {})[id] > ((rec.off || {})[id] || 0);
+const WEEK_ONLY = new Set(['boys_am', 'delegate', 'focus', 'noclient', 'stop', 'prep', 'friend']), WEEKEND_ONLY = new Set(['train_we', 'adventure']);
+const core = CORE_IDS.filter(id => !((rec.dec || {})[id] || {}).why && !(weekend && WEEK_ONLY.has(id)) && !(!weekend && WEEKEND_ONLY.has(id))).map(id => [id, CORE_NAMES[id]]);
+const coreLeft = core.filter(([id]) => !isDone(id));
 const due = [];
 if (process.env.TEST === '1') due.push({ tag: 'test', title: 'Life', body: 'Server test: reminders reach this phone.' });
 for (const [id, def] of Object.entries(DEFAULTS)) {
@@ -45,8 +56,10 @@ for (const [id, def] of Object.entries(DEFAULTS)) {
     continue;
   }
   const t = /^\d{2}:\d{2}$/.test(pref.t || '') ? pref.t : def.t;
-  if (id === 'coach') { if (!inWindow(t)) continue; const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now.getTime() - 864e5)); const y = (state.days || {})[ymd] || {}; const first = y.close && y.close.first; due.push({ tag: 'coach', title: 'Coach', body: first ? `First move: ${first}. Do it before Slack opens.` : 'No first move set last night. Pick one now, before Slack opens. Priority: Business.' }); continue; }
-  if (inWindow(t)) due.push({ tag: id, title: def.title, body: def.body });
+  if (id === 'coach') { if (!inWindow(t)) continue; const y = (state.days || {})[dayKey(-864e5)] || {}; const first = y.close && y.close.first; if (!core.length) { due.push({ tag: 'coach', title: 'Pick your Core', body: 'Open Life and choose the three missions that decide your day.' }); continue; } due.push({ tag: 'coach', title: `Today’s Core: ${core.length}`, body: `${core.map(c => c[1]).join(' · ')}.${first ? ` First move: ${first}.` : ''}` }); continue; }
+  if (!inWindow(t)) continue;
+  if ((id === 'stop' || id === 'close') && core.length) { const n = coreLeft.length; due.push({ tag: id, title: n === 0 ? 'Day won' : `${n} core left`, body: n === 0 ? 'Core done. Close the day and set tomorrow’s first move.' : `${coreLeft.map(c => c[1]).join(', ')}. ${n <= 2 ? 'Twenty minutes and the day is yours.' : def.body}` }); continue; }
+  due.push({ tag: id, title: def.title, body: def.body });
 }
 if (!due.length) { console.log(`subscriptions: ${subs.length}`); console.log('nothing due at', get('hour') + ':' + get('minute'), tz); process.exit(0); }
 

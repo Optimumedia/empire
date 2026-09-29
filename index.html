@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XQ/kpBmxJNfQyCFVlyFSdj9U2CpoLxwO7pCm118h+Gs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a0tvEGbEb0Z5qIrXTv3a9yiRZnZpxg1alwp9JeazzF4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Life">
@@ -102,6 +102,12 @@
   .hero-t .xp i { display: block; height: 100%; background: var(--xp); border-radius: inherit; transition: width .5s cubic-bezier(.2,.8,.2,1); }
   .hero-t .verdict { font-size: 15px; line-height: 1.35; font-weight: 500; }
   .hero-t .verdict::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: currentColor; vertical-align: 1px; }
+  .core { display: flex; flex-wrap: wrap; gap: 6px; }
+  .core-h { width: 100%; display: flex; align-items: baseline; gap: 10px; font-size: 14px; } .core-h .tiny { margin-left: auto; } .core-h .linkbtn { min-height: 0; padding: 0; font-size: 13px; }
+  .corechip { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 13px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .corechip i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--ink-3); display: block; position: relative; }
+  .corechip.on { background: var(--go-soft, var(--surface-2)); border-color: var(--go); color: var(--ink-2); text-decoration: line-through; }
+  .corechip.on i { background: var(--go); border-color: var(--go); }
   .stats4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .stats4 div { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; min-width: 0; } .stats4 span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stats4 i { display: block; height: 4px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
@@ -377,6 +383,7 @@
         <div class="verdict" id="verdict">Loading…</div>
       </div>
     </div>
+    <div class="core" id="core-strip"></div>
     <div class="stats4" id="stats4"></div>
     <div id="bdays" hidden></div>
     <button class="coach-alert" id="coach-alert" hidden></button>
@@ -439,7 +446,7 @@
     <div class="card" id="words-card"><h3>Your words</h3><p class="sub">Celebration lines in your voice, one per line. One shows on roughly every other completed mission.</p><textarea class="note" id="shine-text"></textarea><p class="sub">Temptation bundles — a pleasure you only allow yourself after a mission. <i>Podcast = train</i>, one per line. Ids: train, delegate, focus, boys_pm, debrief, lights, prot_l.</p><textarea class="note" id="bundle-text" style="min-height:48px"></textarea><div><button class="btn sm" id="words-save">Save</button></div></div>
     <div class="card" id="custom-card"><h3>Your own mission <span class="tiny" id="custom-sub"></span></h3><p class="sub" id="custom-why"></p>
       <div id="custom-form" hidden><input class="note" id="custom-name" aria-label="Mission name" maxlength="80" placeholder="e.g. Read 10 pages"><div class="row" style="margin-top:8px"><select class="note" id="custom-stat" aria-label="Stat" style="width:auto;flex:1"><option value="business">Business</option><option value="body">Body</option><option value="health">Health</option><option value="family">Family</option></select><input class="note" type="time" id="custom-time" aria-label="Time" value="18:00" style="width:120px"></div><div class="row" style="margin-top:8px"><button class="btn sm dark" id="custom-save">Save</button><button class="btn sm" id="custom-off">Remove</button></div></div></div>
-    <div class="card" id="rules-card"><h3>The rules</h3><p class="sub">Missions pay XP into four stats and mint Grit 1:1 (+100 Grit per day won). Win the day at the Council's threshold — 72% by default, 50% the day after a loss. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Five days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time. Easy days: a low morning check-in drops the bar to 60% with tiny missions, twice a week at most. Can’t today: decline up to two missions a day with a reason; each lowers the bar and the pattern reaches the coach and the Council. The season opens with 400 Grit; from level 3 the Iron Week stake can be 500. The weekly city goal pays 150 Grit when the population target is reached by Sunday.</p></div>
+    <div class="card" id="rules-card"><h3>The rules</h3><p class="sub">Every day has a <b>Core</b>: three to five missions you choose. Doing them wins the day; one may slip after a loss or on an easy day. Change it any time from Today — the Lab will also tell you when a Core mission has stopped happening. Everything else on the board is bonus: it pays XP into four stats and mints Grit 1:1 (+100 Grit per day won), and it feeds the city, but it never decides whether you won. Shields cover lost days; skipped days don't count. Beat the ghost and next week pays +10% XP (stacks to ×1.3). Three days won unlocks the weekly crate. Iron Week can be staked: 300 Grit, back ×1.5 on success. Levels never go down, and each one from 2 to 10 unlocks a perk — see the ladder under All-time. Easy days: a low morning check-in drops the bar to 60% with tiny missions, twice a week at most. Can’t today: decline up to two missions a day with a reason; each lowers the bar and the pattern reaches the coach and the Council. The season opens with 400 Grit; from level 3 the Iron Week stake can be 500. The weekly city goal pays 150 Grit when the population target is reached by Sunday.</p></div>
     <div class="card" id="remind-card" hidden><h3>Reminders <span class="tiny" id="remind-status"></span></h3><p class="sub">Push notifications on this phone, sent through your sync Gist by your own GitHub every 15 minutes — so times are “around”, not to the minute. Needs Gist sync on.</p>
       <div class="list" id="remind-list"></div>
       <div class="row"><button class="btn sm dark" id="remind-enable">Enable on this phone</button><button class="btn sm" id="remind-test">Test notification</button></div></div>
@@ -467,8 +474,8 @@
 <div class="milestone" id="milestone" aria-live="polite"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="quotes.js?v=20260916-221018"></script>
-<script src="city.js?v=20260916-221018"></script>
+<script src="quotes.js?v=20260929-175454"></script>
+<script src="city.js?v=20260929-175454"></script>
 
 <script>
 (() => {
@@ -552,8 +559,14 @@
   const STAKE_BIG = 500, RARE_GRIT = 200, INTEREST_RATE = 0.05, INTEREST_CAP = 500, CUSTOM_XP = 15;
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   const titleFor = L => L <= TITLES.length ? TITLES[L - 1] : `Ascended ${ROMAN[Math.min(L - TITLES.length, 10)] || L - TITLES.length}`;
+  // The Core: the day is won on five missions, not on the whole board. Everything else is bonus XP.
+  const CORE_MAX = 5, CORE_RATIO = 0.8, CORE_EASY = 0.6;
+  const CORE_MIN = 3;
+  const CORE_SEED = ['checkin', 'prot_l', 'close']; // only until there is history to learn from
+  const CORE_NEVER = new Set(['weigh', 'pulse', 'prep']); // logging and one-offs are not a day's spine
   const WIN_DEFAULT = 0.72, WIN_AFTER_LOSS = 0.5, REVIEW_XP = 25, SHIELD_MONTHLY = 2, SHIELD_CAP = 3, DAYWON_GRIT = 100, STAKE = 300, STIPEND = 400;
   const MILESTONES = [7, 30, 100, 365];
+  const CRATE_WINS = 3;
   const DEFAULT_REWARDS = [['r1', 'New lifting shoes', 1500], ['r2', 'Something for the boys', 800], ['r3', 'Weekend away with my wife', 6000]];
   const SEASON_START = '2026-09-11', DAY_BOUNDARY_H = 4, MS_DAY = 864e5;
   const need = L => Math.round(150 * Math.pow(L, 1.5));
@@ -587,7 +600,7 @@
   // State — every record carries a timestamp so two devices merge instead of overwrite
   // =====================================================================
   const LS_KEY = 'ascent.v2';
-  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, levelups: {}, interest: {}, custom: {}, quotes: {}, cityGoals: {}, city: City.emptyCity() });
+  const base = () => ({ v: 3, days: {}, weeks: {}, weighins: {}, waist: {}, reviews: {}, ladder: {}, rewards: {}, identity: {}, seen: {}, peakLevel: 1, plans: {}, crates: {}, stakes: {}, letters: {}, words: {}, friends: {}, tweaks: {}, push: {}, remind: {}, levelups: {}, interest: {}, custom: {}, quotes: {}, cityGoals: {}, core: { ids: [], t: 0 }, city: City.emptyCity() });
   const now = () => Date.now();
   const maxT = (a, b) => (!a ? b : !b ? a : (a.t || 0) >= (b.t || 0) ? a : b);
   const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
@@ -648,6 +661,7 @@
     for (const k of union(a.remind, b.remind)) { const x = a.remind && a.remind[k], y = b.remind && b.remind[k]; const m = (!x ? y : !y ? x : num(x.at) >= num(y.at) ? x : y); if (isObj(m)) out.remind[k] = { on: m.on !== false, t: /^\d{2}:\d{2}$/.test(m.t || '') ? m.t : '', at: num(m.at) }; }
     byT('friends', m => ({ name: String(m.name || '').slice(0, 60), bday: /^\d{4}-\d{2}-\d{2}$/.test(m.bday || '') ? m.bday : '', kind: m.kind === 'family' ? 'family' : 'friend', gone: !!m.gone, t: num(m.t) }));
     for (const k of union(a.seen, b.seen)) { const v = (a.seen && a.seen[k]) || (b.seen && b.seen[k]); out.seen[k] = typeof v === 'object' ? v : true; }
+    { const m = maxT(a.core, b.core); out.core = isObj(m) ? { ids: (Array.isArray(m.ids) ? m.ids : []).filter(x => typeof x === 'string').slice(0, CORE_MAX), t: num(m.t) } : { ids: [], t: 0 }; }
     out.peakLevel = Math.max(num(a.peakLevel, 1), num(b.peakLevel, 1), 1);
     const dateRe = /^\d{4}-\d{2}-\d{2}$/;
     for (const l of union(a.levelups, b.levelups)) { const x = a.levelups && a.levelups[l], y = b.levelups && b.levelups[l]; const ok = v => isObj(v) && dateRe.test(v.k || ''); const m = ok(x) && ok(y) ? (x.k <= y.k ? x : y) : ok(x) ? x : ok(y) ? y : null; if (m && +l >= 2) out.levelups[l] = { k: m.k, t: num(m.t) }; } // earliest date wins: a level is reached once
@@ -764,8 +778,8 @@
         if (revN[k]) stock = Math.min(shieldCap(k), stock + revN[k]);
         if (planDays.has(k)) stock = Math.min(shieldCap(k), stock + 1);
         const prevLost = lostYesterday; lostYesterday = false;
-        const th = Math.ceil(dayMax(k) * (prevLost ? WIN_AFTER_LOSS : winRatio(wk, k)));
-        const w = dayXP(k).xp >= th;
+        const cn = coreFor(k).length; const need = cn ? Math.max(1, Math.ceil(cn * ((prevLost || easyDay(k)) ? CORE_EASY : CORE_RATIO))) : 0;
+        const w = cn > 0 && coreDone(k) >= need;
         if (k === tk) { if (w && !isSkip(k)) { streak++; won++; wonByWeek[wk] = (wonByWeek[wk] || 0) + 1; } break; }
         if (isSkip(k)) continue;
         if (w) { streak++; won++; wonByWeek[wk] = (wonByWeek[wk] || 0) + 1; }
@@ -777,7 +791,14 @@
       return { streak, stock, shielded, lost, won, best, wonByWeek };
     });
   }
-  function winThreshold(k, S) { const y = key(addDays(parse(k), -1)); const reduced = S.lost[y] === true; return { need: Math.ceil(dayMax(k) * (reduced ? WIN_AFTER_LOSS : winRatio(weekKey(parse(k)), k))), reduced }; }
+  // completion rate over the last n scheduled days — the only honest basis for what the Core should be
+  function rateOf(id, tk, n) { let sched = 0, done = 0; for (let i = 1; i <= n; i++) { const k = key(addDays(parse(tk), -i)); if (k < seasonStart()) break; if (!missionOn(k, id)) continue; sched++; if (doneOn(k).has(id)) done++; } return { sched, done, rate: sched ? done / sched : null }; }
+  function coreSuggestion(tk) { const cand = MISSIONS.filter(m => !m.bonus && !m.kind && !CORE_NEVER.has(m.id)).map(m => ({ id: m.id, ...rateOf(m.id, tk, 14) })).filter(x => x.sched >= 3 && x.rate >= 0.5).sort((a, b) => b.rate - a.rate || b.sched - a.sched); return (cand.length >= CORE_MIN ? cand.slice(0, CORE_MIN).map(x => x.id) : CORE_SEED); }
+  function coreFor(k) { return cached('core:' + k, () => { const by = {}; for (const m of missionsFor(parse(k))) by[m.id] = m; const dc = declinedOn(k); const ids = (state.core.ids.length ? state.core.ids : CORE_SEED).filter(id => by[id] && !dc.has(id)); return ids.slice(0, CORE_MAX).map(id => by[id]); }); }
+  const coreDone = k => { const d = doneOn(k); return coreFor(k).filter(m => d.has(m.id)).length; };
+  const coreNeed = (k, easy) => { const n = coreFor(k).length; return n ? (easy ? Math.max(1, n - 1) : n) : 0; }; // all of them wins; one may slip on an easy day or after a loss
+  function winThreshold(k, S) { const y = key(addDays(parse(k), -1)); const reduced = !!(S && S.lost[y] === true); const n = coreFor(k).length; return { n, need: coreNeed(k, reduced || easyDay(k)), done: coreDone(k), reduced, xp: dayXP(k).xp, xpMax: dayMax(k) }; }
+  const dayWon = (k, S) => { const t = winThreshold(k, S); return t.need > 0 && t.done >= t.need; };
   function gritInfo(T, S, curWk) {
     let earned = STIPEND + T.xp + DAYWON_GRIT * S.won, spent = City.gritSpent(state.city);
     for (const id in state.rewards) if (state.rewards[id].claimed && !state.rewards[id].gone) spent += state.rewards[id].cost;
@@ -951,6 +972,7 @@
     else if (lvTouched) persist();
     if (payInterest(C)) return; // Monday payout re-renders with the new balance
     try { cityGoal(C); } catch (e) {}
+    if (!state.core.ids.length && Object.keys(state.days).length >= 3) { state.core = { ids: coreSuggestion(tk), t: now() }; persist(); }
     const L = state.peakLevel > Lc.level ? levelFrom(Math.max(T.xp, cumulative(state.peakLevel)), need) : Lc;
     const d = parse(tk);
     $('top-cap').textContent = `Day ${Math.max(1, dayDiff(tk, seasonStart()) + 1)} · ${S.won} won`; $('chip-streak').parentElement.title = `Streak ${S.streak} · best ${S.best}`;
@@ -979,21 +1001,25 @@
     const due = cands.filter(m => m.grp === curGrp && tOf(m) <= h + 0.75).sort((a, b) => tOf(a) - tOf(b));
     const st0 = day(tk); const cond = st0.md || st0.am; const RECOVER = new Set(['wake', 'water', 'pnp', 'boys_pm', 'debrief', 'kiss', 'lights', 'dry', 'friend']), HEAVY = new Set(['train', 'focus', 'delegate']);
     if (due.length && cond) { if (cond.s >= 4 || (cond.e > 0 && cond.e <= 2)) { const r = due.find(m => RECOVER.has(m.id)); if (r) return r; } else if (cond.e >= 4) { const hv = due.find(m => HEAVY.has(m.id)); if (hv) return hv; } }
-    if (due.length) { const st = due.find(m => starter.has(m.id) || m.focus); if (st) return st; return due.find(m => h - tOf(m) <= 2.5) || due[due.length - 1]; }
+    const coreIds = new Set(coreFor(tk).map(m => m.id));
+    if (due.length) { const cm = due.find(m => coreIds.has(m.id)); if (cm) return cm; const st = due.find(m => starter.has(m.id) || m.focus); if (st) return st; return due.find(m => h - tOf(m) <= 2.5) || due[due.length - 1]; }
     const upcoming = cands.filter(m => tOf(m) > h).sort((a, b) => tOf(a) - tOf(b)); if (upcoming.length) return upcoming[0];
     const inBlock = cands.filter(m => m.grp === curGrp); return inBlock[inBlock.length - 1] || null;
   }
   function renderToday(C) {
     const { tk, selKey, S, h } = C; const d = parse(selKey), ms = missionsFor(d), rec = day(selKey), done = doneOn(selKey), isToday = selKey === tk, skip = isSkip(selKey);
-    const x = dayXP(selKey), max = dayMax(selKey), th = winThreshold(selKey, S), won = x.xp >= th.need;
+    const x = dayXP(selKey), max = dayMax(selKey), th = winThreshold(selKey, S), won = th.need > 0 && th.done >= th.need;
     // ring
-    $('ring-fill').style.strokeDashoffset = ringOffset(x.xp / th.need); $('ring-fill').classList.toggle('won', won);
-    $('ring-over').style.strokeDashoffset = ringOffset(won ? (x.xp - th.need) / Math.max(1, max - th.need) : 0);
-    const el = $('ring-xp'); countUp(el, prevXP == null ? x.xp : prevXP, x.xp); prevXP = x.xp;
-    $('ring-sub').textContent = won ? `won · ${max - x.xp} left` : `of ${th.need} to win`;
-    const st = skip ? 'hold' : stateOf(x.xp, th.need, isToday ? h : 24);
+    $('ring-fill').style.strokeDashoffset = ringOffset(th.need ? th.done / th.need : 0); $('ring-fill').classList.toggle('won', won);
+    $('ring-over').style.strokeDashoffset = ringOffset(won ? (th.done - th.need) / Math.max(1, th.n - th.need) : 0);
+    const el = $('ring-xp'); countUp(el, prevXP == null ? th.done : prevXP, th.done); prevXP = th.done;
+    $('ring-sub').textContent = won ? `core done · ${x.xp} XP` : `of ${th.need} core to win`;
+    const cs = $('core-strip'); const doneSet = doneOn(selKey);
+    cs.innerHTML = th.n ? `<div class="core-h"><b>The Core${th.need < th.n ? ` · ${th.need} of ${th.n} today` : ''}</b><button class="linkbtn" id="core-edit">Change</button><span class="tiny">${x.xp} XP${max ? ` · ${Math.round(100 * x.xp / max)}% of the board` : ''}</span></div>` + coreFor(selKey).map(m => `<button class="corechip${doneSet.has(m.id) ? ' on' : ''}" data-chk="${esc(m.id)}" aria-pressed="${doneSet.has(m.id)}"><i></i>${esc(m.name.split('—')[0].trim())}</button>`).join('') : '';
+    const st = skip ? 'hold' : stateOf(th.done, th.need, isToday ? h : 24);
     const v = $('verdict'); v.className = `verdict s-${st}`;
-    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? '. Bonus from here.' : '.'}` : th.reduced ? `Never miss twice. Bar at 50%: ${th.need - x.xp} XP. Move.` : easyDay(selKey) ? `Easy day. Bar 60%. Win it small: ${th.need - x.xp} XP.` : isToday ? (st === 'rest' ? `${th.need - x.xp} XP short. Evening is thin. Two missions. Go.` : `${th.need - x.xp} XP to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : 'No excuses.'}`) : `${th.need - x.xp} XP short that day.`;
+    const left = Math.max(0, th.need - th.done); const nextCore = coreFor(selKey).filter(m => !doneOn(selKey).has(m.id))[0];
+    v.textContent = skip ? `Skipped — ${rec.skip.v}. No score, no streak damage.` : won ? `Day won${isToday ? `. ${th.n - th.done ? 'The rest is bonus.' : 'Clean sweep.'}` : '.'}` : th.reduced ? `Never miss twice. ${left} core left today.` : easyDay(selKey) ? `Easy day. ${left} core mission${left > 1 ? 's' : ''} and it’s yours.` : isToday ? (left === 1 ? `One core mission left: ${nextCore ? nextCore.name.split('—')[0].trim() : ''}. Go.` : `${left} core missions to win. ${S.streak >= 3 ? `Streak ${S.streak} on the line.` : 'No excuses.'}`) : `${left} core short that day.`;
     $('today-label').textContent = isToday ? 'Today' : `Yesterday · ${fmt(d)}`;
     const dcl = declinedOn(selKey); const nonBonus = ms.filter(m => !m.bonus && !dcl.has(m.id)); $('today-count').textContent = `${nonBonus.filter(m => done.has(m.id)).length} of ${nonBonus.length}${dcl.size ? ` · ${dcl.size} declined` : ''}`;
     $('skip-note').hidden = true;
@@ -1035,15 +1061,15 @@
   function renderWeek(C) {
     const { tk, wk, T, S, G } = C; const days = weekDays(wk); if (!weekSel || !days.includes(weekSel)) weekSel = tk;
     $('week-label').textContent = `${fmt(parse(wk))} – ${fmt(addDays(parse(wk), 6))} · ${C.W.xp} XP`;
-    $('weekrings').innerHTML = days.map(k => { const fut = k > tk; const x = fut ? 0 : dayXP(k).xp; const th = winThreshold(k, S).need; const won = !fut && x >= th; return `<button class="wd${k === tk ? ' today' : ''}${won ? ' won' : ''}${S.shielded[k] ? ' shield' : ''}${k === weekSel ? ' sel' : ''}" data-wd="${k}"><span class="n">${DOW[parse(k).getDay()]}</span><svg viewBox="0 0 40 40"><circle class="t" cx="20" cy="20" r="16"/><circle class="f" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="${ringOffset(fut ? 0 : x / th, 100.5)}"/></svg><span class="x">${fut ? '–' : isSkip(k) ? 'skip' : S.shielded[k] ? 'shield' : x}</span></button>`; }).join('');
+    $('weekrings').innerHTML = days.map(k => { const fut = k > tk; const won = !fut && dayWon(k, S); return `<button class="wd${k === tk ? ' today' : ''}${won ? ' won' : ''}${S.shielded[k] ? ' shield' : ''}${k === weekSel ? ' sel' : ''}" data-wd="${k}"><span class="n">${DOW[parse(k).getDay()]}</span><svg viewBox="0 0 40 40"><circle class="t" cx="20" cy="20" r="16"/><circle class="f" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="${ringOffset(fut ? 0 : x / th, 100.5)}"/></svg><span class="x">${fut ? '–' : isSkip(k) ? 'skip' : S.shielded[k] ? 'shield' : x}</span></button>`; }).join('');
     const idx = days.indexOf(tk); const you = days.slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0);
     let ghost = 0, label = 'Ghost, same point'; const bb = bestBefore(wk); if (bb.bestWk) ghost = weekDays(bb.bestWk).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); else { ghost = weekDays(prevWeek(wk)).slice(0, idx + 1).reduce((s, k) => s + dayXP(k).xp, 0); label = 'Last week, same point'; }
     const dsel = weekSel; const dd = dayXP(dsel), dth = winThreshold(dsel, S);
     const cg = state.cityGoals[wk]; const cgPop = cg ? City.population(state.city, vitality(tk)) : 0;
-    $('week-tiles').innerHTML = (cg ? `<div class="tile${cg.done ? ' won' : ''}"><div class="k">City goal</div><div class="v">${City.fmt(cgPop)} <small>/ ${City.fmt(cg.target)}</small></div><div class="tiny">${cg.done ? `reached · +${CITY_GOAL_GRIT} Grit` : `people by Sunday · +${CITY_GOAL_GRIT} Grit`}</div></div>` : '') + `<div class="tile${you > ghost && ghost > 0 ? ' won' : ''}"><div class="k">You vs ghost</div><div class="v">${you} <small>/ ${ghost}</small></div><div class="tiny">${label}${T.bestWk ? ` · best week ${T.best}` : ' · set the record'}</div></div><div class="tile${dd.xp >= dth.need ? ' won' : ''}"><div class="k">${fmt(parse(dsel))}</div><div class="v">${dd.xp} <small>/ ${dth.need}</small></div><div class="tiny">${dsel === tk ? 'today' : missionsFor(parse(dsel)).filter(m => doneOn(dsel).has(m.id)).map(m => m.name.split('—')[0].trim()).slice(0, 3).join(', ') || 'nothing logged'}</div></div>`;
+    $('week-tiles').innerHTML = (cg ? `<div class="tile${cg.done ? ' won' : ''}"><div class="k">City goal</div><div class="v">${City.fmt(cgPop)} <small>/ ${City.fmt(cg.target)}</small></div><div class="tiny">${cg.done ? `reached · +${CITY_GOAL_GRIT} Grit` : `people by Sunday · +${CITY_GOAL_GRIT} Grit`}</div></div>` : '') + `<div class="tile${you > ghost && ghost > 0 ? ' won' : ''}"><div class="k">You vs ghost</div><div class="v">${you} <small>/ ${ghost}</small></div><div class="tiny">${label}${T.bestWk ? ` · best week ${T.best}` : ' · set the record'}</div></div><div class="tile${dth.done >= dth.need && dth.need > 0 ? ' won' : ''}"><div class="k">${fmt(parse(dsel))}</div><div class="v">${dth.done} <small>/ ${dth.need} core</small></div><div class="tiny">${dsel === tk ? 'today' : missionsFor(parse(dsel)).filter(m => doneOn(dsel).has(m.id)).map(m => m.name.split('—')[0].trim()).slice(0, 3).join(', ') || 'nothing logged'}</div></div>`;
     const wonWk = S.wonByWeek[wk] || 0, crate = state.crates[wk];
-    $('crate').hidden = !(wonWk >= 5 || crate);
-    $('crate').innerHTML = crate ? `<div><b>${crate.grit ? 'Rare crate' : 'Crate'} opened</b><div class="tiny">+${crate.bucks} Bucks${crate.grit ? ` · +${crate.grit} Grit` : ''} · “${esc(crate.line)}”</div></div><span style="font-size:28px">${crate.grit ? '💎' : '📦'}</span>` : `<div><b>Weekly crate unlocked</b><div class="tiny">${wonWk} days won this week. 0–${state.peakLevel >= 6 ? 300 : 150} Bucks${state.peakLevel >= 6 ? ', one in four rare' : ''} and a word from the ghost.</div></div><button class="btn sm" id="crate-open" style="background:var(--xp);color:#1A1300;border-color:var(--xp)">Open</button>`;
+    $('crate').hidden = !(wonWk >= CRATE_WINS || crate);
+    $('crate').innerHTML = crate ? `<div><b>${crate.grit ? 'Rare crate' : 'Crate'} opened</b><div class="tiny">+${crate.bucks} Bucks${crate.grit ? ` · +${crate.grit} Grit` : ''} · “${esc(crate.line)}”</div></div><span style="font-size:28px">${crate.grit ? '💎' : '📦'}</span>` : `<div><b>Weekly crate unlocked</b><div class="tiny">${wonWk} days won this week (${CRATE_WINS} opens it). 0–${state.peakLevel >= 6 ? 300 : 150} Bucks${state.peakLevel >= 6 ? ', one in four rare' : ''} and a word from the ghost.</div></div><button class="btn sm" id="crate-open" style="background:var(--xp);color:#1A1300;border-color:var(--xp)">Open</button>`;
     const stake = state.stakes[wk];
     $('quests').innerHTML = questsFor(wk).map(q => { const s = questState(wk, q); let ctl = `<span class="c-${q.stat}">${STATS[q.stat]}</span>`;
       if (q.manual) ctl = `<button class="btn sm" data-quest="${q.id}">${s.cleared ? 'Undo' : 'Mark done'}</button>`;
@@ -1110,7 +1136,7 @@
     const decTop = Object.entries(decC).sort((a, b) => b[1].n - a[1].n)[0]; if (decTop && decTop[1].n >= 2 && BYID[decTop[0]]) { const w = Object.entries(decTop[1].why).sort((a, b) => b[1] - a[1])[0][0]; lines0.push(`“${BYID[decTop[0]].name.split('—')[0].trim()}” declined ${decTop[1].n}× in two weeks (“${w}”). ${DECLINE_ADVICE[w] || ''}`); }
     if (lossTop && lossTop[1] >= 2) lines0.push(`Lost days, last two weeks: “${lossTop[0]}” ×${lossTop[1]}. ${LOSS_ADVICE[lossTop[0]] || ''}`);
     const lines = [...lines0, `Week so far: ${W.xp} XP${lw ? ` versus ${lw} last week` : ''}${W.mult > 1 ? ` (×${W.mult.toFixed(1)} for beating the ghost)` : ''}. Iron Week ${iron.raw}/4. Streak ${S.streak}, best ${S.best}, shields ${S.stock}.`,
-      'Five walls: train at 08:30, one hand-off a day, hard stop 20:00, bedtime captain, lights out 23:00. Every mission sits inside one of them.',
+      `Your Core: ${coreFor(tk).map(m => m.name.split('—')[0].trim()).join(' · ') || 'not set — pick it on Today'}. All of it wins the day, one may slip when you are wrecked. The rest of the board is bonus.`,
       'Business XP comes from handing things off, not doing more. The agency runs without you because you delegated once a day and stopped answering clients yourself.'];
     const sp = stressPattern(tk, Array.from({ length: 14 }, (_, i) => key(addDays(parse(tk), -i))).filter(k => k >= seasonStart()));
     if (sp.top.length) { const [w, c] = sp.top[0]; if (c >= 3) lines.push(`Stress pattern: “${w}” ${c} times in two weeks${sp.top[1] && sp.top[1][1] >= 2 ? `, “${sp.top[1][0]}” ${sp.top[1][1]}` : ''}. ${STRESS_ADVICE[w] || 'Name it in the Sunday review and the Council will plan around it.'}`); else if (sp.hi >= 3) lines.push(`Stress ran high on ${sp.hi} check-ins this fortnight. Reasons so far: ${sp.top.map(([w, c]) => `${w} ×${c}`).join(', ')}. Three of the same and the coach names the fix.`); }
@@ -1199,7 +1225,7 @@
     const weeks = []; let w = prevWeek(target); for (let i = 0; i < 4; i++) { weeks.unshift(w); w = prevWeek(w); }
     const S = season(tk); const days = [];
     const start = seasonStart();
-    for (const wk of weeks) for (const k of weekDays(wk)) if (k <= tk && k >= start) days.push({ date: k, won: dayXP(k).xp >= winThreshold(k, S).need, score: +(dayXP(k).xp / Math.max(1, dayMax(k))).toFixed(2), skipped: isSkip(k), shielded: !!S.shielded[k] });
+    for (const wk of weeks) for (const k of weekDays(wk)) if (k <= tk && k >= start) days.push({ date: k, won: dayWon(k, S), core: `${coreDone(k)}/${coreFor(k).length}`, score: +(dayXP(k).xp / Math.max(1, dayMax(k))).toFixed(2), skipped: isSkip(k), shielded: !!S.shielded[k] });
     const active = days.filter(d => !d.skipped); const winRate = active.length ? +(active.filter(d => d.won).length / active.length).toFixed(2) : 0;
     const rate = (id, n) => { let sched = 0, done = 0; for (let i = 1; i <= n * 7; i++) { const k = key(addDays(parse(tk), -i)); if (k < start) break; if (!missionsFor(parse(k)).some(m => m.id === id)) continue; sched++; if (doneOn(k).has(id)) done++; } return sched ? +(done / sched).toFixed(2) : null; };
     const decl = {}; for (let i = 0; i < 14; i++) { const k = key(addDays(parse(tk), -i)); if (k < start) break; const d = day(k).dec || {}; for (const id in d) if (d[id].why) (decl[id] ||= []).push(d[id].why); }
@@ -1309,12 +1335,12 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   function setMission(k, id, on) { const r = rec(k); if (on) r.on[id] = now(); else r.off[id] = now(); }
   function complete(k, id, el) {
     { const r0 = rec(k); if (r0.dec && r0.dec[id] && r0.dec[id].why) r0.dec[id] = { why: '', note: '', t: now() }; }
-    const m = missionOn(k, id); if (!m) { persist(); render(); return; } const C0 = ctx(); const wasWon = dayXP(k).xp >= winThreshold(k, C0.S).need, won0 = C0.S.won;
+    const m = missionOn(k, id); if (!m) { persist(); render(); return; } const C0 = ctx(); const wasWon = dayWon(k, C0.S), won0 = C0.S.won;
     const on = doneOn(k).has(id); setMission(k, id, !on); use(on ? 'undo' : 'done');
     if (!on) { if (el) { el.classList.add('pop'); sparks(el); } vibrate(12); const lines = shineLines(); toast(Math.random() < 0.45 ? `+${m.xp} · ${lines[Math.floor(Math.random() * lines.length)]}` : `+${m.xp} ${STATS[m.stat]} XP · +${m.xp} Grit`); }
     else toast(`Undone −${m.xp}`);
     persist(); render();
-    const S = season(key(logicalToday())); const won = dayXP(k).xp >= winThreshold(k, S).need;
+    const S = season(key(logicalToday())); const won = dayWon(k, S);
     if (!wasWon && won) { vibrate([20, 40, 20]); milestone(`<div class="flame">🔥</div><div class="bignum">${S.streak}</div><div class="cap" style="font-size:14px">day streak</div><h1>Day won.</h1><p class="muted">+${DAYWON_GRIT} Grit for the city. Anything else is bonus.</p>`, 2400); }
     if (wasWon && !won) toast('Day no longer won');
     for (const ms0 of MILESTONES) if (won0 < ms0 && S.won >= ms0) milestone(`<div class="bignum">${ms0}</div><h1>${ms0} days won.</h1><p class="muted">${ms0 >= 30 ? 'You’re not trying this anymore. You’re doing it.' : 'Most people quit at three.'}</p>`, 3000);
@@ -1373,6 +1399,17 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const dcd = declinedOn(k).has(id);
     openSheet(`<div class="cap c-${m.stat}">${STATS[m.stat]} · ${m.t}${m.min ? ` · ${m.min} min` : ''} · +${m.xp} XP</div><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>${m.tiny && !m.isTiny ? `<p class="tiny">Tiny version if today is on fire: ${esc(m.tiny)} — full XP for showing up.</p>` : ''}${dcd ? `<p class="tiny">Declined today: ${esc(r.dec[id].why)}${r.dec[id].note ? ` — ${esc(r.dec[id].note)}` : ''}. Doing it anyway counts in full.</p>` : ''}<div class="acts"><button class="btn" data-x>Close</button>${on || dcd ? '' : `<button class="btn" id="sh-decline">Can’t today</button>`}<button class="btn ${on ? '' : 'primary'}" id="sh-done">${on ? 'Undo' : 'Done'}</button></div>`, sh => { sh.querySelector('#sh-done').addEventListener('click', () => { closeSheet(); complete(k, id); }); const dbtn = sh.querySelector('#sh-decline'); if (dbtn) dbtn.addEventListener('click', () => { declineSheet(k, id, m); }); });
   }
+  function coreSheet() {
+    const tk = key(logicalToday()); const sel = new Set(state.core.ids.length ? state.core.ids : coreSuggestion(tk));
+    const list = MISSIONS.filter(m => !m.bonus && !CORE_NEVER.has(m.id)).map(m => ({ m, ...rateOf(m.id, tk, 14) })).sort((a, b) => (b.rate === null ? -1 : b.rate) - (a.rate === null ? -1 : a.rate));
+    const row = x => `<button class="gate" data-core="${esc(x.m.id)}" aria-pressed="${sel.has(x.m.id)}"><i></i><span>${esc(x.m.name.split('—')[0].trim())}<small class="tiny" style="display:block">${x.sched ? `${x.done} of ${x.sched} in two weeks` : 'no history yet'} · ${x.m.t}</small></span></button>`;
+    openSheet(`<h2>Your Core</h2><p>Three to five missions that decide the day. Pick what you will actually do on a bad day — the rest of the board still pays XP, Grit and the city. Sorted by what you have been doing.</p><div class="list" id="core-pick" style="max-height:46vh;overflow:auto">${list.map(row).join('')}</div><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" id="core-ok">Save the Core</button></div>`, sh => {
+      const ok = sh.querySelector('#core-ok'); const sync = () => { ok.textContent = `Save the Core · ${sel.size}`; ok.disabled = sel.size < CORE_MIN || sel.size > CORE_MAX; };
+      sync();
+      sh.querySelector('#core-pick').addEventListener('click', e => { const b = e.target.closest('[data-core]'); if (!b) return; const id = b.dataset.core; if (sel.has(id)) sel.delete(id); else { if (sel.size >= CORE_MAX) { toast(`${CORE_MAX} at most — that is the point`); return; } sel.add(id); } b.setAttribute('aria-pressed', sel.has(id)); sync(); });
+      ok.addEventListener('click', () => { if (sel.size < CORE_MIN) { toast(`Pick at least ${CORE_MIN}`); return; } state.core = { ids: [...sel], t: now() }; use('core-set'); closeSheet(); persist(); render(); toast('Core set. That is the day now.'); });
+    });
+  }
   function declineSheet(k, id, m) {
     const used = declinedOn(k).size; if (used >= DECLINE_CAP) { toast(`${DECLINE_CAP} declines a day. The rest stands.`); return; }
     let why = ''; openSheet(`<h2>Can’t do “${esc(m.name.split('—')[0].trim())}” today</h2><p>Say why. The bar lowers by about ${Math.ceil(m.baseXp * winRatio(weekKey(parse(k)), k))} XP, and the pattern goes to the coach and the Council.</p><div class="fpick" id="dc-why">${DECLINE_WHY.map(w => `<button data-w="${w}">${w}</button>`).join('')}</div><input class="note" id="dc-note" maxlength="140" placeholder="One line, optional"><div class="acts"><button class="btn" id="dc-back">Back</button><button class="btn primary" id="dc-ok">Decline · ${DECLINE_CAP - used - 1} left today</button></div>`, sh => {
@@ -1383,19 +1420,19 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
   }
   // ---- close the day (peak-end ritual) ----
   function closeDay(kk) {
-    const k = kk || key(logicalToday()); const r = rec(k); const C = ctx(); const x = dayXP(k), th = winThreshold(k, C.S); const done = missionsFor(parse(k)).filter(m => doneOn(k).has(m.id) && m.id !== 'close');
+    const k = kk || key(logicalToday()); const r = rec(k); const C = ctx(); const x = dayXP(k), th = winThreshold(k, C.S); const cWon = th.need > 0 && th.done >= th.need; const done = missionsFor(parse(k)).filter(m => doneOn(k).has(m.id) && m.id !== 'close');
     const best = done.slice().sort((a, b) => b.xp - a.xp)[0]; const p = planApplies(weekKey(parse(k)), k); const q = quoteFor(k);
     const step = { mood: r.close ? r.close.mood : 0, best: r.close ? r.close.best : (best ? best.name.split('—')[0].trim() : ''), note: r.close ? r.close.note : '', first: r.close ? r.close.first : (p && p.woop ? p.woop.plan : '') };
     overlay(`<div class="row" style="justify-content:space-between"><span class="cap">Close the day</span><button class="btn ghost sm" id="ov-x">Later</button></div>
-      <div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill${x.xp >= th.need ? ' won' : ''}" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ov-ring"/></svg><div class="in"><b class="num" style="font-size:52px">${x.xp}</b><span>${x.xp >= th.need ? 'won' : `of ${th.need}`}</span></div></div>
-      <h1>${x.xp >= th.need ? 'Day won.' : done.length ? `${done.length} missions. Not a win. Set tomorrow’s first move.` : 'Nothing logged. Tomorrow starts tonight.'}</h1>
+      <div class="bigring ring"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="fill${cWon ? ' won' : ''}" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7" id="ov-ring"/></svg><div class="in"><b class="num" style="font-size:52px">${th.done}</b><span>${cWon ? 'core done' : `of ${th.need} core`}</span></div></div>
+      <h1>${cWon ? 'Day won.' : done.length ? `${done.length} missions. Not a win. Set tomorrow’s first move.` : 'Nothing logged. Tomorrow starts tonight.'}</h1>
       <div class="qa"><label>How was it?</label><div class="scale mood" id="ov-mood">${['😩', '😕', '😐', '🙂', '🔥'].map((e, i) => `<button data-m="${i + 1}" aria-pressed="${step.mood === i + 1}">${e}</button>`).join('')}</div></div>
       <div class="qa"><label>Best move today</label>${done.length ? `<div class="fpick" id="ov-best">${done.slice().sort((a, b) => b.xp - a.xp).slice(0, 6).map(m => `<button data-b="${esc(m.name.split('—')[0].trim())}" aria-pressed="${step.best === m.name.split('—')[0].trim()}">${esc(m.name.split('—')[0].trim())}</button>`).join('')}</div>` : `<input class="note" id="ov-best-in" placeholder="What did you do right?" value="${esc(step.best)}">`}</div>
       <div class="qa"><label for="ov-note">One line. What did the business do without you today?</label><input class="note" id="ov-note" maxlength="140" value="${esc(step.note)}"></div>
       <div class="qa"><label for="ov-first">Tomorrow’s first move — after coffee, I will…</label><input class="note" id="ov-first" maxlength="160" value="${esc(step.first)}" placeholder="e.g. Loom the reporting process before 08:30"></div>
       <div class="grow"></div>${q ? `<div class="note-line">“${esc(q.q)}” <b>— ${esc(q.a)}</b></div>` : ''}
       <button class="btn primary wide" id="ov-save">Close the day · +10 XP</button><p class="tiny" style="text-align:center">Sleep is a mission. Lights out 23:00.</p>`, o => {
-      requestAnimationFrame(() => { o.querySelector('#ov-ring').style.strokeDashoffset = ringOffset(x.xp / th.need); });
+      requestAnimationFrame(() => { o.querySelector('#ov-ring').style.strokeDashoffset = ringOffset(th.need ? th.done / th.need : 0); });
       o.querySelector('#ov-x').addEventListener('click', closeOverlay);
       o.querySelector('#ov-mood').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; step.mood = +b.dataset.m; o.querySelectorAll('#ov-mood button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
       const bl = o.querySelector('#ov-best'); if (bl) bl.addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (!b) return; step.best = b.dataset.b; o.querySelectorAll('#ov-best button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
@@ -1439,6 +1476,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     const tab = t.closest('.nav [data-view]'); if (tab) { goView(tab.dataset.view); return; }
     if (t.closest('#city-exit')) { goView('today'); return; }
     if (t.closest('#coach-alert')) { goView('coach'); return; }
+    if (t.closest('#core-edit')) { coreSheet(); return; }
     if (t.closest('[data-shield-info]')) { const C = ctx(); openSheet(`<h2>Shields · ${C.S.stock} in stock</h2><p>A shield covers a lost day so the streak survives. You get ${shieldMonthly(C.tk)} a month and can hold ${shieldCap(C.tk)}${state.peakLevel >= 2 ? ' (level 2 perk)' : ' (3 a month and 4 in stock from level 2)'}. +1 for every Sunday review, +1 when you accept a Council shield. Skipped days never need one.</p><div class="acts"><button class="btn primary" data-x>OK</button></div>`); return; }
   });
   // ---- Progress tab ----
@@ -1579,7 +1617,7 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     if (nx) { const [hh, mm] = nx.t.split(':').map(Number); const t = hh + mm / 60; if (t < h - 3 && nx.grp !== curGrp) out.push(['next-stale', `NEXT offered “${nx.name}” (${nx.t}) at ${h.toFixed(1)}h`]); }
     const x = dayXP(tk).xp, max = dayMax(tk) + ms.reduce((a, m) => a + (m.bonus ? m.xp : m.xp - m.baseXp), 0); if (x > max) out.push(['xp-over-max', `${x} > ${max}`]);
     const ids = ms.map(m => m.id); if (new Set(ids).size !== ids.length) out.push(['dup-mission', ids.join(',')]);
-    const th = winThreshold(tk, S); if (dayMax(tk) && (th.need < dayMax(tk) * 0.45 || th.need > dayMax(tk) * 0.85)) out.push(['threshold-band', `${th.need} of ${dayMax(tk)}`]);
+    const th = winThreshold(tk, S); if (th.n && (th.need < 1 || th.need > th.n)) out.push(['core-band', `${th.need} of ${th.n}`]);
     if (S.streak > dayDiff(tk, seasonStart()) + 1) out.push(['streak-impossible', `${S.streak} > days`]);
     if (G.grit < -50) out.push(['grit-debt', String(G.grit)]);
     if (!$('sheet').hidden && $('sheet-bg').hidden) out.push(['sheet-stranded', '']);
@@ -1609,12 +1647,17 @@ Give a plan for the rest of today in under 120 words: the single next move, one 
     // 7. close-the-day never used
     const closes = days14.slice(0, 7).filter(k => day(k).close).length; if (dayDiff(tk, seasonStart()) >= 5 && closes === 0) add('no-close', 'med', '“Close the day” never used', 'It’s the peak-end of the loop: mood, best move, tomorrow’s first move. A 22:30 phone alarm is the cheapest fix.', null);
     // 8. win rate low over 14 days
-    const played = days14.filter(k => !isSkip(k) && dayXP(k).xp > 0); const wonN = played.filter(k => dayXP(k).xp >= winThreshold(k, S).need).length; if (played.length >= 7 && wonN / played.length < 0.4) add('win-low', 'high', `Winning ${wonN} of ${played.length} played days`, 'The bar is too high for this season of life. Run the Council — it lowers the threshold 5 points at a time — or park two missions.', null);
+    const played = days14.filter(k => !isSkip(k) && dayXP(k).xp > 0); const wonN = played.filter(k => dayWon(k, S)).length; if (played.length >= 7 && wonN / played.length < 0.4) add('win-low', 'high', `Winning ${wonN} of ${played.length} played days`, 'The bar is too high for this season of life. Run the Council — it lowers the threshold 5 points at a time — or park two missions.', null);
     // 9. starters not holding
     const st = (state.seen.starter && state.seen.starter.ids) || []; for (const id of st) { let sched = 0, d2 = 0; for (const k of days14.slice(0, 7)) { if (!missionOn(k, id)) continue; sched++; if (doneOn(k).has(id)) d2++; } if (sched >= 4 && d2 / sched < 0.5) add('starter:' + id, 'med', `Starter “${short(BYID[id] || { name: id })}” under 50% this week`, 'You committed to three. Either this one gets the Council’s focus ×2, or swap it for one you’ll actually do.', null); }
     // 9a. a mission declined again and again → the mission is wrong, not the man
     const decCount = {}; for (const k of days14.concat([tk])) { const d = day(k).dec || {}; for (const id in d) if (d[id].why) { const o = decCount[id] || (decCount[id] = { n: 0, why: {} }); o.n++; o.why[d[id].why] = (o.why[d[id].why] || 0) + 1; } }
     for (const id in decCount) { const o = decCount[id]; if (o.n < 3) continue; const top = Object.entries(o.why).sort((a, b) => b[1] - a[1])[0][0]; const m = BYID[id]; if (!m) continue; add('decline:' + id, o.n >= 5 ? 'high' : 'med', `“${short(m)}” declined ${o.n}× — mostly “${top}”`, DECLINE_ADVICE[top] || 'Recurring. Bring it to the Council.', null); }
+    // 9a2. the Core drifts: promote what he actually does, demote what he never does
+    { const ids = state.core.ids.length ? state.core.ids : CORE_SEED; const inCore = new Set(ids);
+      for (const id of ids) { const r = rateOf(id, tk, 14); if (r.sched >= 5 && r.rate <= 0.2) { const m = BYID[id]; if (m) add('core-drop:' + id, 'high', `“${short(m)}” is in your Core and happens ${Math.round(r.rate * 100)}% of the time`, `${r.done} of ${r.sched} scheduled days. A Core you lose on is a Core that stops the app from meaning anything. Swap it out; it still pays XP on the board.`, { label: 'Take it out of the Core', run: () => { const left = ids.filter(x => x !== id); state.core = { ids: left.length >= CORE_MIN ? left : coreSuggestion(tk), t: now() }; } }); } }
+      const best = MISSIONS.filter(m => !m.bonus && !m.kind && !CORE_NEVER.has(m.id) && !inCore.has(m.id)).map(m => ({ m, ...rateOf(m.id, tk, 14) })).filter(x => x.sched >= 5 && x.rate >= 0.8).sort((a, b) => b.rate - a.rate)[0];
+      if (best && ids.length < CORE_MAX) add('core-add:' + best.m.id, 'med', `“${short(best.m)}” is already a habit — put it in the Core`, `${best.done} of ${best.sched} days. Locking it in makes the win honest and the streak real.`, { label: 'Add to the Core', run: () => { state.core = { ids: [...ids, best.m.id], t: now() }; } }); }
     // 9b. easy days maxed two weeks running → the bar itself is wrong for this season
     const ezWeeks = [weekKey(parse(tk)), prevWeek(weekKey(parse(tk)))].map(w => weekDays(w).filter(k => k <= tk && easyDay(k)).length); if (ezWeeks.every(n => n >= EASY_CAP)) add('easy-maxed', 'high', 'Two weeks of easy days, both capped', 'The bar is set for a season you’re not in. Run the Council (it lowers 5 points at a time), or paste the report to Claude to rebalance the missions.', null);
     // 9c. stress consistently high midday → the work block is the problem, not the evening
